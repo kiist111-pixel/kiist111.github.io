@@ -1,0 +1,2237 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>마지막 출석부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Gothic+Coding:wght@400;700&family=Nanum+Pen+Script&display=swap">
+<style>
+/* Layout: an island map and a class attendance register. Wide screens split into
+   left (me and my bag) and right (the map, what just happened, the records); phones stack them.
+   A bar pinned to the bottom of the screen keeps the two turn actions and my vitals in reach. */
+:root{
+  --paper:#edf0ec; --sheet:#f8f9f6; --ink:#1c2830; --ink-2:#56656b; --rule:#c6d1cc; --rule-2:#dde4e0;
+  --green:#2c5a4c; --on-green:#f2f6f3; --green-wash:#dbe7e0;
+  --red:#b13a2a; --red-wash:#f0d5cf; --amber:#9a6a12; --amber-wash:#f1e4c4;
+  --heart:#a8406a; --violet:#674c98; --friend:#3a7a57;
+  --shadow:0 1px 0 rgba(28,40,48,.06), 0 8px 24px -14px rgba(28,40,48,.35);
+  --f-display:'Hahmlet','Nanum Myeongjo','AppleMyungjo',serif;
+  --f-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --f-mono:'Nanum Gothic Coding',ui-monospace,'SFMono-Regular',monospace;
+  --f-hand:'Nanum Pen Script','Nanum Pen',cursive;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0f1517; --sheet:#151e21; --ink:#dfe6e3; --ink-2:#93a2a1; --rule:#2b373a; --rule-2:#202a2d;
+  --green:#7dbea4; --on-green:#0f1517; --green-wash:#1b2f27;
+  --red:#e4725f; --red-wash:#3d211d; --amber:#ddb05a; --amber-wash:#352b17;
+  --heart:#e78aac; --violet:#b39de6; --friend:#7cc59a;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.7);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#0f1517; --sheet:#151e21; --ink:#dfe6e3; --ink-2:#93a2a1; --rule:#2b373a; --rule-2:#202a2d;
+  --green:#7dbea4; --on-green:#0f1517; --green-wash:#1b2f27;
+  --red:#e4725f; --red-wash:#3d211d; --amber:#ddb05a; --amber-wash:#352b17;
+  --heart:#e78aac; --violet:#b39de6; --friend:#7cc59a;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.7);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+#app{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 56px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.25}
+button{font:inherit;color:inherit}
+.btn{appearance:none;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:var(--r);padding:.55em .95em;cursor:pointer;font-weight:500;line-height:1.3;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--ink-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.small{font-size:13px;padding:.32em .65em}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.hand{font-family:var(--f-hand);font-size:1.45em;line-height:1.25}
+.muted{color:var(--ink-2)}
+.label{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;color:var(--ink-2)}
+input[type=text]{font:inherit;width:100%;padding:.6em .75em;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);color:var(--ink)}
+select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);color:var(--ink)}
+
+/* ---------- title ---------- */
+.title{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:start;padding-block:28px 0}
+.cover h1{font-size:clamp(44px,8vw,84px);font-weight:800;letter-spacing:-.02em;margin-block:10px 18px}
+.cover .lede{max-width:34em;font-size:17px;color:var(--ink)}
+.cover .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.cover .cta .btn{font-size:16px;padding:.7em 1.2em}
+.confirm{margin-top:14px;padding:12px 14px;border:1px dashed var(--red);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.register{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.register header{background:var(--green);color:var(--on-green);padding:12px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.register header b{font-family:var(--f-display);font-size:18px}
+.register ol{list-style:none;margin:0;padding:0}
+.register li{display:grid;grid-template-columns:2.2em minmax(0,1fr);gap:8px;padding:10px 16px;border-top:1px solid var(--rule-2)}
+.register li .n{font-family:var(--f-mono);color:var(--ink-2)}
+.register li b{font-weight:600}
+
+/* ---------- make ---------- */
+.make{max-width:760px;margin:0 auto;display:grid;gap:22px}
+.make h2{font-size:32px}
+.field{display:grid;gap:6px}
+.pers-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pers{position:relative}
+.pers input{position:absolute;opacity:0;pointer-events:none}
+.pers label{display:block;height:100%;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);padding:10px 12px;cursor:pointer}
+.pers label b{display:block;font-family:var(--f-display);font-size:16px}
+.pers label span{font-size:13px;color:var(--ink-2)}
+.pers input:checked + label{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green);background:var(--green-wash)}
+.pers input:focus-visible + label{outline:2px solid var(--green);outline-offset:2px}
+.quick{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;border:1px dashed var(--rule);border-radius:var(--r);padding:10px 14px;font-size:14px}
+.fsec{border:0;padding:0;margin:0;display:grid;gap:10px;min-width:0}
+.fsec>legend,.fsec>h3{font-family:var(--f-display);font-size:20px;font-weight:600;padding:0;margin:0 0 2px;line-height:1.3}
+.fhint{margin:0;font-size:13px;color:var(--ink-2)}
+.namerow{display:flex;gap:8px}
+.namerow input{flex:1;min-width:0}
+.selrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center}
+.selrow select{width:100%;min-width:0}
+.relrow{display:grid;grid-template-columns:minmax(0,12em) minmax(0,1fr);gap:6px 12px;align-items:center;font-size:14px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-block;border:1px solid var(--rule);border-radius:999px;padding:.3em .9em;font-size:14px;cursor:pointer;background:var(--sheet)}
+.seg input:checked+span{border-color:var(--green);background:var(--green-wash);box-shadow:inset 0 0 0 1px var(--green)}
+.seg input:focus-visible+span{outline:2px solid var(--green);outline-offset:2px}
+.pers.rand label{border-style:dashed}
+.idcard{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;display:grid;gap:14px}
+.idcard .top{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.idcard .no{font-family:var(--f-mono);font-size:14px;color:var(--ink-2)}
+.idcard h3{font-size:30px}
+.kvs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px}
+.kvs dt{color:var(--ink-2);font-size:13px;padding-top:2px}
+.kvs dd{margin:0}
+
+/* ---------- game ---------- */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding-block:10px;margin-bottom:16px}
+.bar .clock{font-family:var(--f-display);font-size:20px;font-weight:600}
+.bar .stat{font-family:var(--f-mono);font-size:13px;color:var(--ink-2)}
+.bar .stat b{color:var(--ink)}
+.bar .spacer{flex:1}
+.bar .rescue{font-family:var(--f-mono);font-size:13px;color:var(--green);font-weight:700}
+.gamegrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.col{display:grid;gap:16px;min-width:0}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r);padding:14px 16px;min-width:0}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.me-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.me-top b{font-family:var(--f-display);font-size:22px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;border:1px solid var(--rule);border-radius:999px;padding:1px 8px;color:var(--ink-2);white-space:nowrap}
+.chip.inj{border-color:var(--red);color:var(--red)}
+.meter{display:grid;grid-template-columns:4.4em minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.meter>span:first-child{white-space:nowrap}
+.meter .track{height:8px;background:var(--rule-2);border-radius:4px;overflow:hidden}
+.meter .fill{display:block;height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+.meter .fill.hp-low{background:var(--red)}
+.meter .fill.st{background:var(--amber)}
+.meter .v{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:6.5em}
+.meters{display:grid;gap:6px;margin-block:10px}
+.equip{display:grid;gap:4px;font-size:14px}
+.equip .k{color:var(--ink-2);display:inline-block;min-width:4.2em;font-size:13px}
+.alert{border:1px solid var(--red);background:var(--red-wash);color:var(--ink);border-radius:var(--r);padding:8px 12px;font-size:14px}
+.alert.amber{border-color:var(--amber);background:var(--amber-wash)}
+.comp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px;border-top:1px dashed var(--rule);padding-top:10px;margin-top:10px}
+
+.map{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--rule-2);border:1px solid var(--rule);border-radius:var(--r);padding:4px;
+  background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:12px 12px;background-color:var(--sheet)}
+.tile{position:relative;appearance:none;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);min-height:76px;padding:6px 6px 5px;text-align:left;display:flex;flex-direction:column;gap:2px;cursor:default;color:var(--ink)}
+.tile .tn{font-family:var(--f-display);font-weight:600;font-size:14px;line-height:1.2;word-break:keep-all}
+.tile .tm{font-family:var(--f-mono);font-size:11px;color:var(--ink-2)}
+.tile .tz{margin-top:auto;font-size:11px;font-weight:600}
+.tile.adj{cursor:pointer;border-color:var(--ink-2)}
+.tile.adj:hover{background:var(--green-wash)}
+.tile.here{border:2px solid var(--ink);background:var(--green-wash)}
+.tile.z1{border-style:dashed;border-color:var(--amber);background-image:repeating-linear-gradient(135deg,var(--amber-wash) 0 5px,transparent 5px 11px)}
+.tile.z1 .tz{color:var(--amber)}
+.tile.z2{background:var(--red-wash);background-image:repeating-linear-gradient(135deg,var(--red-wash) 0 6px,var(--sheet) 6px 12px);border-color:var(--red);opacity:.85}
+.tile.z2 .tz{color:var(--red)}
+.tile .you{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:11px;display:grid;place-items:center;font-weight:700}
+.tile .cnt{position:absolute;bottom:5px;right:6px;font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--green)}
+.tile[aria-disabled="true"]{cursor:not-allowed}
+.maphint{font-size:13px;color:var(--ink-2);margin:6px 2px 0}
+.dlg.fightdlg{width:min(560px,100%)}
+.foes{display:grid;gap:8px}
+.foe{border:1px solid var(--red);border-radius:var(--r);padding:10px 12px;display:grid;gap:3px;font-size:14px}
+.foe .fn{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.foe .fn b{font-family:var(--f-display);font-size:17px}
+.hpw{font-family:var(--f-mono);font-size:12px;font-weight:700;border-radius:3px;padding:0 6px;border:1px solid currentColor}
+.hpw.h0{color:var(--green)} .hpw.h1{color:var(--amber)} .hpw.h2{color:var(--red)} .hpw.h3{color:var(--red);background:var(--red-wash)}
+.mybox{border:1px solid var(--rule);border-radius:var(--r);padding:10px 12px;display:grid;gap:6px;font-size:14px}
+.mybox .meters{margin:0}
+.clog{max-height:190px;overflow:auto;border-left:2px solid var(--rule);padding:2px 0 2px 10px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+.clog .rd{color:var(--ink);font-weight:700;margin-top:4px}
+.clog .rd:first-child{margin-top:0}
+.clog .q{color:var(--ink);font-family:var(--f-body)}
+.cacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cacts .btn{padding:.65em .8em;text-align:center}
+.cacts .btn small{display:block;font-size:11.5px;font-weight:400;color:inherit;opacity:.8}
+.cacts .full{grid-column:1/-1}
+.cbag summary{cursor:pointer;font-size:14px;color:var(--ink-2)}
+.cbag .btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#scr-game{padding-bottom:92px}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--sheet);border-top:1px solid var(--rule);box-shadow:0 -12px 24px -20px rgba(0,0,0,.5);
+  padding-inline:16px;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px))}
+.dock-in{max-width:1148px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between}
+.dock-info{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;font-size:13px;min-width:0}
+.dock-info .dloc{font-family:var(--f-display);font-weight:600;font-size:15px}
+.dmeter{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);white-space:nowrap}
+.dmeter b{font-family:var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.dmeter .mt{width:52px;height:6px;border-radius:3px;background:var(--rule-2);overflow:hidden}
+.dmeter .mt span{display:block;height:100%;background:var(--green)}
+.dmeter .mt span.low{background:var(--red)}
+.dmeter .mt span.st{background:var(--amber)}
+.dwarn{color:var(--red);font-weight:600;white-space:nowrap}
+.dock-btns{display:flex;flex-wrap:wrap;gap:8px}
+.dock-btns .btn{padding:.6em 1.05em}
+.dock-btns #act-search{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.dock-btns #act-loot{border-color:var(--red);color:var(--red)}
+.dock-btns #act-chat{border-color:var(--heart);color:var(--heart)}
+.bodysec{display:grid;gap:8px;border:1px solid var(--rule);border-radius:var(--r);padding:10px 12px}
+.bodysec .bh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.bodysec .bh b{font-family:var(--f-display);font-size:16px}
+
+.feed{display:grid;gap:8px}
+.ev{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:8px;font-size:14px;line-height:1.55}
+.ev .tm{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);padding-top:2px}
+.ev .tx{min-width:0}
+.ev .q{display:block;font-family:var(--f-hand);font-size:1.35em;line-height:1.25;margin-top:2px;color:var(--ink)}
+.ev .tier{font-size:12px;color:var(--ink-2);margin-left:4px}
+.ev.death .tx{color:var(--red);font-weight:600}
+.ev.heart .tx b,.ev.inner .tx{color:var(--heart)}
+.ev.inner .tx{font-style:normal}
+.ev.warn .tx{color:var(--amber)}
+.ev.heard .tx{color:var(--ink-2);font-style:italic}
+.ev details{margin-top:4px}
+.ev summary{cursor:pointer;font-size:12px;color:var(--ink-2)}
+.ev ul{margin:4px 0 0;padding-left:1.1em;font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.radio{border:1px dashed var(--ink-2);border-radius:var(--r);padding:10px 12px;background:var(--paper)}
+.radio .rh{display:flex;gap:8px;align-items:baseline;font-family:var(--f-display);font-weight:600}
+.radio .stamp{font-family:var(--f-mono);font-size:11px;border:1px solid var(--ink);border-radius:3px;padding:0 5px;letter-spacing:.1em}
+.radio dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;margin:6px 0 0;font-size:14px}
+.radio dt{color:var(--ink-2);font-size:13px}
+.radio dd{margin:0}
+.radio .r-red{color:var(--red);font-weight:600}
+.radio .r-amb{color:var(--amber);font-weight:600}
+.latest h3{display:flex;justify-content:space-between;align-items:baseline}
+.empty{color:var(--ink-2);font-size:14px}
+
+.inv-list{display:grid;gap:6px}
+.item{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--rule-2);padding-top:6px}
+.item:first-child{border-top:0;padding-top:0}
+.item .nm{font-weight:500}
+.item .meta{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.item .grow{flex:1;min-width:8em}
+.item .tag-p{font-size:11px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:0 4px}
+.picking{border:1px dashed var(--red);border-radius:var(--r);padding:8px 10px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.picking.craft{border-color:var(--green)}
+.item .btns{display:flex;flex-wrap:wrap;gap:6px}
+.bonus{font-family:var(--f-mono);font-size:12px;color:var(--green);font-weight:700}
+.stackn{font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--ink);background:var(--rule-2);border-radius:3px;padding:0 5px}
+.found{border:1px solid var(--rule);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px}
+.found .nm{font-family:var(--f-display);font-size:18px;font-weight:600}
+.found .meta{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.found .cmp{font-size:13px;color:var(--ink-2)}
+.found .warn{font-size:13px;color:var(--red);font-weight:600}
+.lootlist{display:grid;gap:8px}
+.lootlist .row2{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid var(--rule-2);padding-top:8px}
+.lootlist .row2:first-child{border-top:0;padding-top:0}
+.lootlist .grow{flex:1;min-width:9em}
+.swaplist{display:grid;gap:6px}
+.swaplist .btns{display:flex;flex-wrap:wrap;gap:6px}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--rule)}
+.tabs button{appearance:none;border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--green)}
+.tabpanel{padding-top:12px}
+.loglist{display:grid;gap:10px;max-height:640px;overflow:auto;padding-right:4px}
+
+.roster{display:grid}
+.row{display:grid;grid-template-columns:2em minmax(0,1fr) auto;gap:4px 10px;padding:9px 2px;border-top:1px solid var(--rule-2);align-items:start}
+.row:first-child{border-top:0}
+.row .n{font-family:var(--f-mono);color:var(--ink-2);padding-top:2px}
+.row .nm{font-weight:600}
+.row.dead .nm{text-decoration:line-through;text-decoration-color:var(--red);color:var(--ink-2)}
+.row .sub{font-size:13px;color:var(--ink-2)}
+.row .feel{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:13px;margin-top:3px}
+.stampmark{font-family:var(--f-display);font-weight:800;font-size:13px;border:2px solid currentColor;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;transform:rotate(-8deg)}
+.stampmark.al{color:var(--green)}
+.stampmark.dd{color:var(--red)}
+.tg{font-size:12px;font-weight:600;border-radius:3px;padding:0 5px;border:1px solid currentColor}
+.tg-bestie{color:var(--green)} .tg-friend{color:var(--friend)} .tg-crush{color:var(--heart)} .tg-rival{color:var(--violet)} .tg-enemy{color:var(--red)} .tg-none{color:var(--ink-2)}
+.mini{display:inline-flex;gap:4px;align-items:center;font-family:var(--f-mono);font-size:11px;color:var(--ink-2)}
+
+.reltable-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--rule-2);border-radius:var(--r)}
+.reltable{border-collapse:separate;border-spacing:0;width:100%;min-width:500px;font-size:13px}
+.reltable th,.reltable td{border-bottom:1px solid var(--rule-2);padding:6px 8px;text-align:left;vertical-align:top}
+.reltable thead th{font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;border-bottom:2px solid var(--rule);background:var(--sheet)}
+.reltable tbody th{font-weight:600;white-space:nowrap;position:sticky;left:0;z-index:1;background:var(--sheet);border-right:1px solid var(--rule-2)}
+.reltable thead th:first-child{position:sticky;left:0;z-index:2}
+.reltable tr.me th,.reltable tr.me td{background:var(--green-wash)}
+.reltable tr.dead th .nm{text-decoration:line-through;text-decoration-color:var(--red);color:var(--ink-2)}
+.reltable .rn{display:inline-block;margin:0 8px 2px 0;white-space:nowrap}
+.reltable .rn small{font-size:10.5px;color:var(--ink-2);margin-left:3px}
+.reltable .rn.gone{color:var(--ink-2);text-decoration:line-through}
+.reltable .none{color:var(--rule)}
+.reltable .tc{display:block;font-size:10.5px;color:var(--amber);font-weight:600}
+.h-bestie{color:var(--green)} .h-friend{color:var(--friend)} .h-crush{color:var(--heart)} .h-rival{color:var(--violet)} .h-enemy{color:var(--red)}
+.escbox{border:1px dashed var(--green);border-radius:var(--r);padding:8px 12px;font-size:13px;margin-top:10px;display:grid;gap:2px}
+.escbox b{color:var(--green)}
+.escbox .ok{color:var(--green);font-weight:600} .escbox .no{color:var(--ink-2)}
+.dock-btns #act-escape{background:var(--heart);border-color:var(--heart);color:var(--on-green)}
+.relwrap{overflow-x:auto}
+.relsvg{display:block;width:100%;max-width:560px;height:auto;margin:0 auto}
+.relsvg .nd circle{fill:var(--sheet);stroke:var(--ink-2);stroke-width:1.2}
+.relsvg .nd.me circle{fill:var(--ink);stroke:var(--ink)}
+.relsvg .nd text{font-family:var(--f-body);font-size:11px;fill:var(--ink)}
+.relsvg .nd.dead text{fill:var(--ink-2);text-decoration:line-through}
+.relsvg .nd.dead circle{stroke-dasharray:2 2;opacity:.6}
+.relsvg .e{fill:none;stroke-width:1.6;opacity:.9}
+.relsvg .e-bestie{stroke:var(--green);stroke-width:2.4}
+.relsvg .e-friend{stroke:var(--friend)}
+.relsvg .e-crush{stroke:var(--heart)}
+.relsvg .e-rival{stroke:var(--violet);stroke-dasharray:5 3}
+.relsvg .e-enemy{stroke:var(--red)}
+.relsvg .m-bestie{fill:var(--green)} .relsvg .m-friend{fill:var(--friend)} .relsvg .m-crush{fill:var(--heart)} .relsvg .m-rival{fill:var(--violet)} .relsvg .m-enemy{fill:var(--red)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;font-size:12px;margin-top:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px}
+.rellist{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:14px}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,16,18,.45);display:grid;place-items:center;padding:16px}
+.dlg{width:min(480px,100%);max-height:calc(100% - 32px);overflow:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow);padding:20px;display:grid;gap:14px}
+.dlg h2{font-size:24px}
+.dlg .acts{display:flex;flex-wrap:wrap;gap:8px}
+.dlg .acts .btn{flex:1 1 auto}
+.who-card{border:1px solid var(--rule);border-radius:var(--r);padding:10px 12px;display:grid;gap:4px;font-size:14px}
+
+/* ---------- end ---------- */
+.end{display:grid;gap:22px}
+.end .head h1{font-size:clamp(36px,6vw,60px);font-weight:800;margin-block:6px 10px}
+.end .sum{display:flex;flex-wrap:wrap;gap:10px 28px}
+.end .sum div{display:grid}
+.end .sum b{font-family:var(--f-display);font-size:26px}
+.endgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.chron{display:grid;gap:8px;max-height:560px;overflow:auto}
+
+@media (max-width: 860px){
+  .title,.gamegrid,.endgrid{grid-template-columns:minmax(0,1fr)}
+  .pers-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .loglist{max-height:none}
+}
+@media (max-width: 560px){
+  .relrow,.selrow,.kvs{grid-template-columns:minmax(0,1fr)}
+  .kvs{gap:2px}
+  .kvs dd{margin-bottom:8px}
+  .relrow{gap:4px}
+  #scr-game{padding-bottom:124px}
+  .dock-btns{flex:1 1 100%;flex-wrap:nowrap}
+  .dock-btns .btn{flex:1;padding-inline:.5em;white-space:nowrap}
+  .dock-btns .lg{display:none}
+}
+@media (max-width: 420px){
+  .tile{min-height:68px;padding:5px 4px}
+  .tile .tn{font-size:13px}
+  .tile .tm{display:none}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div id="app">
+
+<section id="scr-title" class="title" aria-labelledby="t-h">
+  <div class="cover">
+    <p class="label">2학년 3반 · 수학여행 셋째 날 · 물안개섬</p>
+    <h1 id="t-h">마지막 출석부</h1>
+    <p class="lede">짙은 안개 속에서 배가 멈췄다. 눈을 떠 보니 낯선 섬의 폐교 강당이었고, 손목에는 풀리지 않는 밴드가 채워져 있었다. 천장 스피커에서 목소리가 흘러나왔다. 이 섬을 떠날 수 있는 건 마지막 한 명뿐이라고.</p>
+    <div class="cta">
+      <button class="btn primary" id="btn-new" type="button">출석부에 이름 쓰기</button>
+      <button class="btn" id="btn-cont" type="button" hidden>이어하기</button>
+    </div>
+    <p class="muted" id="cont-info" hidden></p>
+    <div class="confirm" id="confirm-new" hidden>
+      <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
+      <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
+      <button class="btn small" id="btn-new-no" type="button">그대로 두기</button>
+    </div>
+  </div>
+  <aside class="register" aria-label="진행 방식">
+    <header><b>진행 방식</b><span class="mono">한 턴 = 30분</span></header>
+    <ol>
+      <li><span class="n">01</span><div><b>내가 움직일 때만 시간이 흘러요.</b> 이동하거나, 둘러보거나, 숨어서 쉬면 섬 전체가 한 칸 앞으로 갑니다. 며칠 뒤에 와도 멈춘 자리에서 이어져요.</div></li>
+      <li><span class="n">02</span><div><b>같은 반 스물네 명도 각자 살아요.</b> 내가 모르는 사이에 만나고, 친해지고, 다투고, 쓰러집니다.</div></li>
+      <li><span class="n">03</span><div><b>먼저 발견하면 고를 수 있어요.</b> 말을 걸지, 공격할지, 모른 척 지나갈지. 먼저 들키면 상대가 고릅니다. 싸움이 붙으면 라운드마다 공격, 방어, 도망을 직접 고르고, 싸우는 동안에는 시간이 흐르지 않아요.</div></li>
+      <li><span class="n">04</span><div><b>마음은 두 가지로 쌓여요.</b> 호감과 관심. 둘 다 높으면 좋아하게 되고, 싫은데 신경 쓰이면 혐관이 됩니다. 나도 예외는 아니에요.</div></li>
+      <li><span class="n">05</span><div><b>네 시간마다 방송이 나와요.</b> 떠난 친구들의 이름과, 다음에 닫힐 구역을 알려 줍니다. 닫힌 구역에 남아 있으면 밴드가 울려요.</div></li>
+      <li><span class="n">06</span><div><b>주운 물건은 쪼개고 합칠 수 있어요.</b> 유리병을 깨면 유리조각이 되고, 각목에 못을 박으면 쓸 만한 무기가 됩니다.</div></li>
+    </ol>
+  </aside>
+</section>
+
+<section id="scr-make" class="make" hidden aria-labelledby="m-h">
+  <div>
+    <p class="label">출석부 · 2학년 3반</p>
+    <h2 id="m-h">출석부에 이름 쓰기</h2>
+  </div>
+  <form id="make-form" class="make" autocomplete="off">
+    <div class="quick">
+      <span>정하기 어려운 칸은 <b>랜덤</b>으로 두세요. 출석하는 순간 정해져요.</span>
+      <button class="btn" type="button" id="btn-allrand">전부 랜덤으로</button>
+    </div>
+
+    <section class="fsec" aria-labelledby="h-basic">
+      <h3 id="h-basic">이름과 소개</h3>
+      <div class="field">
+        <label for="in-name"><b>이름</b> <span class="muted">성까지 써도 좋아요</span></label>
+        <div class="namerow"><input type="text" id="in-name" maxlength="8" placeholder="예: 이산" required><button class="btn" type="button" id="btn-randname">이름 뽑기</button></div>
+      </div>
+      <div class="field">
+        <label for="in-bio"><b>한 줄 소개</b> <span class="muted">출석부에 함께 적혀요 (비워 둬도 돼요)</span></label>
+        <input type="text" id="in-bio" maxlength="40" placeholder="예: 창가 자리, 늘 이어폰 한쪽을 끼고 있다">
+      </div>
+    </section>
+
+    <fieldset class="fsec">
+      <legend>성격</legend>
+      <p class="fhint">대화가 잘 풀릴지, 누구와 잘 맞을지가 달라져요.</p>
+      <div class="pers-grid" id="pers-grid"></div>
+    </fieldset>
+
+    <fieldset class="fsec">
+      <legend>부서</legend>
+      <p class="fhint">잘 다루는 무기나 특기가 생겨요.</p>
+      <div class="pers-grid" id="club-grid"></div>
+    </fieldset>
+
+    <fieldset class="fsec">
+      <legend>몸</legend>
+      <p class="fhint">기본 능력치가 어느 쪽으로 기울지 정해요.</p>
+      <div class="pers-grid" id="build-grid"></div>
+    </fieldset>
+
+    <fieldset class="fsec">
+      <legend>처음부터 얽힌 관계</legend>
+      <p class="fhint">누가 그 상대인지는 랜덤이에요. 몰래 품은 마음은 직접 알아내야 해요.</p>
+      <div class="relrow"><span>단짝</span><div class="seg" id="seg-bestie"></div></div>
+      <div class="relrow"><span>나를 몰래 좋아하는 애</span><div class="seg" id="seg-admirer"></div></div>
+      <div class="relrow"><span>나를 미워하는 애</span><div class="seg" id="seg-hater"></div></div>
+    </fieldset>
+
+    <section class="fsec" aria-labelledby="h-words">
+      <h3 id="h-words">남길 말</h3>
+      <div class="field">
+        <label for="in-line"><b>한마디</b> <span class="muted">출석부 옆에 적어 둘 말</span></label>
+        <input type="text" id="in-line" maxlength="40" placeholder="예: 끝까지 같이 가자">
+      </div>
+      <div class="field">
+        <label for="in-will"><b>유언</b> <span class="muted">쓰러질 때 남길 말 (비워 두면 말없이)</span></label>
+        <input type="text" id="in-will" maxlength="40" placeholder="예: 다들 밥은 챙겨 먹어">
+      </div>
+    </section>
+
+    <p class="fhint">시작 소지품은 고를 수 없어요. 출석하면 가방 하나씩 무작위로 지급돼요.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn primary" type="submit" id="btn-make">출석</button>
+      <button class="btn" type="button" id="btn-make-back">돌아가기</button>
+    </div>
+  </form>
+</section>
+
+<section id="scr-reveal" class="make" hidden aria-labelledby="r-h">
+  <div class="idcard" id="idcard"></div>
+  <div><button class="btn primary" type="button" id="btn-go">강당 밖으로 나간다</button></div>
+</section>
+
+<section id="scr-game" hidden>
+  <div class="bar" role="status" aria-live="polite">
+    <span class="clock" id="h-clock"></span>
+    <span class="stat">남은 인원 <b id="h-alive"></b></span>
+    <span class="stat">다음 방송까지 <b id="h-next"></b></span>
+    <span class="rescue" id="h-rescue" hidden></span>
+    <span class="spacer"></span>
+    <button class="btn small" type="button" id="btn-home">처음 화면</button>
+  </div>
+  <div class="gamegrid">
+    <div class="col">
+      <section class="card" id="status" aria-label="내 상태"></section>
+      <section class="card" id="inv" aria-label="가방"></section>
+    </div>
+    <div class="col">
+      <section aria-label="섬 지도">
+        <div class="map" id="map"></div>
+        <p class="maphint" id="maphint"></p>
+      </section>
+      <section class="card latest" id="latest" aria-label="방금 일어난 일"></section>
+      <section class="card">
+        <div class="tabs" role="tablist">
+          <button role="tab" type="button" id="tab-log" aria-selected="true" aria-controls="pn-log">기록</button>
+          <button role="tab" type="button" id="tab-roster" aria-selected="false" aria-controls="pn-roster">출석부</button>
+          <button role="tab" type="button" id="tab-rel" aria-selected="false" aria-controls="pn-rel">관계표</button>
+        </div>
+        <div class="tabpanel" id="pn-log" role="tabpanel"></div>
+        <div class="tabpanel" id="pn-roster" role="tabpanel" hidden></div>
+        <div class="tabpanel" id="pn-rel" role="tabpanel" hidden></div>
+      </section>
+    </div>
+  </div>
+  <div class="dock" role="region" aria-label="행동">
+    <div class="dock-in">
+      <div class="dock-info" id="dock-info"></div>
+      <div class="dock-btns">
+        <button class="btn" type="button" id="act-loot" hidden><span class="lg">소지품 </span>뒤지기</button>
+        <button class="btn" type="button" id="act-escape" hidden><span class="lg">함께 </span>탈출</button>
+        <button class="btn" type="button" id="act-chat" hidden>대화하기</button>
+        <button class="btn" type="button" id="act-search"><span class="lg">이 자리 </span>둘러보기</button>
+        <button class="btn" type="button" id="act-rest"><span class="lg">숨어서 </span>쉬기</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="scr-end" class="end" hidden></section>
+
+<div class="modal" id="modal" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-h" id="dlg"></div>
+</div>
+
+</div>
+
+<script id="game-logic">
+(function(root){
+'use strict';
+let R = Math.random;
+const ri=(a,b)=>a+Math.floor(R()*(b-a+1));
+const rf=(a,b)=>a+R()*(b-a);
+const pick=a=>a[Math.floor(R()*a.length)];
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function wpick(list){let s=0;for(const[,w]of list)s+=w;let x=R()*s;for(const[id,w]of list){x-=w;if(x<=0)return id;}return list[0][0];}
+
+/* ----- 조사 ----- */
+function jong(s){s=String(s||'');if(!s)return 0;const c=s.charCodeAt(s.length-1);if(c>=0xAC00&&c<=0xD7A3)return (c-0xAC00)%28;return /[013678lmnr]$/i.test(s)?1:0;}
+const JS={
+  i:s=>s==='나'?'내가':s+(jong(s)?'이':'가'),
+  eun:s=>s+(jong(s)?'은':'는'),
+  eul:s=>s+(jong(s)?'을':'를'),
+  wa:s=>s+(jong(s)?'과':'와'),
+  ro:s=>{const j=jong(s);return s+(j&&j!==8?'으로':'로');},
+  a:s=>s+(jong(s)?'아':'야'),
+  rang:s=>s+(jong(s)?'이랑':'랑'),
+  ida:s=>s+(jong(s)?'이었다':'였다'),
+};
+
+/* ----- 섬 ----- */
+const AREAS=[
+ {n:'북쪽 곶',d:1.3,a:1,f:1,pool:['stone','stone','water','pipe','ironball','shotgun:0.35','windbreaker:0.5']},
+ {n:'등대',d:1,a:1,f:1.2,pool:['water','bread','firstaid:0.5','radio:0.75','padding','molotov:0.4','lifejacket','raincoat:0.6']},
+ {n:'대나무숲',d:.75,a:1,f:1,pool:['bamboo','snare','riceball','stone','choco','armguard:0.4']},
+ {n:'폐광 입구',d:1,a:1,f:.85,pool:['pickaxe','wire','helmet','firecracker','water','nail','powder:0.5','workwear','kneepad:0.5','nipper:0.7']},
+ {n:'선착장',d:1.2,a:1,f:1,pool:['hook','water','ramen','molotov:0.5','bottle','whetstone:0.6','tape:0.5','lifejacket:0.6','hikingpack:0.4']},
+ {n:'폐교',d:1,a:.9,f:1,pool:['plank','mop','extinguisher','cutter','dart','bat:0.6','tracksuit','nail','tape:0.6','backpack','bathelmet:0.6','kneepad:0.4']},
+ {n:'마을회관',d:1.2,a:1,f:1,pool:['radar','choco','painkiller','padding','battery:0.5','firecracker','nail:0.6','ecobag','raincoat:0.5','nipper:0.5']},
+ {n:'동백 언덕',d:1,a:1.2,f:1,pool:['sickle','stone','milk','hatchet:0.5','windbreaker:0.4','pouch:0.4']},
+ {n:'염전',d:1.3,a:1,f:1,pool:['shovel','water','bottle','bread','workwear:0.6','nipper:0.4']},
+ {n:'구멍가게',d:1,a:1,f:1,pool:['ramen','bread','choco','battery','milk','cutter','poison','kitchen','tape','whetstone:0.4','pouch','ecobag:0.5']},
+ {n:'보건소',d:1.2,a:1,f:1,pool:['firstaid','bandage','bandage','painkiller','bandaid','bandaid','poison:0.5','battery:0.4','armguard:0.4']},
+ {n:'저수지',d:.75,a:1,f:1,pool:['airgun','riceball','water','knuckle','raincoat:0.5']},
+ {n:'방파제',d:1,a:1,f:.85,pool:['wire','ironball','bottle','hook','water','glass:0.5','lifejacket:0.5','nipper:0.3']},
+ {n:'해녀 탈의장',d:.75,a:1,f:1,pool:['diveknife','wetsuit','water','riceball','whetstone:0.5','pouch:0.4']},
+ {n:'성당',d:1,a:1,f:1.2,pool:['candlestick','bread','bandage','beartrap','nail:0.5','backpack:0.4']},
+ {n:'전망대',d:1.3,a:1.1,f:1,pool:['bow','choco','vest','dart','machete:0.4','hikingpack:0.5','bathelmet:0.3']},
+];
+function areaMods(a){const m=[];if(a.d>1)m.push('눈에 띔');if(a.d<1)m.push('숨기 좋음');if(a.a>1)m.push('공격↑');if(a.a<1)m.push('공격↓');if(a.f>1)m.push('방어↑');if(a.f<1)m.push('방어↓');return m;}
+function neighbors(i){const r=Math.floor(i/4),c=i%4,o=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const rr=r+dr,cc=c+dc;if(rr>=0&&rr<4&&cc>=0&&cc<4)o.push(rr*4+cc);}return o;}
+function dist(a,b){return Math.max(Math.abs(Math.floor(a/4)-Math.floor(b/4)),Math.abs(a%4-b%4));}
+function dirText(from,to){const dr=Math.floor(to/4)-Math.floor(from/4),dc=to%4-from%4;const ns=dr<0?'북':dr>0?'남':'';const ew=dc>0?'동':dc<0?'서':'';return ns||ew?ns+ew+'쪽':'가까운 곳';}
+
+/* ----- 물건 ----- */
+const IT={
+ kitchen:{n:'식칼',k:'w',t:'cut',atk:12}, cutter:{n:'커터칼',k:'w',t:'cut',atk:7}, sickle:{n:'낫',k:'w',t:'cut',atk:18},
+ hatchet:{n:'손도끼',k:'w',t:'cut',atk:22}, machete:{n:'정글도',k:'w',t:'cut',atk:28}, bamboo:{n:'죽창',k:'w',t:'cut',atk:14},
+ hook:{n:'갈고리',k:'w',t:'cut',atk:13}, diveknife:{n:'잠수 칼',k:'w',t:'cut',atk:16},
+ plank:{n:'각목',k:'w',t:'blunt',atk:9}, mop:{n:'대걸레 자루',k:'w',t:'blunt',atk:6}, pipe:{n:'쇠파이프',k:'w',t:'blunt',atk:16},
+ bat:{n:'야구방망이',k:'w',t:'blunt',atk:18}, extinguisher:{n:'소화기',k:'w',t:'blunt',atk:14}, pickaxe:{n:'곡괭이',k:'w',t:'blunt',atk:21},
+ shovel:{n:'삽',k:'w',t:'blunt',atk:15}, candlestick:{n:'촛대',k:'w',t:'blunt',atk:13},
+ knuckle:{n:'너클',k:'w',t:'fist',atk:7},
+ stone:{n:'돌멩이',k:'w',t:'throw',atk:6,uses:8}, dart:{n:'다트',k:'w',t:'throw',atk:9,uses:6}, bottle:{n:'유리병',k:'w',t:'throw',atk:11,uses:4},
+ ironball:{n:'쇠공',k:'w',t:'throw',atk:14,uses:5},
+ airgun:{n:'공기총',k:'w',t:'shoot',atk:17,uses:20}, shotgun:{n:'엽총',k:'w',t:'shoot',atk:34,uses:6},
+ bow:{n:'양궁 활',k:'w',t:'bow',atk:22,uses:12},
+ firecracker:{n:'폭죽 묶음',k:'w',t:'blast',atk:12,uses:5}, molotov:{n:'화염병',k:'w',t:'blast',atk:26,uses:3},
+ uniform:{n:'교복',k:'a',def:2,dur:20}, tracksuit:{n:'체육복',k:'a',def:4,dur:25}, raincoat:{n:'우비',k:'a',def:3,dur:20},
+ windbreaker:{n:'바람막이',k:'a',def:5,dur:25}, workwear:{n:'작업복',k:'a',def:6,dur:30},
+ padding:{n:'두꺼운 패딩',k:'a',def:8,dur:30}, wetsuit:{n:'잠수복',k:'a',def:9,dur:35}, vest:{n:'방검 조끼',k:'a',def:14,dur:45},
+ helmet:{n:'안전모',k:'g',def:5,dur:30,prot:'head'}, bathelmet:{n:'야구 헬멧',k:'g',def:4,dur:25,prot:'head'},
+ kneepad:{n:'무릎 보호대',k:'g',def:3,dur:25,prot:'leg'}, armguard:{n:'팔 보호대',k:'g',def:3,dur:25,prot:'arm'},
+ lifejacket:{n:'구명조끼',k:'g',def:4,dur:30,prot:'body'},
+ pouch:{n:'허리 쌕',k:'b',cap:1}, ecobag:{n:'에코백',k:'b',cap:2}, backpack:{n:'책가방',k:'b',cap:3}, hikingpack:{n:'등산 배낭',k:'b',cap:4},
+ water:{n:'생수',k:'f',st:20}, bread:{n:'빵',k:'f',st:30}, riceball:{n:'주먹밥',k:'f',st:35}, ramen:{n:'컵라면',k:'f',st:45},
+ choco:{n:'초코바',k:'f',st:25}, milk:{n:'바나나우유',k:'f',st:30},
+ bandaid:{n:'반창고',k:'h',hp:15}, bandage:{n:'붕대',k:'h',hp:25,cure:1}, painkiller:{n:'진통제',k:'h',hp:20}, firstaid:{n:'구급상자',k:'h',hp:50,cure:9},
+ radar:{n:'휴대용 레이더',k:'s'}, poison:{n:'쥐약',k:'s'}, snare:{n:'올무',k:'s',trap:22}, beartrap:{n:'곰덫',k:'s',trap:38},
+ radio:{n:'고장난 무전기',k:'p'}, battery:{n:'건전지',k:'p'}, wire:{n:'구리선',k:'p'}, fixedradio:{n:'고친 무전기',k:'s'},
+ nail:{n:'못',k:'m'}, whetstone:{n:'숫돌',k:'m'}, powder:{n:'화약',k:'m'}, tape:{n:'청테이프',k:'m'}, glass:{n:'유리조각',k:'s',trap:16},
+ nailplank:{n:'못 박힌 각목',k:'w',t:'blunt',atk:17}, nailbat:{n:'못 박힌 방망이',k:'w',t:'blunt',atk:26},
+ mopspear:{n:'대걸레 창',k:'w',t:'cut',atk:19}, powderbottle:{n:'화약병',k:'w',t:'blast',atk:22,uses:2},
+ glassknuckle:{n:'유리 너클',k:'w',t:'fist',atk:13}, spikesnare:{n:'가시 올무',k:'s',trap:34},
+ nipper:{n:'니퍼',k:'p'},
+};
+const RECIPES=[['plank','nail','nailplank'],['bat','nail','nailbat'],['mop','kitchen','mopspear'],['mop','cutter','mopspear'],
+  ['bottle','powder','powderbottle'],['snare','glass','spikesnare'],['tape','glass','glassknuckle']];
+const SPLIT={bottle:['glass'],firecracker:['powder']};
+const SPLIT_T={bottle:'유리병을 바닥에 내리쳐 깨뜨렸다. 날카로운 유리조각을 챙겼다.',firecracker:'폭죽 묶음을 하나하나 풀어 화약을 모았다.'};
+function recipeFor(a,b){for(const[x,y,o]of RECIPES)if((x===a&&y===b)||(x===b&&y===a))return o;
+  const sh=(w,s)=>s==='whetstone'&&IT[w].k==='w'&&IT[w].t==='cut'&&!IT[w].uses;return sh(a,b)||sh(b,a)?'sharpen':null;}
+function craftPartners(me,ref){const A=ref==='wep'?me.wep:me.inv[+ref];if(!A)return [];const out=[];
+  const cands=me.inv.map((x,i)=>[String(i),x]);if(me.wep)cands.push(['wep',me.wep]);
+  for(const[r,x]of cands){if(r===String(ref))continue;const o=recipeFor(A.id,x.id);if(!o)continue;
+    if(o==='sharpen'){const w=IT[A.id].k==='w'?A:x;if((w.b||0)>=10)continue;}out.push({ref:r,out:o});}
+  return out;}
+const TYPEN={cut:'베기',blunt:'둔기',fist:'맨손',throw:'던지기',shoot:'총',bow:'활',blast:'폭발'};
+const RANGED={throw:1,shoot:1,bow:1,blast:1};
+const START_W=[['kitchen',8],['cutter',8],['plank',8],['mop',6],['pipe',5],['stone',7],['dart',6],['bottle',5],['knuckle',5],['bat',4],['sickle',4],['firecracker',4],['airgun',2],['bow',2],['shotgun',1]];
+const START_X=[['bandaid',6],['bandage',5],['painkiller',4],['poison',3],['snare',3],['radar',1],['milk',4],['water',4],['tracksuit',2]];
+const FILLER=['water','bread','choco','bandaid','stone','plank','milk'];
+const INV_MAX=6,STACK_MAX=9;
+const SLOT={w:'wep',a:'arm',g:'gear',b:'bag'};
+const PROTN={head:'머리',arm:'팔',leg:'다리',body:'몸통'};
+const STACKK={f:1,h:1,m:1,s:1,p:1};
+function skey(it){return STACKK[IT[it.id].k]?it.id+(it.pk?'!':''):null;}
+function slotsOf(list){const m={};let n=0;for(const it of list){const k=skey(it);if(k==null){n++;continue;}m[k]=(m[k]||0)+1;}for(const k in m)n+=Math.ceil(m[k]/STACK_MAX);return n;}
+function capOf(c){return INV_MAX+(c.bag?IT[c.bag.id].cap:0);}
+function mergeTarget(c,it){const d=IT[it.id];if(d.k!=='w'||!d.uses||it.b)return null;return [c.wep,...c.inv].find(x=>x&&x!==it&&x.id===it.id&&!x.b)||null;}
+function bagHasRoom(c,it){if(mergeTarget(c,it))return true;return slotsOf([...c.inv,it])<=capOf(c);}
+function addToBag(c,it){const t=mergeTarget(c,it);if(t){t.u=Math.min(40,t.u+it.u);return;}c.inv.push(it);}
+function stackIdxs(c,i){const k=skey(c.inv[i]);if(k==null)return [i];return c.inv.map((x,j)=>skey(x)===k?j:-1).filter(j=>j>=0);}
+function dropStack(G,c,i){const idx=stackIdxs(c,i).sort((a,b)=>b-a);const out=[];for(const j of idx)out.push(c.inv.splice(j,1)[0]);for(const it of out)G.pool[c.loc].push(it);return out;}
+function canEquipBag(c,it){return slotsOf(c.inv.filter(x=>x!==it).concat(c.bag?[c.bag]:[]))<=INV_MAX+IT[it.id].cap;}
+/* 땅이나 소지품에서 바로 착용: 원래 것은 가방에, 자리가 없으면 그 자리에 내려놓는다 */
+function wearFrom(G,me,it){const d=IT[it.id];const slot=SLOT[d.k];const old=me[slot];me[slot]=it;let tail='';
+  if(old){if(bagHasRoom(me,old))addToBag(me,old);else{G.pool[me.loc].push(old);tail=` ${JS.eun(IT[old.id].n)} 내려놓았다.`;}}
+  return tail;}
+const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘러멨다'};
+let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
+function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.uses||0,d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
+function migrate(G){
+  const fix=it=>{if(it&&!it.uid)it.uid=newUid();};
+  for(const p of G.pool)p.forEach(fix);
+  for(const c of G.c){
+    if(c.gear===undefined)c.gear=null;if(c.bag===undefined)c.bag=null;
+    if(c.arm&&IT[c.arm.id].k==='g'){if(!c.gear)c.gear=c.arm;else c.inv.push(c.arm);c.arm=null;}
+    c.inv.forEach(fix);fix(c.wep);fix(c.arm);fix(c.gear);fix(c.bag);}
+  if(!G.bodies)G.bodies=Array.from({length:16},()=>[]);
+  if(G.finalZone==null){const open=[...Array(16).keys()].filter(i=>G.zones[i]===0);G.finalZone=open.length?pick(open):0;}
+  if(G.pending&&G.pending.type==='combat'&&!G.combat){G.pending=null;G.phase='act';}
+  if(!G.v||G.v<5)G.v=5;
+  return G;
+}
+
+/* ----- 사람 ----- */
+const PK=['dajeong','dahyeol','sosim','naengjeong','eongttung','neunggeul','seongsil','cynic'];
+const PERS={
+ dajeong:{n:'다정함',d:'누구에게나 먼저 손을 내민다',agg:.1,flee:.35,betray:.05,talk:1,ig:1,hide:.14},
+ dahyeol:{n:'다혈질',d:'참는 법을 모른다',agg:.5,flee:.15,betray:.2,talk:-1,ig:1.2,hide:.06},
+ sosim:{n:'소심함',d:'숨는 게 제일 자신 있다',agg:.07,flee:.55,betray:.15,talk:-1,ig:.8,hide:.35},
+ naengjeong:{n:'냉정함',d:'늘 계산이 먼저다',agg:.32,flee:.3,betray:.4,talk:0,ig:.7,hide:.14},
+ eongttung:{n:'엉뚱함',d:'다음 행동을 아무도 모른다',agg:.24,flee:.3,betray:.2,talk:0,ig:1.1,hide:.14},
+ neunggeul:{n:'능글맞음',d:'말로는 지지 않는다',agg:.18,flee:.4,betray:.25,talk:2,ig:1.4,hide:.12},
+ seongsil:{n:'성실함',d:'약속은 지킨다',agg:.14,flee:.3,betray:.03,talk:0,ig:.9,hide:.14},
+ cynic:{n:'시니컬함',d:'믿는 사람이 없다',agg:.28,flee:.35,betray:.3,talk:-1,ig:1.3,hide:.16},
+};
+const COMPAT=[
+ [ 1, 0, 2,-1, 1, 1, 2, 0],
+ [ 0,-2,-1,-1, 1, 0,-1,-2],
+ [ 2,-1, 1,-1, 0,-1, 1,-1],
+ [-1,-1,-1, 1,-2, 0, 1, 1],
+ [ 1, 1, 0,-2, 2, 1,-1,-1],
+ [ 1, 0,-1, 0, 1, 0,-1, 1],
+ [ 2,-1, 1, 1,-1,-1, 1,-1],
+ [ 0,-2,-1, 1,-1, 1,-1, 0],
+];
+const compat=(a,b)=>COMPAT[PK.indexOf(a)][PK.indexOf(b)];
+const CLUBS={
+ kendo:{n:'검도부',sk:{cut:20},d:'베는 무기에 익숙하다'},
+ baseball:{n:'야구부',sk:{blunt:20},d:'휘두르는 무기에 익숙하다'},
+ taekwondo:{n:'태권도부',sk:{fist:25},d:'맨손이 곧 무기다'},
+ archery:{n:'양궁부',sk:{bow:20,throw:5},d:'활을 잡으면 손이 떨리지 않는다'},
+ track:{n:'육상부',sk:{},d:'이동할 때 힘이 덜 든다'},
+ cooking:{n:'요리부',sk:{cut:10},d:'음식에 든 독을 알아본다'},
+ drama:{n:'연극부',sk:{},d:'말로 사람 마음을 움직인다'},
+ broadcast:{n:'방송부',sk:{},d:'먼 곳의 소리를 놓치지 않고, 무전기를 다룰 줄 안다'},
+ chem:{n:'화학부',sk:{blast:20},d:'터지는 것을 다룰 줄 안다'},
+ photo:{n:'사진부',sk:{},d:'누구보다 먼저 사람을 알아본다'},
+ home:{n:'귀가부',sk:{},d:'쉬는 데에는 일가견이 있다'},
+};
+const SUR=['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권','황','안','송','류','홍','문','배','백','노','하'];
+const GIV=['서윤','지호','하준','민서','도윤','예린','시우','다은','준서','유나','태오','채원','은호','소율','건우','나은','현우','지안','우진','서아','한결','이든','로운','다온','가람','윤슬','하람','주원','수아','재희','세린','도현','아린','시온','유진','라온','해솔','지율','승아','연우',
+ '하윤','서진','예준','지유','민준','수빈','하은','준우','채윤','시현','유찬','다인','태윤','소이','현서','은찬','지아','우빈','나윤','건호'];
+const TAGN={bestie:'단짝',friend:'친구',crush:'좋아함',rival:'혐관',enemy:'적대','':'—'};
+const TIERN={great:'마음이 통했다',good:'분위기가 좋았다',awkward:'조금 어색했다',bad:'말이 엇나갔다',disaster:'크게 틀어졌다'};
+const INJN={head:'머리',arm:'팔',leg:'다리',body:'몸통'};
+
+/* ----- 대사 ----- */
+const LINE1={
+ dajeong:['다들 무사했으면 좋겠다.','배고픈 사람 있으면 말해.'],
+ dahyeol:['건드리면 가만 안 둬.','누가 이런 짓을 한 거야.'],
+ sosim:['집에 가고 싶어…','조용히만 있으면 괜찮겠지?'],
+ naengjeong:['감정은 나중에 생각하자.','규칙부터 정리해 보자.'],
+ eongttung:['여기 갈매기 진짜 크다.','이거 혹시 몰래카메라야?'],
+ neunggeul:['뭐야, 다들 표정이 왜 그래.','이런 데서 만나니까 반갑네?'],
+ seongsil:['같이 살아서 돌아가자.','약속한 건 꼭 지킬게.'],
+ cynic:['결국 다 이렇게 되는 거지.','기대 같은 건 안 해.'],
+};
+const LINES={
+ dajeong:{great:['{v}, 무사했구나… 진짜 다행이다.','다친 데는 없어? 나 빵 하나 있는데, 반 나눠 먹을래?'],good:['너도 혼자였어? 잠깐 같이 앉아 있자.','괜찮아, 아무 짓도 안 해. 그냥 얼굴 보니까 좋아서.'],awkward:['어… 안녕. 여기서 이렇게 인사하니까 좀 이상하다, 그치?','(웃으려다가 그만둔다)'],bad:['미안, 지금은… 아무도 못 믿겠어.','그런 말은 좀 서운하다.'],disaster:['너 진짜 그런 애였어? 다시 봤다.','(말없이 뒷걸음질 친다)']},
+ dahyeol:{great:['야, 너 생각보다 괜찮은 애다? 마음에 들었어.','좋아. 너는 안 건드린다. 대신 내 뒤 좀 봐줘.'],good:['뭐야, 너구나. 놀랐잖아.','괜히 얼쩡대다 다치지 말고 조심해.'],awkward:['…할 말 있으면 빨리 해.','뭘 봐?'],bad:['지금 나 놀리냐?','말 걸지 마. 기분 더러우니까.'],disaster:['한 마디만 더 해 봐.','너 오늘 운 좋은 줄 알아. …아니, 안 좋은가?']},
+ sosim:{great:['{v}… 너라서 다행이야. 진짜로.','나, 계속 무서웠거든. 근데 지금은 좀 괜찮아.'],good:['어, 어… 안녕. 나 여기 숨어 있었어.','조용히 해 줄 거지? 고마워.'],awkward:['(눈을 마주치지 못한다)','…응. 그래.'],bad:['가, 가까이 오지 마…','미안, 나 지금 아무랑도 얘기 못 하겠어.'],disaster:['왜 그렇게 말해…?','(비명을 삼키며 도망칠 곳을 찾는다)']},
+ naengjeong:{great:['너랑은 말이 통하네. 이 섬에서 그건 꽤 귀한 거야.','좋아. 서로 쓸모 있는 사이로 지내자.'],good:['여기 오래 있지 마. 이쪽은 곧 닫힐지도 몰라.','괜찮은 판단이야.'],awkward:['용건만 말해.','그래서?'],bad:['시간 낭비네.','그 말, 기억해 둘게.'],disaster:['넌 계산에서 빼야겠다.','다음에 만나면 이렇게 얘기로 안 끝나.']},
+ eongttung:{great:['{v}! 나 방금 갈매기랑 눈 마주쳤어. 걔도 무서워하더라.','우리 이거 끝나면 바다 보러 다시 오자. 아, 이미 바다구나.'],good:['어 안녕! 너 손목에 그거 나랑 커플템이네.','여기 숨기 좋더라. 근데 숨으면 심심해.'],awkward:['…지금 무슨 얘기 하던 중이었지?','(갑자기 하늘을 본다)'],bad:['너 재미없다.','음, 아니야. 그 말 별로야.'],disaster:['너랑 있으면 머리가 지끈거려.','(이상한 웃음을 짓는다)']},
+ neunggeul:{great:['어머, 이런 데서 만나니까 운명 같지 않아?','역시 {v}. 말 통하는 건 너밖에 없다니까.'],good:['여기서 만난 건 우리 둘만의 비밀로 하자?','표정 좀 펴. 그러다 주름 생긴다.'],awkward:['에이, 왜 그렇게 쳐다봐.','농담이야, 농담.'],bad:['너 진짜 말 예쁘게 안 한다.','흐응, 그렇게 나오시겠다?'],disaster:['와, 너는 끝까지 별로다.','기억해 둘게. 아주 오래.']},
+ seongsil:{great:['같이 버티자. 나 약속은 지켜.','필요한 거 있으면 말해. 나눠 쓰자.'],good:['다치지 말고. 다음 방송 잘 들어.','아직은 괜찮아. 우리 둘 다.'],awkward:['어… 그래. 조심해.','(어색하게 고개를 끄덕인다)'],bad:['그건 아닌 것 같아.','실망이야.'],disaster:['다신 너 안 믿어.','그런 사람인 줄 몰랐어.']},
+ cynic:{great:['…너는 좀 덜 짜증 나네. 칭찬이야.','웃기지. 이 와중에 너랑 얘기하는 게 제일 편하다.'],good:['살아 있었네. 의외로.','그래, 뭐. 나쁘진 않네.'],awkward:['그래서 하고 싶은 말이 뭔데.','희망 같은 소리 하려면 저리 가.'],bad:['네가 뭘 알아.','착한 척하는 거 다 보여.'],disaster:['너 같은 애가 제일 먼저 배신하더라.','저리 가. 진심이야.']},
+};
+const CONFESS={
+ dajeong:'사실… 수학여행 오기 전부터 너 좋아했어. 지금 말 안 하면 못 할 것 같아서.',
+ dahyeol:'아 진짜… 너만 보면 화가 나는 줄 알았는데, 그게 아니더라.',
+ sosim:'나… 너 좋아해. 대답 안 해도 돼. 그냥 알아줬으면 해서.',
+ naengjeong:'계산이 안 되는 건 너 하나야. 무슨 뜻인지 알지?',
+ eongttung:'있잖아, 나 너 좋아하나 봐! …방금 내가 뭐라고 했지?',
+ neunggeul:'농담 아니고, 이번엔 진짜야. 너 좋아해.',
+ seongsil:'끝까지 지켜 주고 싶은 사람이 생겼어. 너야.',
+ cynic:'웃기지? 나도 웃겨. 근데 너 좋아하는 것 같아.',
+};
+const PROPOSE={
+ dajeong:'혼자 있지 말고 같이 다니자. 응?', dahyeol:'따라와. 내가 앞장설게.', sosim:'저기… 나 너랑 같이 있어도 돼?',
+ naengjeong:'둘이 움직이는 게 살아남을 확률이 높아. 같이 가.', eongttung:'우리 탐험대 하자! 대장은 너.',
+ neunggeul:'에이, 이렇게 만났는데 같이 다녀야지.', seongsil:'같이 가자. 등은 내가 맡을게.', cynic:'…따라가도 되냐. 혼자는 좀 지겨워서.',
+};
+const BETRAY={naengjeong:'미안. 계산이 끝났어.',dahyeol:'더는 못 참겠다.',cynic:'봐, 결국 다 이렇게 된다니까.',eongttung:'어? 나 지금 뭐 하는 거지?',neunggeul:'미안, 이번엔 농담 아니야.'};
+const PARTING={dajeong:'우리 둘 다 살 수는 없나 봐. …먼저 갈게.',dahyeol:'다음에 만나면, 봐주지 마.',sosim:'미안해. 나 너랑은 못 싸워.',naengjeong:'여기까지야. 각자 가자.',eongttung:'이건 너무 재미없는 결말이다.',neunggeul:'아쉽다. 진짜로.',seongsil:'끝까지 같이 못 가서 미안.',cynic:'거봐. 결국 이렇게 되잖아.'};
+const WILLS={
+ dajeong:['다들… 밥은 챙겨 먹어.','아프지 마, 다들.'], dahyeol:['젠장… 이렇게 끝날 줄은.','다음엔 안 진다.'],
+ sosim:['엄마… 나 무서워.','집에… 가고 싶었는데.'], naengjeong:['…계산 착오였네.','이것도 확률인가.'],
+ eongttung:['아, 바다 한 번 더 보고 싶었는데.','이거 몰래카메라 아니었구나.'], neunggeul:['나 없으면 다들 심심할 텐데.','웃으면서 갈게.'],
+ seongsil:['약속… 못 지켜서 미안.','끝까지 버티고 싶었는데.'], cynic:['봐, 내 말이 맞았잖아.','…기대 안 했어. 정말이야.'],
+};
+const FINDT=[(a,i)=>`${a} 구석에서 ${JS.eul(i)} 발견했다.`,(a,i)=>`누군가 두고 간 ${JS.i(i)} 눈에 띄었다.`,(a,i)=>`발치에 ${JS.i(i)} 떨어져 있다.`,(a,i)=>`${JS.eul(a)} 뒤지다 ${JS.eul(i)} 찾았다.`];
+
+/* ----- 시간 ----- */
+function clock(t){const h=12+t;const day=Math.floor(h/48)+1;const hh=Math.floor((h%48)/2);const mm=(h%2)*30;const hm=String(hh).padStart(2,'0')+':'+(mm?'30':'00');return {day,hm,s:day+'일차 '+hm};}
+const BCAST=8;
+
+/* ----- 생성 ----- */
+function mkChar(id,name,pers,club,me){
+  const c={id,name,given:me?(name.length>=3?name.slice(1):name):name.slice(1),me:!!me,pers,club,no:0,
+    mhp:ri(95,115),hp:0,st:100,mst:100,atk:ri(9,14),def:ri(8,13),lv:1,exp:0,
+    sk:{cut:0,blunt:0,fist:0,throw:0,shoot:0,bow:0,blast:0},inj:{head:0,arm:0,leg:0,body:0},
+    wep:null,arm:null,gear:null,bag:null,inv:[],loc:5,alive:true,deathT:-1,killer:null,cause:'',will:'',willText:'',line:'',
+    comp:null,revenge:null,lastLine:'',rested:false,searched:false,moved:false,met:false,talked:false,kills:0,confessed:false,seenT:-1,seenLoc:-1};
+  c.hp=c.mhp;const cl=CLUBS[club];for(const k in cl.sk)c.sk[k]+=cl.sk[k];return c;
+}
+const BUILDS={
+ balance:{n:'고른 편',d:'모난 데 없이 고르다'},
+ power:{n:'힘이 센 편',d:'공격 +3, 방어 -1'},
+ tough:{n:'맷집이 좋은 편',d:'최대 체력 +20, 공격 -1'},
+ guard:{n:'몸을 잘 지키는 편',d:'방어 +3, 최대 체력 -5'},
+ stamina:{n:'지치지 않는 편',d:'최대 스태미나 +25, 최대 체력 -5'},
+};
+function applyBuild(c,b){
+  if(b==='power'){c.atk+=3;c.def-=1;}
+  else if(b==='tough'){c.mhp+=20;c.atk-=1;}
+  else if(b==='guard'){c.def+=3;c.mhp-=5;}
+  else if(b==='stamina'){c.mst+=25;c.st=c.mst;c.mhp-=5;}
+  c.hp=c.mhp;c.build=b;
+}
+const pickOr=(v,list)=>v&&v!=='random'&&list.includes(v)?v:null;
+const CLASS_SIZE=25;
+/* 전입생: 판마다 들어올지, 어떤 쪽일지 랜덤. 정체는 끝날 때 공개 */
+const TRANSFER_CHANCE=.5;
+const TRANSFER={
+ hunter:{n:'사냥꾼',pers:['naengjeong','cynic','dahyeol'],wep:['shotgun','machete','hatchet','bow'],arm:'windbreaker',inv:['bandage','bandage','ramen'],
+   desc:'반 아이들을 하나씩 사냥하고 다녔다.'},
+ helper:{n:'조력자',pers:['cynic','naengjeong','seongsil'],wep:['airgun','pipe','diveknife','sickle'],arm:'tracksuit',inv:['bandage','bread'],
+   desc:'밴드를 끊고 섬을 빠져나가는 방법을 알고 있었다.'},
+};
+const ESCAPE_SPOTS=[4,12];
+const HELPER_SECRET='작년에 이 섬에서 살아 나간 게 나야. 이 밴드, 끊는 방법이 있어. 니퍼 하나만 구해 와. 선착장이나 방파제까지만 가면 돼. 같이 나가자.';
+/* 내 이름에 따라 반에 함께 들어오는 캐릭터 */
+const SPECIALS=[
+ {when:['범지민'],add:{name:'윤하루',sex:'남',club:'archery',pers:'neunggeul',rel:'lover'}},
+ {when:['범원','한윤희','백나루','지원우'],add:{name:'성시우',sex:'남',club:'home',pers:'dajeong',rel:'bestie',hpMod:-2}},
+ {when:['윤하루'],add:{name:'범지민',sex:'여',club:'broadcast',pers:'dajeong',rel:'lover'}},
+];
+function specialsFor(name){return SPECIALS.filter(s=>s.when.includes(name)).map(s=>s.add);}
+function isCouple(G,a,b){return (G.couples||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a));}
+const CHAT={
+ dajeong:['우리 나가면 제일 먼저 뭐 먹을까?','너 손 차갑다. 이거 덮어.','무서우면 무섭다고 해도 돼. 나도 그래.'],
+ dahyeol:['야, 졸지 마. 망은 내가 볼게.','나가면 저 방송하는 놈부터 찾아낼 거야.','…너랑 있으니까 좀 낫다.'],
+ sosim:['계속 같이 있어 줄 거지?','나 혼자였으면 벌써 울었을 거야.','네 숨소리 들리니까 덜 무서워.'],
+ naengjeong:['남은 인원이랑 금지구역부터 정리해 보자.','넌 생각보다 쓸모 있어. 칭찬이야.','감정은 아껴 둬. 나중에 쓸 데가 있을 거야.'],
+ eongttung:['저 구름 고래 같지 않아?','우리 이거 끝나면 같이 갈매기 키우자.','나 방금 엄청 좋은 생각 났는데 까먹었어.'],
+ neunggeul:['이 상황에 너랑 단둘이라니, 운명 아니야?','표정 풀어. 나 있잖아.','나가면 나한테 밥 한 번 사. 목숨값으로.'],
+ seongsil:['교대로 자자. 내가 먼저 깨어 있을게.','끝까지 같이 가. 약속했잖아.','상처 좀 보여 줘. 붕대 다시 감아 줄게.'],
+ cynic:['…너는 왜 아직 나랑 다니는 건데.','이런 데서 수다나 떨고, 우리도 참.','뭐, 나쁘진 않네. 이런 시간도.'],
+};
+function randomName(){return pick(SUR)+pick(GIV);}
+function newGame(o){
+  const G={v:4,t:0,seq:0,c:[],rel:[],known:{},zones:Array(16).fill(0),pool:[],traps:[],log:[],phase:'act',pending:null,
+    deathsSince:[],order:[],lastDeathT:0,flee:'low',rescueT:null,result:null,wit:{},kk:{},facts:[],turnStart:0,bestie:null,hints:{},couples:[],
+    bodies:Array.from({length:16},()=>[])};
+  const pers=pickOr(o.pers,PK)||pick(PK);
+  const clubs=Object.keys(CLUBS);
+  const me=mkChar(0,o.name,pers,pickOr(o.club,clubs)||pick(clubs),true);me.line=o.line||'';me.will=o.will||'';me.bio=o.bio||'';
+  applyBuild(me,pickOr(o.build,Object.keys(BUILDS))||pick(Object.keys(BUILDS)));
+  G.c.push(me);
+  const sps=specialsFor(o.name);
+  const used=new Set([me.given,...sps.map(s=>s.name.slice(1))]);const names=[];
+  while(names.length<CLASS_SIZE-1-sps.length){const g=pick(GIV);if(used.has(g))continue;used.add(g);names.push(pick(SUR)+g);}
+  names.forEach((n,i)=>{const c=mkChar(i+1,n,pick(PK),pick(clubs),false);c.line=pick(LINE1[c.pers]);G.c.push(c);});
+  for(const s of sps){const c=mkChar(G.c.length,s.name,s.pers,s.club,false);c.line=pick(LINE1[c.pers]);c.sex=s.sex;c.special=s.rel;
+    applyBuild(c,pick(Object.keys(BUILDS)));if(s.hpMod){c.mhp+=s.hpMod;c.hp=c.mhp;}c.woundRoll=1;G.c.push(c);}
+  [...G.c].sort((a,b)=>a.name.localeCompare(b.name,'ko')).forEach((c,i)=>c.no=i+1);
+  for(const c of G.c){c.arm=mkItem('uniform');c.wep=mkItem(wpick(START_W));c.inv.push(mkItem(pick(['water','bread','riceball','choco'])));c.inv.push(mkItem(wpick(START_X)));}
+  AREAS.forEach(a=>{const p=[];for(const e of a.pool){const[id,pr]=e.split(':');if(!pr||R()<+pr)p.push(mkItem(id,.06));}const k=ri(1,2);for(let j=0;j<k;j++)p.push(mkItem(pick(FILLER),.06));G.pool.push(shuffle(p));G.traps.push([]);});
+  G.transferId=null;
+  if(R()<TRANSFER_CHANCE){const type=R()<.5?'hunter':'helper';const T=TRANSFER[type];
+    let g;do{g=pick(GIV);}while(used.has(g));used.add(g);
+    const c=mkChar(G.c.length,pick(SUR)+g,pick(T.pers),pick(clubs),false);c.transfer=type;c.no=G.c.length+1;c.line='작년에도 이 섬에 있었어.';
+    c.mhp=ri(128,142);c.hp=c.mhp;c.atk+=6;c.def+=4;c.lv=3;
+    c.wep=mkItem(pick(T.wep));c.sk[IT[c.wep.id].t]+=30;c.arm=mkItem(T.arm);c.inv=T.inv.map(id=>mkItem(id));
+    G.c.push(c);G.transferId=c.id;}
+  me.loc=5;for(const c of G.c)if(!c.me)c.loc=R()<.15?5:ri(0,15);
+  initRel(G,o);
+  if(G.transferId!=null){const tc=G.c[G.transferId];if(tc.transfer==='helper'){G.rel[tc.id][0]=[ri(20,32),ri(25,40),''];}}
+  for(const c of G.c)if(!c.me&&(c.id===G.bestie||c.special||c.transfer)&&dist(c.loc,5)<2)c.loc=pick([...Array(16).keys()].filter(i=>dist(i,5)>=2));
+  G.finalZone=pick([...Array(16).keys()].filter(i=>i!==5));
+  G.zones[5]=1;chooseClosures(G,1).forEach(i=>G.zones[i]=1);
+  ev(G,'radio','radio','',{imp:1,data:{first:1,time:clock(0).hm,closed:[],next:G.zones.map((z,i)=>z===1?i:-1).filter(i=>i>=0),dead:[],alive:G.c.length,transfer:G.transferId}});
+  G.turnStart=0;
+  return G;
+}
+function calcTag(r){const[l,i,g]=r;if(g==='bestie'&&l>=15)return 'bestie';if(l>=55&&i>=55)return 'crush';if(l>=35)return 'friend';if(l<=-35&&i>=45)return 'rival';if(l<=-45)return 'enemy';return '';}
+function know(G,a,b){G.known[a+','+b]=1;}
+function isKnown(G,a,b){return !!G.known[a+','+b];}
+function initRel(G,o){
+  o=o||{};
+  const N=G.c.length;G.rel=[];
+  for(let a=0;a<N;a++){const row=[];for(let b=0;b<N;b++)row.push(a===b?[0,0,'']:[ri(-10,24),ri(0,22),'']);G.rel.push(row);}
+  const S=(a,b,l,i,g)=>{G.rel[a][b]=[l,i,g];};
+  const npcs=shuffle([...Array(N-1).keys()].map(i=>i+1));
+  const spB=G.c.find(c=>c.special==='bestie');
+  const bv=o.bestie||'yes';const hasBestie=!!spB||bv==='yes'||(bv==='random'&&R()<.7);
+  const f=spB?spB.id:hasBestie?npcs.find(x=>!G.c[x].special&&!G.c[x].transfer):null;G.bestie=f;
+  if(f!=null){S(0,f,ri(68,78),ri(40,55),'bestie');S(f,0,ri(68,80),ri(40,60),'bestie');}
+  for(const c of G.c.filter(c=>c.special==='lover')){S(0,c.id,ri(80,90),ri(80,90),'crush');S(c.id,0,ri(82,92),ri(80,92),'crush');
+    know(G,c.id,0);c.confessed=true;G.couples.push([0,c.id]);}
+  const others=npcs.filter(x=>x!==f&&!G.c[x].special&&!G.c[x].transfer);
+  const sc=(N-1)/15,P=x=>Math.max(1,Math.round(x*sc));
+  const pairs=n=>{const out=[];for(let k=0;k<n;k++){let a,b,t=0;do{a=pick(others);b=pick(others);}while((a===b||G.rel[a][b][2]||G.rel[b][a][2])&&t++<40);if(a!==b&&!G.rel[a][b][2]&&!G.rel[b][a][2])out.push([a,b]);}return out;};
+  pairs(P(2)).forEach(([a,b])=>{S(a,b,ri(68,80),ri(40,60),'bestie');S(b,a,ri(68,80),ri(40,60),'bestie');});
+  pairs(P(4)).forEach(([a,b])=>{S(a,b,ri(40,56),ri(20,40),'friend');S(b,a,ri(40,56),ri(20,40),'friend');});
+  pairs(P(3)).forEach(([a,b])=>{S(a,b,ri(60,80),ri(62,85),'crush');});
+  pairs(P(1)).forEach(([a,b])=>{S(a,b,ri(62,80),ri(62,85),'crush');S(b,a,ri(62,80),ri(62,85),'crush');});
+  pairs(P(2)).forEach(([a,b])=>{S(a,b,ri(-50,-38),ri(50,70),'rival');S(b,a,ri(-50,-38),ri(50,70),'rival');});
+  pairs(P(1)).forEach(([a,b])=>{S(a,b,ri(-65,-50),ri(25,40),'enemy');S(b,a,ri(-65,-50),ri(25,40),'enemy');});
+  const odds=(v,base)=>v==='yes'?1:v==='no'?0:base;
+  const free=()=>others.filter(x=>!G.rel[x][0][2]);
+  if(R()<odds(o.admirer,.4)){const c=free();if(c.length){S(pick(c),0,ri(60,76),ri(58,76),'crush');if(o.admirer==='yes')G.hints.admirer=1;}}
+  if(R()<odds(o.hater,.35)){const c=free();if(c.length){const x=pick(c);S(x,0,ri(-62,-48),ri(30,60),'');G.rel[x][0][2]=calcTag(G.rel[x][0]);S(0,x,ri(-30,-15),ri(20,35),'');if(o.hater==='yes')G.hints.hater=1;}}
+  for(let b=1;b<N;b++)know(G,0,b);
+  if(f!=null)know(G,f,0);
+  const tagged=[];for(const a of others)for(const b of others)if(a!==b&&G.rel[a][b][2])tagged.push([a,b]);
+  shuffle(tagged);
+  const seenPair=new Set(),lim=N>16?3:2;
+  for(const[a,b]of tagged){if(G.facts.length>=lim)break;const key=Math.min(a,b)+','+Math.max(a,b);if(seenPair.has(key))continue;seenPair.add(key);know(G,a,b);const mutual=G.rel[b][a][2]===G.rel[a][b][2];if(mutual)know(G,b,a);G.facts.push(relSentence(G,a,b,mutual));}
+}
+function relSentence(G,a,b,mutual){
+  const A=G.c[a],B=G.c[b],g=G.rel[a][b][2];
+  if(mutual){
+    if(g==='bestie')return `${JS.wa(A.name)} ${JS.eun(B.name)} 단짝이다.`;
+    if(g==='friend')return `${JS.wa(A.name)} ${JS.eun(B.name)} 친한 사이다.`;
+    if(g==='crush')return isCouple(G,a,b)?`${JS.wa(A.name)} ${JS.eun(B.name)} 연인이다.`:`${JS.wa(A.name)} ${JS.eun(B.name)} 서로 좋아한다.`;
+    if(g==='rival')return `${JS.wa(A.name)} ${JS.eun(B.name)} 서로 못 잡아먹어 안달이다.`;
+    if(g==='enemy')return `${JS.wa(A.name)} ${JS.eun(B.name)} 사이가 아주 나쁘다.`;
+  }
+  if(g==='crush')return `${JS.i(A.name)} ${JS.eul(B.name)} 좋아한다.`;
+  if(g==='bestie')return `${JS.eun(A.name)} ${JS.eul(B.name)} 단짝으로 여긴다.`;
+  if(g==='friend')return `${JS.eun(A.name)} ${JS.wa(B.name)} 친하게 지낸다.`;
+  if(g==='rival')return `${JS.eun(A.name)} ${JS.eul(B.name)} 싫어하면서도 신경 쓴다.`;
+  if(g==='enemy')return `${JS.eun(A.name)} ${JS.eul(B.name)} 적으로 여긴다.`;
+  return '';
+}
+
+/* ----- 기록 ----- */
+function ev(G,v,c,x,o){o=o||{};const e={n:G.seq++,t:G.t,v,c,x};if(o.q)e.q=o.q;if(o.imp)e.imp=1;if(o.lines&&o.lines.length)e.lines=o.lines;if(o.data)e.data=o.data;if(o.tier)e.tier=o.tier;G.log.push(e);
+  if(G.log.length>700){const keep=[];let drop=G.log.length-560;for(const it of G.log){if(drop>0&&!it.imp&&it.v==='hidden'){drop--;continue;}keep.push(it);}
+    if(keep.length>650){const k2=[];let d2=keep.length-560;for(const it of keep){if(d2>0&&!it.imp){d2--;continue;}k2.push(it);}G.log=k2;}else G.log=keep;}
+  return e;}
+const nm=c=>c.me?'나':c.name;
+function visAt(G,loc,inv){const me=G.c[0];if(inv&&inv.some(c=>c&&c.me))return 'seen';if(me.alive&&me.loc===loc)return 'seen';return 'hidden';}
+function rel(G,a,b){const r=G.rel[a.id][b.id];return {like:r[0],int:r[1],tag:r[2]};}
+const INNER={
+ crush:n=>`${JS.i(n)} 자꾸 신경 쓰인다. 이상하게 심장이 빨리 뛴다.`,
+ friend:n=>`${JS.wa(n)}는 좀 가까워진 것 같다.`,
+ rival:n=>`${JS.eul(n)} 보면 짜증이 치민다. 그런데 자꾸 눈에 밟힌다.`,
+ enemy:n=>`${JS.eun(n)} 이제 믿을 수 없다.`,
+ '':n=>`${n}에 대한 마음이 조금 식었다.`,
+};
+function changeRel(G,a,b,dl,di){
+  if(a.id===b.id)return;const r=G.rel[a.id][b.id];
+  r[0]=clamp(Math.round(r[0]+dl),-100,100);r[1]=clamp(Math.round(r[1]+di),0,100);
+  const nt=calcTag(r);
+  if(nt!==r[2]&&(nt===''||R()<.6)){const old=r[2];r[2]=nt;
+    if(a.me){if(old!=='bestie'||nt!=='')ev(G,'seen','inner',INNER[nt](b.name),{imp:nt!==''?1:0});}
+    else if(b.me){if(nt)ev(G,'hidden','heart',`${JS.i(a.name)} 나를 ${nt==='crush'?'좋아하게 됐다':nt==='rival'?'싫어하면서도 신경 쓰게 됐다':nt==='enemy'?'적으로 여기게 됐다':'친구로 여기게 됐다'}.`,{imp:1});}
+    else if(nt==='crush'||nt==='rival'||nt==='enemy'){ev(G,'hidden','heart',relSentence(G,a.id,b.id,false),{imp:1});}
+  }
+}
+
+/* ----- 전투력 ----- */
+function wepInfo(c){
+  if(!c.wep)return {t:'fist',atk:c.club==='taekwondo'?6:0,r:'m',name:'맨손'};
+  const d=IT[c.wep.id];
+  if(d.uses&&c.wep.u<=0)return {t:'blunt',atk:Math.floor(d.atk/4),r:'m',name:d.n};
+  return {t:d.t,atk:d.atk+(c.wep.b||0)+(d.t==='fist'&&c.club==='taekwondo'?6:0),r:RANGED[d.t]?'r':'m',name:d.n};
+}
+const skLv=(c,t)=>Math.floor(c.sk[t]/10);
+function wscore(c,it){const d=IT[it.id];if(d.k!=='w')return -1;if(d.uses&&it.u<=0)return d.atk/4;return (d.atk+(it.b||0))*(1+skLv(c,d.t)*.07)+(d.t==='fist'&&c.club==='taekwondo'?6:0);}
+function armorDef(c){return (c.arm?IT[c.arm.id].def:0)+(c.gear?IT[c.gear.id].def:0);}
+function power(c){const w=wepInfo(c);return c.atk+w.atk*(1+skLv(c,w.t)*.07)+c.def*.5+armorDef(c)+c.hp*.15+c.lv*3;}
+function autoEquip(G,c){
+  let bi=-1,bs=c.wep?wscore(c,c.wep):(c.club==='taekwondo'?6:0);
+  c.inv.forEach((it,i)=>{const s=wscore(c,it);if(s>bs+1){bs=s;bi=i;}});
+  if(bi>=0){const it=c.inv.splice(bi,1)[0];if(c.wep)c.inv.push(c.wep);c.wep=it;}
+  let ai=-1,ad=c.arm?IT[c.arm.id].def:0;
+  c.inv.forEach((it,i)=>{const d=IT[it.id];if(d.k==='a'&&d.def>ad){ad=d.def;ai=i;}});
+  if(ai>=0){const it=c.inv.splice(ai,1)[0];if(c.arm)c.inv.push(c.arm);c.arm=it;}
+  let gi=-1,gd=c.gear?IT[c.gear.id].def:0;
+  c.inv.forEach((it,i)=>{const d=IT[it.id];if(d.k==='g'&&d.def>gd){gd=d.def;gi=i;}});
+  if(gi>=0){const it=c.inv.splice(gi,1)[0];if(c.gear)c.inv.push(c.gear);c.gear=it;}
+  while(c.inv.length>INV_MAX){const i=c.inv.findIndex(it=>IT[it.id].k==='w'||IT[it.id].k==='a');const k=i>=0?i:0;G.pool[c.loc].push(c.inv.splice(k,1)[0]);}
+}
+function levelCheck(G,c,lines){
+  while(c.exp>=4+c.lv*5){c.exp-=4+c.lv*5;c.lv++;c.atk+=ri(2,3);c.def+=ri(1,3);c.mhp+=8;c.hp=Math.min(c.mhp,c.hp+18);
+    if(lines)lines.push(`${JS.i(nm(c))} 한 단계 강해졌다 (Lv ${c.lv})`);else if(c.me)ev(G,'seen','find',`한 단계 강해졌다. Lv ${c.lv}.`);}
+}
+
+/* ----- 행동 ----- */
+function stOver(G,c){c.mhp=Math.max(30,c.mhp-6);c.hp=Math.min(c.hp,c.mhp);c.st=20;if(c.me)ev(G,'seen','warn','숨이 턱까지 찼다. 최대 체력이 줄었다.');}
+function moveChar(G,c,to){
+  const cost=Math.round(10*(c.club==='track'?.6:1)*(c.inj.leg?1.5:1));
+  c.st-=cost;if(c.st<0)stOver(G,c);c.loc=to;c.moved=true;trapCheck(G,c);
+}
+function restChar(G,c,label){
+  c.rested=true;const s=c.club==='home'?38:26,h=c.club==='home'?12:6;
+  const s0=c.st,h0=c.hp;c.st=Math.min(c.mst,c.st+s);c.hp=Math.min(c.mhp,c.hp+h);
+  if(c.me){const g=[];if(c.hp>h0)g.push(`체력 +${c.hp-h0}`);if(c.st>s0)g.push(`스태미나 +${c.st-s0}`);ev(G,'seen','rest',`${label||'숨을 죽이고 잠시 쉬었다.'}${g.length?' '+g.join(', ')+'.':''}`);}
+}
+function revealSecret(G,h,me){
+  if(h.transfer!=='helper'||G.escapeKnown||rel(G,h,me).like<45)return false;
+  G.escapeKnown=true;know(G,h.id,0);ev(G,'seen','heart',`${JS.i(h.name)} 목소리를 낮췄다.`,{q:HELPER_SECRET,imp:1});return true;}
+function canEscape(G){const me=G.c[0];if(!me.alive||!G.escapeKnown||G.transferId==null)return false;const h=G.c[G.transferId];
+  return h.alive&&me.comp===h.id&&h.loc===me.loc&&me.inv.some(x=>x.id==='nipper')&&ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2;}
+/* 동행과 쉬면서 이야기하기: 쉬기만큼 회복하고 서로 마음이 가까워진다 */
+function chatWith(G,me,m){
+  m.talked=true;
+  const roll=compat(me.pers,m.pers)+ri(-2,3)+(me.club==='drama'?1:0)+rel(G,m,me).like/40+1;
+  const tier=roll>=4?'great':roll>=1.5?'good':'awkward';
+  const D={great:[14,8],good:[9,5],awkward:[5,3]}[tier];
+  const pool=CHAT[m.pers].filter(l=>l!==m.lastLine);const line=pick(pool.length?pool:CHAT[m.pers]);m.lastLine=line;
+  ev(G,'seen','talk',`${JS.wa(m.name)} 나란히 앉아 이야기를 나눴다.`,{q:line,tier});
+  changeRel(G,m,me,D[0]+ri(-2,2),D[1]*PERS[m.pers].ig);
+  changeRel(G,me,m,D[0]*.8+ri(-2,2),D[1]);
+  if(revealSecret(G,m,me))return;
+  const r=rel(G,m,me);
+  if(r.tag==='crush'&&!m.confessed&&r.like>=60&&r.int>=56&&R()<.6){
+    m.confessed=true;know(G,m.id,0);ev(G,'seen','heart',`${JS.i(m.name)} 고백했다.`,{q:CONFESS[m.pers],imp:1});changeRel(G,me,m,8,20);}
+  else if((tier==='great'&&R()<.5)||(tier==='good'&&R()<.25))gossip(G,m,me);
+}
+function trapCheck(G,c){
+  const T=G.traps[c.loc];
+  for(let i=T.length-1;i>=0;i--){const tr=T[i];if(tr.by===c.id||R()>=.3)continue;T.splice(i,1);
+    c.hp-=tr.dmg;if(R()<.5)c.inj.leg=1;
+    const owner=G.c[tr.by];
+    const vis=visAt(G,c.loc,[c]);
+    ev(G,vis,'fight',c.me?`발밑에서 덫이 튀어 올랐다! ${tr.dmg} 피해.`:`${JS.i(c.name)} 덫에 걸렸다.`,{imp:1});
+    if(owner&&owner.me&&!c.me&&vis==='hidden')ev(G,'heard','heard',`${AREAS[c.loc].n} 쪽에서 내 덫에 무언가 걸린 소리가 났다.`);
+    if(c.hp<=0){kill(G,c,owner&&owner.alive?owner:null,'trap');return;}
+  }
+}
+function searchArea(G,c){
+  c.searched=true;c.st-=8;if(c.st<0)stOver(G,c);
+  trapCheck(G,c);if(!c.alive)return;
+  const pool=G.pool[c.loc];
+  if(c.me){
+    if(pool.length&&R()<.62){
+      const it=pick(pool);
+      if(c.club==='cooking'&&it.p)it.pk=1;
+      ev(G,'seen','find',pick(FINDT)(AREAS[c.loc].n,IT[it.id].n)+(it.pk?' 냄새가 이상하다. 독이 든 것 같다.':''));
+      G.pending={type:'find',uid:it.uid,loc:c.loc};G.phase='pending';return;
+    }
+    const hasBody=bodiesAt(G,c.loc).length>0;
+    ev(G,'seen','find',(pool.length?'아무것도 찾지 못했다.':'이곳엔 더 나올 게 없는 것 같다.')+(hasBody?' 쓰러진 사람의 소지품은 따로 뒤질 수 있다.':''));
+    return;
+  }
+  const ok=it=>{const k=IT[it.id].k;return k!=='p'&&k!=='m'&&k!=='b';};
+  const cands=pool.filter(ok).map(it=>[it,pool,null]);
+  for(const b of (G.bodies?G.bodies[c.loc]:[]))for(const it of b.items)if(ok(it))cands.push([it,b.items,b]);
+  if(!cands.length||R()>=.62)return;
+  const[it,src,b]=pick(cands);
+  if(c.inv.length>=INV_MAX){const i=c.inv.findIndex(x=>IT[x.id].k==='s'&&x.id!=='radar');if(i<0)return;pool.push(c.inv.splice(i,1)[0]);}
+  src.splice(src.indexOf(it),1);c.inv.push(it);autoEquip(G,c);
+  if(b&&visAt(G,c.loc,[c])==='seen')ev(G,'seen','meet',`${JS.i(c.name)} 쓰러진 ${G.c[b.v].name}의 소지품을 뒤졌다.`);
+}
+function bodiesAt(G,loc){return G.bodies?G.bodies[loc].filter(b=>b.items.length):[];}
+function noticeBodies(G){const me=G.c[0];if(!me.alive||!G.bodies)return;
+  for(const b of G.bodies[me.loc]){if(b.seen)continue;b.seen=1;ev(G,'seen','death',`${JS.i(G.c[b.v].name)} 쓰러져 있다.`+(b.items.length?' 곁에 소지품이 흩어져 있다.':''),{imp:1});}}
+function consume(G,c,idx,out){
+  const say=(G2,v,cl,x,o)=>out?out.push(x):ev(G2,v,cl,x,o);
+  const it=c.inv[idx];const d=IT[it.id];c.inv.splice(idx,1);
+  if(it.p){const dmg=(d.st||d.hp||20);c.hp-=dmg;
+    if(c.me)say(G,'seen','death',`${JS.i(d.n)} 이상하다… 독이었다! ${dmg} 피해.`,{imp:1});
+    if(c.hp<=0){const by=it.by!=null?G.c[it.by]:null;kill(G,c,by&&by.alive?by:null,'poison');}
+    return;}
+  if(d.k==='f'){const s0=c.st;c.st=Math.min(c.mst,c.st+d.st);if(c.me)say(G,'seen','rest',`${JS.eul(d.n)} 먹었다. 스태미나 +${c.st-s0}.`);}
+  if(d.k==='h'){const h0=c.hp;c.hp=Math.min(c.mhp,c.hp+Math.round(d.hp*(c.inj.body?.7:1)));let cured='';
+    if(d.cure){const ps=Object.keys(c.inj).filter(p=>c.inj[p]);const n=d.cure===1?ps.slice(0,1):ps;n.forEach(p=>c.inj[p]=0);if(n.length)cured=` ${n.map(p=>INJN[p]).join('·')} 부상이 나았다.`;}
+    if(c.me)say(G,'seen','rest',`${JS.eul(d.n)} 썼다. 체력 +${c.hp-h0}.${cured}`);}
+}
+function emergencyUse(G,c){
+  const use=(k,cond)=>{if(!cond)return;let bi=-1,bv=0;c.inv.forEach((it,i)=>{const d=IT[it.id];if(d.k!==k)return;if(it.p&&(c.club==='cooking'||it.by===c.id))return;const v=d.st||d.hp;if(v>bv){bv=v;bi=i;}});if(bi>=0)consume(G,c,bi);};
+  use('h',c.hp<c.mhp*.45);if(!c.alive)return;use('f',c.st<35);
+  if(c.club==='cooking'){for(let i=c.inv.length-1;i>=0;i--)if(c.inv[i].p&&c.inv[i].by!==c.id)G.pool[c.loc].push(c.inv.splice(i,1)[0]);}
+}
+
+/* ----- 결정 ----- */
+function aliveCount(G){return G.c.filter(c=>c.alive).length;}
+function npcDecide(G,a,b){
+  if(a.transfer==='hunter')return R()<(a.hp<a.mhp*.25?.5:.9)?'attack':'pass';
+  if(a.transfer==='helper'){if(a.revenge===b.id)return 'attack';return R()<.75?'talk':'pass';}
+  const P=PERS[a.pers],r=rel(G,a,b);
+  const n=aliveCount(G);
+  const close=r.tag==='crush'||r.tag==='bestie';
+  const soft=n<=2?(close?.55:.3):n<=3?(close?.8:.6):1;
+  let h=P.agg-r.like/100*1.1*(r.like>0?soft:1);
+  if(r.tag==='enemy')h+=.6;if(r.tag==='rival')h+=.2;
+  if(r.tag==='crush'||r.tag==='friend'||r.tag==='bestie')h-=.7*soft;
+  if(a.revenge===b.id)h+=1;
+  if(n<=6)h+=.15;if(n<=4)h+=.2;if(n<=2)h+=.35;
+  h+=Math.min(.3,G.t/100)+Math.min(.25,Math.max(0,G.t-G.lastDeathT-8)/40);
+  if(G.t<4)h-=.15;
+  h+=clamp((power(a)-power(b))/60,-.3,.3)*(a.pers==='naengjeong'?1.6:1);
+  if(b.hp<b.mhp*.35&&a.pers==='naengjeong')h+=.2;
+  if(a.hp<a.mhp*.3)h-=.3;
+  h=clamp(h,.02,.97);
+  if(R()<h)return 'attack';
+  const tp=.55+P.talk*.08+Math.max(0,r.like)/200-(a.pers==='sosim'?.2:0);
+  return R()<tp?'talk':'pass';
+}
+function pickMove(G,c){
+  const nb=neighbors(c.loc).filter(i=>G.zones[i]!==2);if(!nb.length)return null;
+  const safe=nb.filter(i=>G.zones[i]===0);let cand=safe.length?safe:nb;
+  if(!safe.length&&turnsToBcast(G)<=2&&G.zones[c.loc]===0)return null;
+  const P=c.transfer==='hunter'?{agg:.95}:c.transfer==='helper'?{agg:0}:PERS[c.pers];let best=null,bw=-1e9;
+  for(const i of cand){
+    let w=1+R()*1.5+Math.min(G.pool[i].length,8)*(G.t<18?.18:.06);
+    const ppl=G.c.filter(o=>o.alive&&o!==c&&o.loc===i&&o.id!==c.comp);
+    w+=ppl.length*(P.agg-.25)*1.6;
+    if(c.revenge!=null&&G.c[c.revenge].alive&&G.c[c.revenge].loc===i)w+=3;
+    for(const o of ppl){const t=G.rel[c.id][o.id][2];if(t==='crush'||t==='bestie')w+=1.2;if(t==='enemy')w+=P.agg>.3?.8:-1;}
+    if(G.zones[i]===1)w-=1.5;
+    if(c.pers==='eongttung')w+=R()*2;
+    if(w>bw){bw=w;best=i;}
+  }
+  return best;
+}
+function turnsToBcast(G){return BCAST-(G.t%BCAST);}
+function seekStep(G,c){
+  if(G.t<6&&c.revenge==null)return null;
+  let best=null,bl=0;
+  for(const o of G.c){if(!o.alive||o===c||o.loc===c.loc||o.id===c.comp)continue;const r=G.rel[c.id][o.id];
+    let w=(r[2]==='crush'||r[2]==='bestie')?r[0]:0;if(c.revenge===o.id)w=120;if(w>bl){bl=w;best=o;}}
+  if(!best||R()>(c.revenge===best.id?.35:.15))return null;
+  const nb=shuffle(neighbors(c.loc).filter(i=>G.zones[i]===0||(G.zones[i]===1&&turnsToBcast(G)>2)));
+  let bi=null,bd=dist(c.loc,best.loc);for(const i of nb){const d=dist(i,best.loc);if(d<bd){bd=d;bi=i;}}
+  return bi;
+}
+function huntStep(G,c){
+  let best=null,bd=99;for(const o of G.c){if(!o.alive||o===c)continue;const d=dist(c.loc,o.loc);if(d<bd){bd=d;best=o;}}
+  if(!best||bd===0)return null;
+  const nb=shuffle(neighbors(c.loc).filter(i=>G.zones[i]===0||(G.zones[i]===1&&turnsToBcast(G)>2)));
+  let bi=null;for(const i of nb){const d=dist(i,best.loc);if(d<bd){bd=d;bi=i;}}return bi;
+}
+function npcAct(G,c){
+  emergencyUse(G,c);if(!c.alive)return;autoEquip(G,c);
+  const P=PERS[c.pers];
+  const closing=G.zones[c.loc]===1&&turnsToBcast(G)<=3;
+  if(c.transfer==='hunter'&&!closing&&c.st>=22&&G.t>=3){
+    if(G.c.some(o=>o.alive&&o!==c&&o.loc===c.loc)){searchArea(G,c);return;}
+    if(R()<.55){const to=huntStep(G,c);if(to!=null){moveChar(G,c,to);return;}}}
+  let ch;
+  if(closing&&R()<(c.pers==='seongsil'?1:c.pers==='eongttung'?.75:.95))ch='move';
+  else if(c.st<22)ch='rest';
+  else{const sk=seekStep(G,c);if(sk!=null){moveChar(G,c,sk);return;}
+    const r=R();if(r<P.hide)ch='rest';else if(r<P.hide+.42)ch='search';else ch='move';}
+  if(ch==='move'){const to=pickMove(G,c);if(to==null)ch='search';else{moveChar(G,c,to);return;}}
+  if(ch==='search')searchArea(G,c);else restChar(G,c);
+}
+function resetFlags(G){for(const c of G.c){c.rested=false;c.searched=false;c.moved=false;}}
+function npcPhase(G){
+  const list=shuffle(G.c.filter(c=>c.alive&&!c.me&&c.comp!==0));
+  const followers=[];
+  for(const c of list){
+    if(!c.alive)continue;
+    if(c.comp!=null&&G.c[c.comp].alive&&c.id>c.comp){followers.push(c);continue;}
+    npcAct(G,c);
+  }
+  for(const f of followers){
+    if(!f.alive)continue;const l=G.c[f.comp];
+    if(!l||!l.alive){f.comp=null;npcAct(G,f);continue;}
+    emergencyUse(G,f);if(!f.alive)continue;
+    if(f.loc!==l.loc){if(dist(f.loc,l.loc)<=1)moveChar(G,f,l.loc);else{f.comp=null;l.comp=null;npcAct(G,f);continue;}}
+    if(!f.alive)continue;
+    if(l.searched)searchArea(G,f);else if(l.rested)restChar(G,f);
+  }
+}
+
+/* ----- 만남 ----- */
+function encounterPhase(G){
+  const me=G.c[0];const used=new Set();let pe=null,pFirst=false;
+  if(me.alive){
+    const here=shuffle(G.c.filter(c=>c.alive&&!c.me&&c.loc===me.loc&&c.id!==me.comp));
+    const base=me.searched?.6:me.rested?.32:.5;const ar=AREAS[me.loc];
+    for(const n of here){if(R()<base*ar.d*(n.rested?.6:1)){pe=n;break;}}
+    if(pe){used.add(0);if(me.comp!=null)used.add(me.comp);used.add(pe.id);if(pe.comp!=null)used.add(pe.comp);
+      const ps=R()+(me.club==='photo'?.3:0)+(me.rested?.15:0);
+      const ns=R()+(pe.club==='photo'?.3:0)+(pe.rested?.15:0)+(pe.pers==='sosim'?.1:0);
+      pFirst=ps>=ns;}
+  }
+  if(me.alive&&me.comp!=null)used.add(me.comp);
+  const byLoc={};
+  for(const c of G.c)if(c.alive&&!c.me&&!used.has(c.id))(byLoc[c.loc]=byLoc[c.loc]||[]).push(c);
+  for(const loc in byLoc){
+    const L=shuffle(byLoc[loc]);const ar=AREAS[loc];
+    for(let i=0;i<L.length;i++){const a=L[i];if(used.has(a.id)||!a.alive)continue;
+      for(let j=i+1;j<L.length;j++){const b=L[j];if(used.has(b.id)||!b.alive||a.comp===b.id)continue;
+        if(R()<.42*ar.d*(a.rested?.6:1)*(b.rested?.6:1)){
+          [a,b].forEach(x=>{used.add(x.id);if(x.comp!=null)used.add(x.comp);});
+          npcMeet(G,a,b);break;}
+      }
+    }
+    if(G.phase==='end')return;
+  }
+  if(pe&&pe.alive&&me.alive&&pe.loc===me.loc){
+    if(pe.woundRoll){pe.woundRoll=0;if(R()<.5){const p=pick(Object.keys(pe.inj));pe.inj[p]=1;pe.hp=Math.min(pe.hp,Math.round(pe.mhp*rf(.45,.8)));
+      ev(G,'seen','meet',`${JS.eun(pe.name)} ${JS.eul(INJN[p])} 다친 채였다.`);}}
+    pe.met=true;pe.seenT=G.t;pe.seenLoc=pe.loc;
+    if(pFirst){G.pending={type:'meet',who:pe.id};G.phase='pending';}
+    else npcApproach(G,pe,me);
+  }
+}
+function npcMeet(G,a,b){
+  const first=R()<.5?a:b,second=first===a?b:a;
+  const d=npcDecide(G,first,second);
+  if(d==='attack'){fight(G,first,second,{ambush:true});}
+  else if(d==='talk'){talk(G,first,second);}
+  else{const vis=visAt(G,a.loc);if(vis==='seen'){ev(G,'seen','meet',`${JS.wa(a.name)} ${JS.i(b.name)} 서로를 보고는 말없이 멀어졌다.`);}}
+}
+function npcApproach(G,n,me){
+  const d=npcDecide(G,n,me);
+  if(d==='attack'){
+    const t=G.rel[n.id][0][2];if(t==='enemy'||t==='rival')know(G,n.id,0);
+    fight(G,n,me,{ambush:true,head:`${JS.i(n.name)} 갑자기 덮쳐 왔다!`});
+  }else if(d==='talk'){talk(G,n,me);}
+  else{ev(G,'seen','meet',`${JS.i(n.name)} 나를 보더니 말없이 멀어졌다.`);}
+}
+function talk(G,a,b){
+  const npc=a.me?b:b.me?a:null;
+  let roll=compat(a.pers,b.pers)+ri(-3,3)+(a.club==='drama'?2:0)+(b.club==='drama'?1:0)+PERS[a.pers].talk*.5+rel(G,b,a).like/35+rel(G,a,b).like/70;
+  const tier=roll>=4?'great':roll>=2?'good':roll>=0?'awkward':roll>=-2?'bad':'disaster';
+  const D={great:[20,12],good:[10,6],awkward:[2,4],bad:[-12,10],disaster:[-22,14]}[tier];
+  a.talked=true;b.talked=true;
+  const vis=visAt(G,a.loc,[a,b]);
+  if(npc){const p=npc===a?b:a;
+    const pool=LINES[npc.pers][tier].filter(l=>l!==npc.lastLine);const raw=pick(pool.length?pool:LINES[npc.pers][tier]);npc.lastLine=raw;
+    const line=raw.replace('{v}',JS.a(p.given));
+    ev(G,'seen','talk',a.me?`${npc.name}에게 말을 걸었다.`:`${JS.i(npc.name)} 먼저 말을 걸어왔다.`,{q:line,tier,imp:tier==='great'||tier==='disaster'?1:0});
+  }else if(vis==='seen'){ev(G,'seen','talk',`${JS.i(a.name)} ${b.name}에게 말을 걸었다.`,{tier});}
+  else ev(G,'hidden','talk',`${JS.i(a.name)} ${b.name}에게 말을 걸었다.`,{tier});
+  changeRel(G,b,a,D[0]+ri(-3,3),D[1]*PERS[b.pers].ig);
+  changeRel(G,a,b,D[0]*.8+ri(-3,3),D[1]*PERS[a.pers].ig);
+  if(npc){const p=npc===a?b:a;
+    if(revealSecret(G,npc,p)){if(p.comp==null&&npc.comp==null){G.pending={type:'propose',who:npc.id};G.phase='pending';}return;}
+    const r=rel(G,npc,p);
+    if(r.tag==='crush'&&!npc.confessed&&(tier==='great'||tier==='good')&&r.like>=60&&r.int>=56&&R()<.7){
+      npc.confessed=true;know(G,npc.id,p.id);ev(G,'seen','heart',`${JS.i(npc.name)} 고백했다.`,{q:CONFESS[npc.pers],imp:1});changeRel(G,p,npc,8,20);
+    }else if((tier==='great'&&R()<.55)||(tier==='good'&&R()<.35))gossip(G,npc,p);
+    if(tier==='great'&&R()<.3)gift(G,npc,p);
+    if(tier==='disaster'&&R()<PERS[npc.pers].agg+.15){fight(G,npc,p,{ambush:false,head:`${JS.i(npc.name)} 참지 못하고 달려들었다!`});return;}
+    const r2=rel(G,npc,p);
+    if(p.alive&&npc.alive&&p.comp==null&&npc.comp==null&&(tier==='great'||tier==='good')&&r2.like>=40&&(r2.tag==='friend'||r2.tag==='bestie'||r2.tag==='crush')&&R()<.6){G.pending={type:'propose',who:npc.id};G.phase='pending';}
+  }else{
+    if(tier==='disaster'&&R()<PERS[b.pers].agg+.1){fight(G,b,a,{ambush:false});return;}
+    const ra=rel(G,a,b),rb=rel(G,b,a);
+    if(a.comp==null&&b.comp==null&&ra.like>=40&&rb.like>=40&&R()<.5){a.comp=b.id;b.comp=a.id;ev(G,vis,'pair',`${JS.wa(a.name)} ${JS.i(b.name)} 함께 다니기 시작했다.`,{imp:1});}
+  }
+}
+function gossip(G,npc,p){
+  const opts=[];
+  for(const o of G.c){if(o===npc||o===p)continue;const t=G.rel[npc.id][o.id][2];if(t&&!isKnown(G,npc.id,o.id))opts.push({w:3,k:'own',x:npc,y:o});}
+  for(const o of G.c){if(o===npc||o.me)continue;const t=G.rel[o.id][0][2];if(t&&!isKnown(G,o.id,0))opts.push({w:2,k:'you',x:o});}
+  for(const w of (G.wit[npc.id]||[])){if(w.k!=null&&G.kk[w.v]==null)opts.push({w:4,k:'kill',w});}
+  for(let n=0;n<24;n++){const x=pick(G.c),y=pick(G.c);if(x===y||x.me||y.me||x===npc)continue;if(G.rel[x.id][y.id][2]&&!isKnown(G,x.id,y.id))opts.push({w:1,k:'other',x,y});}
+  if(!opts.length)return;
+  let s=0;for(const o of opts)s+=o.w;let r=R()*s,c=opts[0];for(const o of opts){r-=o.w;if(r<=0){c=o;break;}}
+  let q='';
+  if(c.k==='own'){const t=G.rel[npc.id][c.y.id][2],y=c.y.given;know(G,npc.id,c.y.id);
+    q={crush:`사실 나, ${y} 좋아해. 아무한테도 말하지 마.`,bestie:`${JS.eun(y)} 진짜 내 편이야. 걔 보면 내가 찾는다고 전해 줘.`,friend:`${JS.rang(y)}는 꽤 친해. 걔는 믿어도 돼.`,rival:`${JS.rang(y)} 나? 말도 꺼내지 마. …근데 자꾸 생각나긴 해.`,enemy:`${JS.eul(y)} 조심해. 나랑은 원수야.`}[t];}
+  else if(c.k==='you'){const t=G.rel[c.x.id][0][2],x=c.x.given;know(G,c.x.id,0);
+    q={crush:`${JS.i(x)} 너 좋아하는 거 알아? 몰랐어?`,bestie:`${JS.i(x)} 너 엄청 찾던데.`,friend:`${JS.i(x)} 네 얘기 좋게 하더라.`,rival:`${JS.i(x)} 너만 보면 으르렁대잖아. 근데 그게 관심 아니야?`,enemy:`${JS.eul(x)} 조심해. 너 엄청 싫어하더라.`}[t];}
+  else if(c.k==='kill'){const w=c.w,k=G.c[w.k],v=G.c[w.v];G.kk[w.v]=w.k;
+    q=`봤어. ${JS.i(k.given)} ${JS.eul(v.given)} 해치는 거. ${AREAS[w.loc].n}에서.`;
+    if(G.rel[0][v.id][0]>=30)changeRel(G,p,k,-30,25);}
+  else{const t=G.rel[c.x.id][c.y.id][2],x=c.x.given,y=c.y.given;know(G,c.x.id,c.y.id);
+    q={crush:`${JS.i(x)} ${JS.eul(y)} 좋아한대. 다 티 나.`,bestie:`${JS.wa(x)} ${JS.eun(y)} 원래 단짝이잖아.`,friend:`${JS.wa(x)} ${JS.eun(y)} 꽤 친하던데.`,rival:`${JS.eun(x)} ${JS.rang(y)} 맨날 으르렁대는데, 이상하게 붙어 다녀.`,enemy:`${JS.eun(x)} ${JS.eul(y)} 진짜 싫어해.`}[t];}
+  if(q)ev(G,'seen','gossip',`${JS.i(npc.name)} 귓속말을 했다.`,{q,imp:1});
+}
+function gift(G,npc,p){
+  const cons=npc.inv.map((it,i)=>[it,i]).filter(([it])=>{const k=IT[it.id].k;return (k==='f'||k==='h')&&!it.p;});
+  if(cons.length<2)return;
+  const[it,i]=pick(cons);if(!bagHasRoom(p,it))return;npc.inv.splice(i,1);addToBag(p,it);
+  ev(G,'seen','find',`${JS.i(npc.name)} ${JS.eul(IT[it.id].n)} 건넸다.`,{q:'이거 너 가져.'});
+}
+
+/* ----- 싸움 ----- */
+const FLEE_TH={low:.3,mid:.5,none:0};
+function fleeTo(G,c){const nb=neighbors(c.loc).filter(i=>G.zones[i]===0);const nb2=nb.length?nb:neighbors(c.loc).filter(i=>G.zones[i]!==2);return nb2.length?pick(nb2):null;}
+/* ----- 내가 낀 싸움: 라운드마다 고른다. 라운드는 시간을 쓰지 않는다 ----- */
+const SPARE={dajeong:'…미안해. 나도 이러고 싶지 않았어.',dahyeol:'쳇. 이번만이야.',sosim:'(떨리는 손으로 무기를 내린다)',naengjeong:'지금은 득이 없네. 물러날게.',
+  eongttung:'어? 우리 왜 싸우고 있었지?',neunggeul:'에이, 진심 아니었어. 알지?',seongsil:'그래. 이건 아니야.',cynic:'…귀찮아졌어. 가.'};
+const COMBAT_MAX=8;
+function live(G,ids){const C=G.combat;return ids.map(id=>G.c[id]).filter(c=>c.alive&&c.loc===C.loc&&!C.out.includes(c.id));}
+function syncHead(G){const C=G.combat;if(!C)return;const e=G.log.find(x=>x.n===C.headN);if(e)e.lines=C.lines.slice();}
+function pickTarget(cands){const me=cands.find(c=>c.me);if(me&&R()<.65)return me;return cands.length?pick(cands):null;}
+function fleeChance(G){const me=G.c[0],C=G.combat;if(!C)return 0;let p=.6;if(me.club==='track')p+=.2;if(me.inj.leg)p-=.25;
+  p-=(live(G,C.foes).length-1)*.12;if(me.st<10)p-=.15;return clamp(p,.1,.92);}
+function spareChance(G,f){const me=G.c[0],C=G.combat;const r=rel(G,f,me);let p=.12+r.like/110;
+  if(r.tag==='friend'||r.tag==='bestie')p+=.25;if(r.tag==='crush')p+=.35;if(r.tag==='enemy')p-=.2;
+  p+=({dajeong:.15,sosim:.2,seongsil:.1,dahyeol:-.15,cynic:-.05,eongttung:.05,neunggeul:.05}[f.pers]||0);
+  if(me.club==='drama')p+=.15;if(f.revenge===0)p-=.5;if(f.transfer==='hunter')p-=.6;if(aliveCount(G)<=4)p-=.15;if(f.hp<f.mhp*.4)p+=.1;
+  p-=((C&&C.talks[f.id])||0)*.12;return clamp(p,.02,.9);}
+function startCombat(G,A,B,o){
+  const me=G.c[0];const loc=me.loc;
+  if(A.comp===B.id){A.comp=null;B.comp=null;}
+  const foe=A.me?B:A;
+  const mine=[0],foes=[foe.id];
+  if(me.comp!=null){const m=G.c[me.comp];if(m&&m.alive&&m.loc===loc&&m!==foe)mine.push(m.id);}
+  if(foe.comp!=null&&foe.comp!==0){const m=G.c[foe.comp];if(m&&m.alive&&m.loc===loc&&!mine.includes(m.id))foes.push(m.id);}
+  const head=ev(G,'seen','fight',o.head||(A.me?`${JS.eul(foe.name)} 공격했다.`:`${JS.wa(foe.name)} 싸움이 붙었다.`),{imp:1,q:o.q});
+  const lines=[];
+  const inv=new Set([...mine,...foes]);
+  for(const c of G.c){if(!c.alive||c.me||inv.has(c.id)||c.loc!==loc)continue;const r=rel(G,c,B);
+    if((r.tag==='crush'||r.tag==='bestie')&&r.like>=55&&rel(G,c,A).like<40&&R()<.7){(B.me?mine:foes).push(c.id);know(G,c.id,B.id);lines.push(`${JS.i(c.name)} ${nm(B)}의 앞을 막아섰다!`);break;}}
+  for(const id of (B.me?mine:foes))changeRel(G,G.c[id],A,-28,24);
+  changeRel(G,A,B,-10,10);
+  if(B.me){const t=G.rel[A.id][0][2];if(t==='enemy'||t==='rival')know(G,A.id,0);}
+  G.combat={loc,mine,foes,out:[],round:1,headN:head.n,lines,free:A.me&&o.ambush?'me':null,talks:{}};
+  for(const id of [...mine,...foes])G.c[id].guard=false;
+  G.pending={type:'combat'};G.phase='pending';
+  if(!A.me&&o.ambush){
+    for(const f of live(G,foes)){const tg=pickTarget(live(G,mine));if(!tg)break;hit(G,f,tg,lines);if(!me.alive)break;}
+  }
+  syncHead(G);
+  if(!me.alive){G.combat=null;}
+}
+function combatAct(G,action){
+  const C=G.combat;if(!C||G.phase!=='pending'||!G.pending||G.pending.type!=='combat')return false;
+  const me=G.c[0];const L=C.lines;const[cmd,arg]=String(action).split(':');
+  if(!live(G,C.foes).length){endCombat(G,'win');return true;}
+  if(cmd==='use'&&!me.inv[+arg])return false;
+  L.push(`${C.round}라운드`);
+  me.guard=false;const free=C.free==='me';C.free=null;
+  if(cmd==='attack'){
+    let t=G.c[+arg];if(!t||!live(G,C.foes).includes(t))t=live(G,C.foes)[0];
+    me.st-=3;if(me.st<0)stOver(G,me);
+    hit(G,me,t,L);
+  }else if(cmd==='defend'){
+    me.guard=true;me.st=Math.min(me.mst,me.st+4);L.push('몸을 웅크리고 막을 자세를 잡았다.');
+  }else if(cmd==='flee'){
+    me.st-=6;if(me.st<0)stOver(G,me);
+    if(R()<fleeChance(G)){const to=fleeTo(G,me);
+      if(to!=null){me.loc=to;const m=me.comp!=null?G.c[me.comp]:null;if(m&&m.alive&&C.mine.includes(m.id))m.loc=to;
+        L.push(`${JS.ro(AREAS[to].n)} 달아났다.`);endCombat(G,'fled');return true;}
+      L.push('도망칠 곳이 없다.');}
+    else L.push('도망치려 했지만 길이 막혔다.');
+  }else if(cmd==='talk'){
+    let t=G.c[+arg];if(!t||!live(G,C.foes).includes(t))t=live(G,C.foes)[0];
+    const p=spareChance(G,t);C.talks[t.id]=(C.talks[t.id]||0)+1;
+    L.push(`${t.name}에게 그만하자고 말했다.`);t.talked=true;
+    if(R()<p){L.push(`${t.name}: “${SPARE[t.pers]}”`);changeRel(G,t,me,8,6);C.out.push(t.id);
+      const to=fleeTo(G,t);if(to!=null)t.loc=to;L.push(`${JS.i(t.name)} 무기를 거두고 물러났다.`);}
+    else{L.push(`${t.name}: “${pick(LINES[t.pers].bad)}”`);changeRel(G,t,me,-3,4);}
+  }else if(cmd==='use'){
+    const i=+arg;const it=me.inv[i];const d=IT[it.id];
+    if(d.k==='f'||d.k==='h')consume(G,me,i,L);
+    else if(d.k==='w'){me.inv.splice(i,1);const old=me.wep;me.wep=it;if(old)addToBag(me,old);L.push(`${JS.ro(d.n)} 바꿔 쥐었다.`);}
+    else return false;
+  }
+  if(!me.alive){syncHead(G);G.combat=null;return true;}
+  if(!live(G,C.foes).length){endCombat(G,'win');return true;}
+  for(const m of live(G,C.mine)){if(m.me)continue;const tg=live(G,C.foes);if(!tg.length)break;hit(G,m,pick(tg),L);}
+  if(!live(G,C.foes).length){endCombat(G,'win');return true;}
+  if(free)L.push('상대는 아직 자세를 잡지 못했다.');
+  else for(const f of live(G,C.foes)){
+    if(f.hp<f.mhp*(f.transfer==='hunter'?.1:PERS[f.pers].flee)){let p=f.pers==='sosim'?.85:f.pers==='dahyeol'?.35:.6;if(f.club==='track')p+=.15;if(f.inj.leg)p-=.2;
+      if(R()<p){const to=fleeTo(G,f);if(to!=null){f.loc=to;C.out.push(f.id);L.push(`${JS.i(f.name)} ${JS.ro(AREAS[to].n)} 달아났다.`);continue;}}}
+    const tg=pickTarget(live(G,C.mine));if(!tg)break;hit(G,f,tg,L);if(!me.alive)break;
+  }
+  if(!me.alive){syncHead(G);G.combat=null;return true;}
+  if(!live(G,C.foes).length){endCombat(G,'win');return true;}
+  C.round++;
+  if(C.round>COMBAT_MAX){L.push('서로 지쳐서 거리를 벌렸다.');endCombat(G,'draw');return true;}
+  syncHead(G);return true;
+}
+function endCombat(G,how){
+  const C=G.combat;const me=G.c[0];
+  if(how==='win')C.lines.push('싸움이 끝났다.');
+  syncHead(G);
+  for(const id of [...C.mine,...C.foes])G.c[id].guard=false;
+  G.combat=null;G.pending=null;G.phase='act';
+  if(how!=='fled'){
+    const vs=C.foes.map(id=>G.c[id]).filter(v=>!v.alive&&v.cause==='fight'&&v.loc===me.loc&&(G.bodies[me.loc]||[]).some(b=>b.v===v.id&&b.items.length));
+    if(vs.length){if(me.club==='cooking')for(const b of G.bodies[me.loc])b.items.forEach(it=>{if(it.p)it.pk=1;});
+      G.pending={type:'body',loc:me.loc,focus:vs[vs.length-1].id,free:1};G.phase='pending';return;}
+  }
+  proceed(G);
+}
+/* 선택 창이 닫힌 뒤 이번 턴의 나머지를 이어서 진행한다 */
+function proceed(G){
+  if(G.phase!=='act'||G.pending)return;
+  const st=G.stage;G.stage=null;
+  if(st==='afterPlayer'){continueTurn(G);return;}
+  if(checkEnd(G))return;
+  if(st==='finishRest'){finishTurnRest(G);return;}
+  finishTurn(G);
+}
+function fight(G,A,B,o){
+  o=o||{};if(!A.alive||!B.alive)return;
+  if(G.c[0].alive&&(A.me||B.me)&&!G.combat){startCombat(G,A,B,o);return;}
+  const loc=B.loc;
+  if(A.comp===B.id){A.comp=null;B.comp=null;}
+  const sa=[A],sb=[B];
+  const addComp=(side,c,foe)=>{if(c.comp!=null){const m=G.c[c.comp];if(m&&m.alive&&m.loc===loc&&m!==foe&&!side.includes(m))side.push(m);}};
+  addComp(sa,A,B);addComp(sb,B,A);
+  const inv=new Set([...sa,...sb].map(c=>c.id));
+  const vis=visAt(G,loc,[...sa,...sb]);
+  const head=ev(G,vis,'fight',o.head||(A.me?`${JS.eul(B.name)} 공격했다.`:B.me?`${JS.wa(A.name)} 싸움이 붙었다.`:`${JS.wa(A.name)} ${JS.i(B.name)} 맞붙었다.`),{imp:1,q:o.q});
+  let shield=null;
+  for(const c of G.c){if(!c.alive||c.me||inv.has(c.id)||c.loc!==loc)continue;const r=rel(G,c,B);
+    if((r.tag==='crush'||r.tag==='bestie')&&r.like>=55&&rel(G,c,A).like<40&&R()<.7){shield=c;sb.push(c);inv.add(c.id);know(G,c.id,B.id);break;}}
+  const lines=[];
+  if(shield)lines.push(`${JS.i(shield.name)} ${nm(B)}의 앞을 막아섰다!`);
+  for(const d of sb)changeRel(G,d,A,-28,24);
+  changeRel(G,A,B,-10,10);
+  if(B.me){const t=G.rel[A.id][0][2];if(t==='enemy'||t==='rival')know(G,A.id,0);}
+  const fled=new Set();let gun=false;
+  const act=s=>s.filter(c=>c.alive&&!fled.has(c.id));
+  for(let round=1;round<=4;round++){
+    for(const att of act(sa)){const tg=act(sb);if(!tg.length)break;
+      const tgt=(round===1&&shield&&tg.includes(shield))?shield:tg.includes(B)?B:pick(tg);
+      if(hit(G,att,tgt,lines))gun=true;}
+    for(const d of act(sb)){const tg=act(sa);if(!tg.length)break;
+      if(round===1&&d!==shield){if(o.ambush)continue;if(wepInfo(d).r!==wepInfo(A).r){lines.push(`${JS.eun(nm(d))} 거리가 맞지 않아 반격하지 못했다.`);continue;}if(R()>.8)continue;}
+      const tgt=tg.includes(A)?A:pick(tg);if(hit(G,d,tgt,lines))gun=true;}
+    for(const c of[...act(sa),...act(sb)]){
+      const th=c.me?FLEE_TH[G.flee]:c.transfer==='hunter'?.1:PERS[c.pers].flee;
+      if(c.hp<c.mhp*th){let p=c.me?.72:(c.pers==='sosim'?.85:c.pers==='dahyeol'?.35:.6);if(c.club==='track')p+=.15;if(c.inj.leg)p-=.2;
+        if(R()<p){const to=fleeTo(G,c);if(to!=null){fled.add(c.id);c.loc=to;c.st=Math.max(0,c.st-8);lines.push(`${JS.i(nm(c))} ${JS.ro(AREAS[to].n)} 달아났다.`);
+          if(c.comp!=null){const m=G.c[c.comp];if(m&&m.alive&&inv.has(m.id)&&!fled.has(m.id)){fled.add(m.id);m.loc=to;}}}}}
+    }
+    if(!act(sa).length||!act(sb).length)break;
+    if(round===4)lines.push('서로 거리를 벌렸다.');
+  }
+  if(vis==='seen')head.lines=lines;
+  const me=G.c[0];
+  if(gun&&vis!=='seen'&&me.alive)ev(G,'heard','heard',`${dirText(me.loc,loc)} 어딘가에서 총성이 울렸다.`);
+  else if(vis!=='seen'&&me.alive&&me.club==='broadcast'&&R()<.5)ev(G,'heard','heard',`${AREAS[loc].n} 쪽에서 비명 같은 소리가 들렸다.`);
+}
+function hit(G,att,def,lines){
+  const w=wepInfo(att);const ar=AREAS[att.loc];let gun=false;
+  if(att.wep&&IT[att.wep.id].uses&&att.wep.u>0){att.wep.u--;if(w.t==='shoot')gun=true;}
+  att.sk[w.t]++;const sl=skLv(att,w.t);
+  const own=att.me?'내 ':att.name+'의 ';
+  if(R()>.8+sl*.015-(att.inj.head?.15:0)-(def.guard?.1:0)){lines.push(`${own}${w.name}, 빗나감`);return gun;}
+  const raw=(att.atk*.6+w.atk)*(1+sl*.07)*ar.a*(att.inj.arm?.75:1);
+  const red=(def.def*.35+armorDef(def))*ar.f;
+  let dmg=Math.max(3,Math.round((raw*1.35-red*.8)*rf(.85,1.2)));
+  if(def.guard)dmg=Math.max(1,Math.round(dmg*.45));
+  def.hp-=dmg;
+  let inj='';
+  let saved='';
+  if(R()<(w.t==='blast'?.35:.13)*(def.guard?.4:1)){const ps=Object.keys(def.inj).filter(p=>!def.inj[p]);if(ps.length){const p=pick(ps);
+    if(def.gear&&IT[def.gear.id].prot===p&&R()<.7)saved=IT[def.gear.id].n;else{def.inj[p]=1;inj=INJN[p];}}}
+  lines.push(`${own}${w.name} → ${nm(def)} ${dmg}${def.guard?' (막아서 줄임)':''}${inj?` (${inj} 부상)`:''}${saved?` (${JS.i(saved)} 막아 냈다)`:''}`);
+  const own2=def.me?'내':def.name+'의';
+  if(def.arm){def.arm.d-=ri(1,3);if(def.arm.d<=0){lines.push(`${own2} ${JS.i(IT[def.arm.id].n)} 망가졌다.`);def.arm=null;}}
+  if(def.gear){def.gear.d-=ri(0,2);if(def.gear.d<=0){lines.push(`${own2} ${JS.i(IT[def.gear.id].n)} 망가졌다.`);def.gear=null;}}
+  if(att.wep&&!IT[att.wep.id].uses&&R()<.025){lines.push(`${att.me?'내':att.name+'의'} ${JS.i(w.name)} 부러졌다.`);att.wep=null;}
+  att.exp+=2+(def.lv>att.lv?1:0);levelCheck(G,att,lines);
+  if(def.hp<=0)kill(G,def,att,'fight');
+  return gun;
+}
+function npcWill(G,v,k){
+  if(v.transfer==='hunter')return pick(['…이번엔 여기까지인가.','작년보다는 오래 버텼네.']);
+  if(v.transfer==='helper')return k&&k.me?'…날 믿어 줬으면 좋았을 텐데.':'미안. 이번엔 아무도 데리고 나가지 못했어.';
+  let crushT=null,bestT=null;
+  for(const o of G.c){if(o===v)continue;const r=G.rel[v.id][o.id];if(r[2]==='crush'&&(!crushT||r[0]>G.rel[v.id][crushT.id][0]))crushT=o;if(r[2]==='bestie')bestT=o;}
+  if(k&&G.rel[v.id][k.id][2]==='crush')return `${JS.a(k.given)}… 그래도 너라서 다행이야.`;
+  const lover=G.c.find(o=>o!==v&&o!==k&&isCouple(G,v.id,o.id));
+  if(lover)return `${JS.a(lover.me?(lover.given||lover.name):lover.given)}… 미안, 먼저 갈게. 꼭 살아 나가.`;
+  if(crushT&&crushT!==k&&R()<.7)return `${crushT.given}한테… 좋아했다고 전해 줘.`;
+  if(bestT&&bestT!==k&&R()<.7)return `${JS.a(bestT.given)}, 너는 꼭 살아.`;
+  if(k&&G.rel[v.id][k.id][0]<=-35)return `${JS.a(k.given)}… 너만은 용서 못 해.`;
+  return pick(WILLS[v.pers]);
+}
+function kill(G,v,k,cause){
+  if(!v.alive)return;
+  v.alive=false;v.hp=0;v.deathT=G.t;v.killer=k?k.id:null;v.cause=cause;G.deathsSince.push(v.id);G.lastDeathT=G.t;G.order.push(v.id);
+  if(k){k.kills++;if(cause==='fight'){k.exp+=4;levelCheck(G,k,null);}}
+  if(v.comp!=null){const m=G.c[v.comp];if(m&&m.comp===v.id)m.comp=null;v.comp=null;}
+  const drops=[...v.inv];for(const s of ['wep','arm','gear','bag'])if(v[s])drops.push(v[s]);v.inv=[];v.wep=null;v.arm=null;v.gear=null;v.bag=null;
+  if(k&&!k.me&&k.alive&&k.loc===v.loc&&cause==='fight'){
+    let bi=-1,bs=k.wep?wscore(k,k.wep):0;drops.forEach((it,i)=>{const s=wscore(k,it);if(s>bs+2){bs=s;bi=i;}});
+    if(bi<0){let bv=0;drops.forEach((it,i)=>{const d=IT[it.id];if(d.k==='h'||d.k==='f'){const vv=(d.hp||0)*1.2+(d.st||0);if(vv>bv){bv=vv;bi=i;}}});}
+    if(bi>=0&&k.inv.length<INV_MAX){const it=drops.splice(bi,1)[0];k.inv.push(it);autoEquip(G,k);}
+  }
+  let body=null;
+  if(cause==='band'||!G.bodies){for(const it of drops)G.pool[v.loc].push(it);}
+  else{body={v:v.id,t:G.t,items:drops,seen:0};G.bodies[v.loc].push(body);}
+  const me0=G.c[0];
+  const lootFor=!!(body&&!v.me&&cause==='fight'&&k&&me0.alive&&me0.loc===v.loc&&(k.me||k.id===me0.comp)&&drops.length&&!G.inFinish&&!G.pending);
+  const will=v.me?(v.will||''):npcWill(G,v,k);v.willText=will;
+  const vis=v.me?'seen':visAt(G,v.loc,[v,k].filter(Boolean));
+  const tx=cause==='band'?`${v.me?'내':v.name+'의'} 손목 밴드가 날카롭게 울렸다. ${JS.eun(nm(v))} 그대로 쓰러졌다.`:
+    cause==='trap'?`${JS.eun(nm(v))} 덫에 걸려 쓰러졌다.`:cause==='poison'?`${JS.eun(nm(v))} 독이 든 것을 먹고 쓰러졌다.`:`${JS.eun(nm(v))} 쓰러졌다.`;
+  ev(G,vis,'death',tx,{q:will,imp:1});
+  if(vis==='seen'&&k)G.kk[v.id]=k.id;
+  if(body&&vis==='seen')body.seen=1;
+  if(lootFor){if(me0.club==='cooking')drops.forEach(it=>{if(it.p)it.pk=1;});G.pending={type:'body',loc:v.loc,focus:v.id,free:1};G.phase='pending';}
+  if(k&&cause!=='band')for(const c of G.c){if(!c.alive||c===v||c===k||c.loc!==v.loc)continue;(G.wit[c.id]=G.wit[c.id]||[]).push({v:v.id,k:k.id,t:G.t,loc:v.loc});}
+  for(const c of G.c){if(!c.alive||c===v)continue;const r=G.rel[c.id][v.id];
+    if(r[0]>=40||r[2]==='crush'||r[2]==='bestie'){if(k&&k!==c&&c.loc===v.loc){changeRel(G,c,k,-55,40);if(!c.me)c.revenge=k.id;}}}
+  if(v.me){G.phase='dead';G.pending=null;}
+}
+
+/* ----- 턴 ----- */
+function act(G,a){
+  if(G.phase!=='act')return false;
+  const me=G.c[0];if(!me.alive)return false;
+  if(a.type==='move'&&(!neighbors(me.loc).includes(a.to)||G.zones[a.to]===2))return false;
+  if(a.type==='loot'&&!bodiesAt(G,me.loc).length)return false;
+  if(a.type==='chat'&&(me.comp==null||!G.c[me.comp].alive||G.c[me.comp].loc!==me.loc))return false;
+  if(a.type==='escape'){if(!canEscape(G))return false;const h=G.c[G.transferId];G.turnStart=G.seq;
+    ev(G,'seen','heart',`${JS.wa(h.name)} 니퍼로 서로의 밴드를 끊었다. 밴드는 아무 소리 없이 바닥에 떨어졌다. 둘은 낡은 배를 밀어 안개 속으로 나아갔다.`,{imp:1});
+    G.result={type:'escape',with:[0,h.id]};G.phase='end';G.pending=null;return true;}
+  resetFlags(G);G.turnStart=G.seq;G.lastAct=a.type;
+  const comp=me.comp!=null?G.c[me.comp]:null;
+  if(a.type==='move'){
+    ev(G,'seen','move',`${JS.ro(AREAS[a.to].n)} 이동했다.`);
+    moveChar(G,me,a.to);if(comp&&comp.alive){moveChar(G,comp,a.to);}
+    noticeBodies(G);
+  }else if(a.type==='search'){searchArea(G,me);}
+  else if(a.type==='loot'){
+    me.searched=true;
+    const bs=bodiesAt(G,me.loc);
+    ev(G,'seen','find',`쓰러진 ${bs.map(b=>G.c[b.v].name).join(', ')} 곁에 무릎을 꿇고 소지품을 살폈다.`);
+    if(me.club==='cooking')bs.forEach(b=>b.items.forEach(it=>{if(it.p)it.pk=1;}));
+    G.pending={type:'body',loc:me.loc};G.phase='pending';
+  }
+  else if(a.type==='rest'){restChar(G,me);if(comp&&comp.alive)restChar(G,comp);}
+  else if(a.type==='chat'){restChar(G,me,`${JS.wa(comp.name)} 몸을 기대고 쉬었다.`);restChar(G,comp);chatWith(G,me,comp);}
+  if(G.phase==='pending'){G.stage='afterPlayer';return true;}
+  return continueTurn(G);
+}
+function continueTurn(G){
+  G.stage=null;
+  const me=G.c[0];const comp=me.comp!=null?G.c[me.comp]:null;
+  if(G.lastAct==='search'&&comp&&comp.alive&&me.alive)searchArea(G,comp);
+  if(comp&&comp.alive){emergencyUse(G,comp);autoEquip(G,comp);}
+  if(checkEnd(G))return true;
+  npcPhase(G);if(checkEnd(G))return true;
+  encounterPhase(G);if(checkEnd(G))return true;
+  if(G.phase==='act')finishTurn(G);
+  return true;
+}
+function pickUp(G,p,choice){
+  const[cmd,a1,a2]=String(choice).split(':');
+  const me=G.c[0];const pool=G.pool[p.loc];
+  const uid=p.type==='find'?p.uid:a1;
+  const pi=pool.findIndex(x=>x.uid===uid);
+  if(cmd==='leave'||pi<0||me.loc!==p.loc){
+    if(p.type==='find'&&pi>=0)ev(G,'seen','find',`${JS.eul(IT[pool[pi].id].n)} 그대로 두었다.`);
+    else if(p.type==='loot')ev(G,'seen','find','아무것도 챙기지 않았다.');
+    return;}
+  const it=pool[pi],d=IT[it.id];
+  if(cmd==='take'){if(!bagHasRoom(me,it))return;pool.splice(pi,1);addToBag(me,it);ev(G,'seen','find',`${JS.eul(d.n)} 가방에 넣었다.`);}
+  else if(cmd==='equip'&&SLOT[d.k]){
+    if(d.k==='b'&&!canEquipBag(me,it))return;
+    pool.splice(pi,1);const tail=wearFrom(G,me,it);
+    ev(G,'seen','find',`${JS.eul(d.n)} ${WEARV[d.k]}.${tail}`);}
+  else if(cmd==='swap'){const i=+(p.type==='find'?a1:a2);if(!me.inv[i])return;
+    pool.splice(pool.indexOf(it),1);const out=dropStack(G,me,i);
+    if(bagHasRoom(me,it))addToBag(me,it);else pool.push(it);
+    ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓고 ${JS.eul(d.n)} 챙겼다.`);}
+}
+function bodyOp(G,cmd,arg){
+  const p=G.pending;if(!p||p.type!=='body'||G.phase!=='pending')return false;
+  const me=G.c[0];
+  if(cmd==='drop'){const i=+arg;if(!me.inv[i])return false;const out=dropStack(G,me,i);ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓았다.`);return true;}
+  let b=null,i=-1;for(const x of G.bodies[p.loc]){const j=x.items.findIndex(it=>it.uid===arg);if(j>=0){b=x;i=j;break;}}
+  if(!b)return false;const it=b.items[i],d=IT[it.id],who=G.c[b.v].name;
+  if(cmd==='take'){if(!bagHasRoom(me,it))return false;b.items.splice(i,1);addToBag(me,it);ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} 챙겼다.`);return true;}
+  if(cmd==='equip'&&SLOT[d.k]){if(d.k==='b'&&!canEquipBag(me,it))return false;
+    b.items.splice(i,1);const tail=wearFrom(G,me,it);
+    ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} ${WEARV[d.k]}.${tail}`);return true;}
+  return false;
+}
+function resolve(G,choice){
+  const p=G.pending;if(!p||G.phase!=='pending')return;
+  if(p.type==='combat'){combatAct(G,choice);return;}
+  G.pending=null;G.phase='act';
+  const me=G.c[0];
+  if(p.type==='find'||p.type==='loot'||p.type==='body'){
+    if(p.type!=='body')pickUp(G,p,choice);
+    proceed(G);
+    return;
+  }
+  const n=G.c[p.who];
+  if(p.type==='meet'){
+    if(choice==='attack'){fight(G,me,n,{ambush:true,head:`${JS.eul(n.name)} 기습했다.`});}
+    else if(choice==='talk'){
+      if(npcDecide(G,n,me)==='attack'&&R()<.6){fight(G,n,me,{ambush:false,head:`말을 꺼내기도 전에 ${JS.i(n.name)} 달려들었다!`});}
+      else talk(G,me,n);
+    }else{ev(G,'seen','meet',`숨을 죽이고 ${n.name}에게서 멀어졌다.`);}
+  }else if(p.type==='propose'){
+    if(choice==='yes'){me.comp=n.id;n.comp=0;ev(G,'seen','pair',`${JS.wa(n.name)} 함께 다니기로 했다.`,{imp:1});changeRel(G,n,me,5,5);changeRel(G,me,n,5,5);}
+    else{changeRel(G,n,me,-6,4);ev(G,'seen','meet',`${JS.i(n.name)} 조금 서운한 얼굴로 돌아섰다.`);}
+  }
+  proceed(G);
+}
+function companionChecks(G){
+  const me=G.c[0];const n=aliveCount(G);
+  if(me.alive&&me.comp!=null){const m=G.c[me.comp];
+    if(!m.alive){me.comp=null;}
+    else{changeRel(G,m,me,1,1);const r=rel(G,m,me);
+      if(n===2&&m.transfer!=='helper'){me.comp=null;m.comp=null;ev(G,'seen','pair',`이제 ${JS.wa(m.name)} 나, 둘만 남았다. ${JS.i(m.name)} 조용히 손을 놓았다.`,{q:PARTING[m.pers],imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}
+      else{let b=PERS[m.pers].betray*(n<=4?2.5:1)*(r.like<40?1.6:r.like>=70?.1:.6)*.07;if(r.tag==='crush')b*=.2;if(m.transfer==='helper')b=0;if(m.transfer==='hunter')b*=4;
+        if(R()<b){me.comp=null;m.comp=null;know(G,m.id,0);fight(G,m,me,{ambush:true,head:`${JS.i(m.name)} 등 뒤에서 나를 노렸다!`,q:BETRAY[m.pers]||'…미안해.'});if(G.phase!=='act')return;}
+        else if(r.like<15){me.comp=null;m.comp=null;ev(G,'seen','pair',`${JS.i(m.name)} 말없이 떠났다.`,{imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}}}
+  }
+  for(const a of G.c){if(!a.alive||a.me||a.comp==null||a.comp===0||a.id>a.comp)continue;const b=G.c[a.comp];if(!b.alive){a.comp=null;continue;}
+    for(const[x,y]of[[a,b],[b,a]]){const r=rel(G,x,y);let p=PERS[x.pers].betray*(n<=4?2.5:1)*(r.like<40?1.6:r.like>=70?.1:.6)*.07;if(r.tag==='crush')p*=.2;
+      if(R()<p){x.comp=null;y.comp=null;fight(G,x,y,{ambush:true,head:`${JS.i(x.name)} ${JS.eul(y.name)} 배신했다.`,q:BETRAY[x.pers]});break;}
+      if(n===2){x.comp=null;y.comp=null;break;}}
+  }
+}
+function finishTurn(G){
+  noticeBodies(G);
+  G.t++;
+  G.stage='finishRest';G.inFinish=true;companionChecks(G);G.inFinish=false;
+  if(G.phase==='pending')return;
+  G.stage=null;
+  if(checkEnd(G))return;
+  finishTurnRest(G);
+}
+function finishTurnRest(G){
+  G.stage=null;
+  const me=G.c[0];
+  if(G.rescueT!=null&&me.alive&&G.t>=G.rescueT+4){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
+    ev(G,'seen','heart','안개를 가르고 배 한 척이 다가왔다. 아직 숨이 붙어 있던 모두가 그 배에 올랐다.',{imp:1});return;}
+  if(G.t%BCAST===0)broadcast(G);
+  checkEnd(G);
+}
+/* 금지구역 고르기: 남은 구역이 끊어지지 않게, 숨겨진 마지막 구역에서 먼 칸부터 */
+function compCount(cells){const set=new Set(cells),seen=new Set();let k=0;
+  for(const s of cells){if(seen.has(s))continue;k++;seen.add(s);const q=[s];while(q.length){const c=q.pop();for(const n of neighbors(c))if(set.has(n)&&!seen.has(n)){seen.add(n);q.push(n);}}}return k;}
+function chooseClosures(G,k){
+  const open=[...Array(16).keys()].filter(i=>G.zones[i]===0);
+  if(open.length<=1)return [];
+  if(G.finalZone==null||G.zones[G.finalZone]!==0)G.finalZone=pick(open);
+  const fz=G.finalZone,base=compCount(open);
+  const cands=open.filter(i=>i!==fz).map(i=>({i,w:dist(i,fz)+R()*1.6})).sort((a,b)=>b.w-a.w).map(x=>x.i);
+  const chosen=[];
+  for(const i of cands){if(chosen.length>=k)break;
+    const rest=open.filter(x=>x!==i&&!chosen.includes(x));if(!rest.length)break;
+    if(compCount(rest)<=base)chosen.push(i);}
+  return chosen;
+}
+function broadcast(G){
+  const closed=[];
+  G.zones.forEach((z,i)=>{if(z===1){G.zones[i]=2;closed.push(i);}});
+  for(const c of G.c)if(c.alive&&G.zones[c.loc]===2)kill(G,c,null,'band');
+  let stale=G.t-G.lastDeathT,wipe=false,warn=false;
+  if(stale>=30&&G.t>=36){wipe=true;
+    const last=G.c.filter(c=>c.alive);
+    if(last.length===2&&G.rel[last[0].id][last[1].id][0]>=30&&G.rel[last[1].id][last[0].id][0]>=30){
+      G.pact=[last[0].id,last[1].id];
+      ev(G,last.some(c=>c.me)?'seen':'hidden','heart',`${JS.wa(nm(last[0]))} ${JS.eun(nm(last[1]))} 끝까지 서로에게 손을 들지 않았다.`,{imp:1});}
+    for(const c of G.c)if(c.alive)kill(G,c,null,'band');}
+  else if(stale>=18&&G.t>=24)warn=true;
+  const dead=G.deathsSince.slice();G.deathsSince=[];
+  const openN=G.zones.filter(z=>z===0).length;
+  const next=chooseClosures(G,openN>3?2:1);next.forEach(i=>G.zones[i]=1);
+  ev(G,'radio','radio','',{imp:1,data:{time:clock(G.t).hm,closed,next,dead,alive:aliveCount(G),warn,wipe}});
+  const me=G.c[0];
+  if(me.alive)for(const id of dead){const v=G.c[id];if(G.rel[0][id][0]>=40||G.rel[0][id][2]==='crush'||G.rel[0][id][2]==='bestie')ev(G,'seen','inner',`${v.name}의 이름이 불렸다. 숨이 잘 쉬어지지 않는다.`,{imp:1});}
+}
+function checkEnd(G){
+  if(G.phase==='end')return true;
+  const alive=G.c.filter(c=>c.alive);const me=G.c[0];
+  if(me.alive&&alive.length===1){G.result={type:'win',winner:0};G.phase='end';G.pending=null;ev(G,'seen','heart','섬에 남은 건 나 하나뿐이다. 손목의 밴드가 딸깍, 하고 풀렸다.',{imp:1});return true;}
+  if(!me.alive){
+    if(alive.length<=1){G.result=alive.length?{type:'npc',winner:alive[0].id}:{type:'none',pact:G.pact||null};if(G.phase!=='dead')G.phase='end';}
+    else if(G.phase!=='dead'&&G.phase!=='end')G.phase='dead';
+    return true;
+  }
+  return G.phase==='dead';
+}
+function runToEnd(G){
+  if(G.c[0].alive)return;
+  let guard=0;
+  while(!G.result&&guard++<500){
+    resetFlags(G);npcPhase(G);
+    if(aliveCount(G)<=1){checkEnd(G);break;}
+    encounterPhase(G);
+    if(aliveCount(G)<=1){checkEnd(G);break;}
+    G.t++;companionChecks(G);
+    if(G.t%BCAST===0)broadcast(G);
+    if(aliveCount(G)<=1)checkEnd(G);
+  }
+  if(!G.result){G.result={type:'none',pact:G.pact||null};}
+  G.phase='end';
+}
+
+/* ----- 내 물건 ----- */
+function itemOp(G,op,idx,arg){
+  if(G.phase!=='act')return false;
+  const me=G.c[0];
+  const fits=(removed,added)=>slotsOf(me.inv.filter(x=>!removed.includes(x)).concat(added))<=capOf(me);
+  if(op==='unequip'){const slot=idx;const it=me[slot];if(!it)return false;
+    if(slot==='bag'){if(slotsOf([...me.inv,it])>INV_MAX)return false;}else if(!bagHasRoom(me,it))return false;
+    me[slot]=null;addToBag(me,it);return true;}
+  if(op==='split'||op==='craft'){
+    const get=r=>r==='wep'?me.wep:me.inv[+r];
+    const rm=refs=>{refs.filter(r=>r!=='wep').map(Number).sort((x,y)=>y-x).forEach(i=>me.inv.splice(i,1));if(refs.includes('wep'))me.wep=null;};
+    const A=get(idx);if(!A)return false;
+    if(op==='split'){const outs=SPLIT[A.id];if(!outs)return false;const made=outs.map(o=>mkItem(o));
+      if(!fits(idx==='wep'?[]:[A],made))return false;
+      rm([idx]);made.forEach(x=>addToBag(me,x));ev(G,'seen','find',SPLIT_T[A.id]);return true;}
+    const B=get(arg);if(!B||A===B)return false;const out=recipeFor(A.id,B.id);if(!out)return false;
+    if(out==='sharpen'){const w=IT[A.id].k==='w'?A:B;const ws=w===A?arg:idx;if((w.b||0)>=10)return false;
+      w.b=(w.b||0)+5;rm([ws]);ev(G,'seen','find',`숫돌에 ${IT[w.id].n}의 날을 세웠다. 공격 +5.`);return true;}
+    const eq=idx==='wep'||arg==='wep';const n=mkItem(out);const toHand=eq&&IT[out].k==='w';
+    if(!toHand&&!fits([A,B],[n]))return false;
+    rm([idx,arg]);if(toHand&&!me.wep)me.wep=n;else addToBag(me,n);
+    ev(G,'seen','find',`${JS.wa(IT[A.id].n)} ${JS.eul(IT[B.id].n)} 합쳐 ${JS.eul(IT[out].n)} 만들었다.`,{imp:1});return true;
+  }
+  const it=me.inv[idx];if(!it)return false;const d=IT[it.id];
+  if(op==='drop'){me.inv.splice(idx,1);G.pool[me.loc].push(it);ev(G,'seen','find',`${JS.eul(d.n)} ${AREAS[me.loc].n}에 내려놓았다.`);return true;}
+  if(op==='equip'){
+    const slot=SLOT[d.k];if(!slot)return false;
+    if(d.k==='b'&&!canEquipBag(me,it))return false;
+    const old=me[slot];me.inv.splice(idx,1);me[slot]=it;if(old)addToBag(me,old);return true;}
+  if(op==='use'){
+    if(d.k==='f'||d.k==='h'){consume(G,me,idx);checkEnd(G);return true;}
+    if(d.trap){if(G.zones[me.loc]===2)return false;me.inv.splice(idx,1);G.traps[me.loc].push({by:0,dmg:d.trap});ev(G,'seen','find',`${AREAS[me.loc].n}에 ${JS.eul(d.n)} 숨겨 두었다.`);return true;}
+    if(it.id==='poison'){const t=me.inv[arg];if(!t||t===it)return false;const td=IT[t.id];if(td.k!=='f'&&td.k!=='h')return false;
+      const ghost={...t,pk:1};if(!fits([it,t],[ghost]))return false;
+      t.p=1;t.by=0;t.pk=1;me.inv.splice(idx,1);ev(G,'seen','find',`${JS.eul(td.n)} 쥐약을 섞었다. 겉으로는 티가 나지 않는다.`);return true;}
+    if(d.k==='p'){if(!canFix(me))return false;['radio','battery','wire'].forEach(id=>{const i=me.inv.findIndex(x=>x.id===id);if(i>=0&&(id!=='wire'||me.club!=='broadcast'))me.inv.splice(i,1);});me.inv.push(mkItem('fixedradio'));ev(G,'seen','heart',me.club==='broadcast'?'방송부에서 만지던 솜씨로 무전기를 살려냈다. 치직, 잡음이 들린다.':'건전지를 넣고 구리선을 이어 붙였다. 치직, 무전기에서 잡음이 들린다.',{imp:1});return true;}
+    if(it.id==='fixedradio'){if(me.loc!==1||G.zones[1]===2||G.rescueT!=null)return false;me.inv.splice(idx,1);G.rescueT=G.t;ev(G,'seen','heart','등대 꼭대기에서 무전을 보냈다. 한참 뒤, 낯선 목소리가 대답했다. "두 시간만 버텨요. 지금 갑니다."',{imp:1});return true;}
+  }
+  return false;
+}
+function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!has('battery'))return false;return me.club==='broadcast'||has('wire');}
+function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
+function dismiss(G){const me=G.c[0];if(me.comp==null||G.phase!=='act')return;const m=G.c[me.comp];me.comp=null;m.comp=null;changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
+
+root.MO={newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+  BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
+  recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
+  AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+
+<script>
+(function(){
+'use strict';
+const M=window.MO;const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let G=null;let tab='log';let pickMode=null;
+const SAVE_KEY='last-roll-call/save-v1';
+
+/* ---------- 저장 ---------- */
+let localSave=null,cloudSave=null,dbRef=null,saveTimer=null,saving=false,dirty=false;
+try{const s=localStorage.getItem(SAVE_KEY);if(s)localSave=JSON.parse(s);}catch(e){}
+const bytes=s=>{try{return new TextEncoder().encode(s).length;}catch(e){return s.length*3;}};
+function packState(){let g=G;let json=JSON.stringify(g);const LIM=170000;
+  if(bytes(json)>LIM){g=JSON.parse(json);g.log=g.log.filter(e=>e.imp||e.v!=='hidden');json=JSON.stringify(g);}
+  if(bytes(json)>LIM){g.log.forEach((e,i)=>{if(i<g.log.length-60)delete e.lines;});json=JSON.stringify(g);}
+  if(bytes(json)>LIM){g.log=g.log.filter(e=>e.imp).slice(-250);json=JSON.stringify(g);}
+  return {savedAt:Date.now(),json};}
+function saveSoon(){if(!G)return;dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,700);}
+async function flushSave(){
+  if(!G||!dirty)return;dirty=false;const pk=packState();localSave=pk;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(pk));}catch(e){}
+  if(!dbRef||saving){if(saving)dirty=true;return;}
+  saving=true;try{await dbRef.set(pk);}catch(e){}saving=false;
+  if(dirty){clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,700);}
+}
+(async()=>{try{
+  if(!window.claude||!window.claude.use)return;
+  const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+  if(!db||!user)return;const id=await user.id();if(!id)return;
+  dbRef=db.doc('data/users/'+id+'/save');
+  const snap=await dbRef.get();
+  if(snap.exists){const d=snap.data();if(d&&d.json&&(!localSave||d.savedAt>localSave.savedAt)){cloudSave={savedAt:d.savedAt,json:d.json};if(!G)renderTitle();}}
+}catch(e){}})();
+function bestSave(){const a=localSave,b=cloudSave;if(a&&b)return a.savedAt>=b.savedAt?a:b;return a||b;}
+
+/* ---------- 화면 전환 ---------- */
+const SCR=['scr-title','scr-make','scr-reveal','scr-game','scr-end'];
+function show(id){SCR.forEach(s=>$(s).hidden=s!==id);window.scrollTo({top:0});}
+
+function renderTitle(){
+  const s=bestSave();let g=null;try{g=s?JSON.parse(s.json):null;}catch(e){}
+  const btn=$('btn-cont'),info=$('cont-info');
+  if(g){btn.hidden=false;info.hidden=false;const me=g.c[0];
+    if(g.phase==='end'){btn.textContent='지난 판 결과 보기';info.textContent=`${me.name} · 지난 판이 끝났어요.`;}
+    else{btn.textContent='이어하기';info.textContent=`${me.name} · ${M.clock(g.t).s} · 남은 인원 ${g.c.filter(c=>c.alive).length}명`;}}
+  else{btn.hidden=true;info.hidden=true;}
+  $('confirm-new').hidden=true;
+}
+$('btn-new').onclick=()=>{if(bestSave()){const g=JSON.parse(bestSave().json);if(g.phase!=='end'){$('confirm-new').hidden=false;$('btn-new-yes').focus();return;}}openMake();};
+$('btn-new-yes').onclick=()=>openMake();
+$('btn-new-no').onclick=()=>{$('confirm-new').hidden=true;};
+$('btn-cont').onclick=()=>{const s=bestSave();if(!s)return;try{G=M.migrate(JSON.parse(s.json));}catch(e){return;}enterGame();};
+$('btn-make-back').onclick=()=>{show('scr-title');renderTitle();};
+$('btn-home').onclick=()=>{flushSave();G=null;show('scr-title');renderTitle();};
+
+/* ---------- 출석부에 이름 쓰기 ---------- */
+const PREF_KEY='last-roll-call/me-v1';
+function loadPref(){try{return JSON.parse(localStorage.getItem(PREF_KEY))||{};}catch(e){return {};}}
+function savePref(p){try{localStorage.setItem(PREF_KEY,JSON.stringify(p));}catch(e){}}
+const RAND={v:'random',n:'랜덤',d:'출석하는 순간 정해져요'};
+function cardGrid(id,name,opts,sel){
+  if(!opts.some(o=>o.v===sel))sel='random';
+  $(id).innerHTML=opts.map(o=>`<div class="pers ${o.v==='random'?'rand':''}"><input type="radio" name="${name}" id="${name}-${o.v}" value="${o.v}" ${o.v===sel?'checked':''}><label for="${name}-${o.v}"><b>${esc(o.n)}</b><span>${esc(o.d)}</span></label></div>`).join('');}
+function segGroup(id,name,opts,sel){
+  if(!opts.some(o=>o.v===sel))sel=opts[0].v;
+  $(id).innerHTML=opts.map(o=>`<label><input type="radio" name="${name}" value="${o.v}" ${o.v===sel?'checked':''}><span>${esc(o.n)}</span></label>`).join('');}
+function openMake(){
+  const p=loadPref();
+  $('in-name').value=p.name||'';$('in-bio').value=p.bio||'';$('in-line').value=p.line||'';$('in-will').value=p.will||'';
+  cardGrid('pers-grid','pers',[...M.PK.map(k=>({v:k,n:M.PERS[k].n,d:M.PERS[k].d})),RAND],p.pers||'random');
+  cardGrid('club-grid','club',[...Object.keys(M.CLUBS).map(k=>({v:k,n:M.CLUBS[k].n,d:M.CLUBS[k].d})),RAND],p.club||'random');
+  cardGrid('build-grid','build',[...Object.keys(M.BUILDS).map(k=>({v:k,n:M.BUILDS[k].n,d:M.BUILDS[k].d})),RAND],p.build||'random');
+  const YNR=[{v:'yes',n:'있음'},{v:'no',n:'없음'},{v:'random',n:'랜덤'}];
+  segGroup('seg-bestie','bestie',YNR,p.bestie||'yes');
+  segGroup('seg-admirer','admirer',[YNR[2],YNR[0],YNR[1]],p.admirer||'random');
+  segGroup('seg-hater','hater',[YNR[2],YNR[0],YNR[1]],p.hater||'random');
+  show('scr-make');$('in-name').focus();
+}
+$('btn-randname').onclick=()=>{$('in-name').value=M.randomName();};
+$('btn-allrand').onclick=()=>{
+  ['pers','club','build','bestie','admirer','hater'].forEach(n=>{const r=document.querySelector(`input[name=${n}][value=random]`);if(r)r.checked=true;});
+  if(!$('in-name').value.trim())$('in-name').value=M.randomName();
+};
+$('make-form').addEventListener('submit',e=>{
+  e.preventDefault();const name=$('in-name').value.trim().replace(/\s+/g,'');if(!name){$('in-name').focus();return;}
+  const val=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value||'random';
+  const o={name,bio:$('in-bio').value.trim(),pers:val('pers'),club:val('club'),build:val('build'),
+    bestie:val('bestie'),admirer:val('admirer'),hater:val('hater'),line:$('in-line').value.trim(),will:$('in-will').value.trim()};
+  savePref(o);
+  G=M.newGame(o);
+  saveSoon();renderReveal();
+});
+function renderReveal(){
+  const me=G.c[0],f=G.bestie!=null?G.c[G.bestie]:null;
+  const items=[me.wep?M.IT[me.wep.id].n:'맨손',...me.inv.map(it=>M.IT[it.id].n)].join(', ');
+  const b=me.build&&M.BUILDS[me.build];
+  const hints=[];if(G.hints&&G.hints.admirer)hints.push('반 어딘가에 나를 몰래 좋아하는 애가 있다. 누군지는 모른다.');
+  if(G.hints&&G.hints.hater)hints.push('반 어딘가에 나를 미워하는 애가 있다. 누군지는 모른다.');
+  $('idcard').innerHTML=`
+   <div class="top"><span class="no">출석번호 ${me.no}번</span><h3>${esc(me.name)}</h3></div>
+   ${me.bio?`<p class="muted" style="margin:0">${esc(me.bio)}</p>`:''}
+   <dl class="kvs">
+    <dt>성격</dt><dd>${M.PERS[me.pers].n} <span class="muted">· ${M.PERS[me.pers].d}</span></dd>
+    <dt>부서</dt><dd>${M.CLUBS[me.club].n} <span class="muted">· ${M.CLUBS[me.club].d}</span></dd>
+    ${b?`<dt>몸</dt><dd>${b.n} <span class="muted">· 체력 ${me.mhp} · 스태미나 ${me.mst} · 공격 ${me.atk} · 방어 ${me.def}</span></dd>`:''}
+    <dt>시작 소지품</dt><dd>${esc(items)}, 교복</dd>
+    <dt>단짝</dt><dd>${f?`<b>${esc(f.name)}</b> <span class="muted">· ${M.CLUBS[f.club].n}</span>`:'<span class="muted">없음</span>'}</dd>
+    ${G.c.filter(c=>!c.me&&M.isCouple(G,0,c.id)).map(c=>`<dt>연인</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}</span></dd>`).join('')}
+    ${G.transferId!=null?`<dt>전입생</dt><dd><b>${esc(G.c[G.transferId].name)}</b> <span class="muted">· 작년 이 게임의 우승자라는 소문이 있다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
+    ${hints.length?`<dt>예감</dt><dd>${hints.map(esc).join('<br>')}</dd>`:''}
+    ${G.facts.length?`<dt>반 애들이 다 아는 사이</dt><dd>${G.facts.map(esc).join('<br>')}</dd>`:''}
+    ${me.line?`<dt>한마디</dt><dd class="hand">${esc(me.line)}</dd>`:''}
+   </dl>
+   <p class="muted" style="margin:0">폐교 강당은 첫 방송에서 금지구역으로 예고됐어요. 다음 방송 전에 밖으로 나가야 해요.</p>`;
+  show('scr-reveal');$('btn-go').focus();
+}
+$('btn-go').onclick=()=>enterGame();
+
+/* ---------- 게임 화면 ---------- */
+function enterGame(){
+  if(G.phase==='end'){renderEnd();return;}
+  show('scr-game');pickMode=null;renderGame();
+  if(G.phase==='pending'||G.phase==='dead')openModal();
+}
+function doAct(a){if(!G||G.phase!=='act')return;pickMode=null;M.act(G,a);after(true);}
+/* turn: 시간이 흐른 행동 뒤에만 방금 일어난 일 쪽으로 살짝 내려 준다. 가방 조작은 화면을 그대로 둔다. */
+function after(turn){saveSoon();renderGame();if(G.phase==='pending'||G.phase==='dead')openModal();else if(G.phase==='end'){closeModal();renderEnd();}
+  else if(turn===true){const l=$('latest');if(l&&window.matchMedia('(max-width: 860px)').matches){const r=l.getBoundingClientRect();if(r.top>window.innerHeight*.85)l.scrollIntoView({block:'nearest',behavior:'smooth'});}}}
+$('act-search').onclick=()=>doAct({type:'search'});
+$('act-rest').onclick=()=>doAct({type:'rest'});
+$('act-loot').onclick=()=>doAct({type:'loot'});
+$('act-chat').onclick=()=>doAct({type:'chat'});
+$('act-escape').onclick=()=>doAct({type:'escape'});
+['log','roster','rel'].forEach(k=>{$('tab-'+k).onclick=()=>{tab=k;renderTabs();};});
+
+function hpWord(c){const r=c.hp/c.mhp;return r>.75?'정상':r>.45?'경상':r>.2?'중상':'빈사';}
+function tagChip(t){return `<span class="tg tg-${t||'none'}">${M.TAGN[t||'']}</span>`;}
+function renderGame(){
+  const me=G.c[0];const ck=M.clock(G.t);
+  $('h-clock').textContent=ck.s;$('h-alive').textContent=G.c.filter(c=>c.alive).length+'명';
+  $('h-next').textContent=M.turnsToBcast(G)+'턴';
+  const hr=$('h-rescue');if(G.rescueT!=null&&!G.result){hr.hidden=false;hr.textContent=`구조선까지 ${Math.max(0,G.rescueT+4-G.t)}턴`;}else hr.hidden=true;
+  renderStatus();renderMap();renderLatest();renderInv();renderTabs();renderDock();
+  const can=G.phase==='act'&&me.alive;$('act-search').disabled=!can;$('act-rest').disabled=!can;
+  const bs=M.bodiesAt(G,me.loc);const lb=$('act-loot');lb.hidden=!(me.alive&&bs.length);lb.disabled=!can;
+  lb.title=bs.map(b=>G.c[b.v].name).join(', ');
+  const comp=me.comp!=null?G.c[me.comp]:null;const cb=$('act-chat');cb.hidden=!(me.alive&&comp&&comp.alive&&comp.loc===me.loc);cb.disabled=!can;
+  const eb=$('act-escape');eb.hidden=!M.canEscape(G);eb.disabled=!can;
+  if(comp)cb.title=`${M.JS.wa(comp.name)} 쉬면서 이야기해요. 쉬기만큼 회복하고 서로 가까워져요.`;
+}
+function renderDock(){
+  const me=G.c[0];const hp=Math.max(0,me.hp),st=Math.max(0,me.st);
+  const hpP=hp/me.mhp*100,stP=st/me.mst*100;const z=G.zones[me.loc];
+  $('dock-info').innerHTML=`<span class="dloc">${M.AREAS[me.loc].n}</span>
+   <span class="dmeter">체력 <span class="mt"><span class="${hpP<35?'low':''}" style="width:${hpP}%"></span></span><b>${hp}</b></span>
+   <span class="dmeter">스태미나 <span class="mt"><span class="st" style="width:${stP}%"></span></span><b>${st}</b></span>
+   ${z===1?`<span class="dwarn">${M.turnsToBcast(G)}턴 뒤 닫힘</span>`:''}`;
+}
+function renderStatus(){
+  const me=G.c[0];const w=M.wepInfo(me);const ar=me.arm?M.IT[me.arm.id]:null;
+  const injs=Object.keys(me.inj).filter(k=>me.inj[k]).map(k=>`<span class="chip inj">${M.INJN[k]} 부상</span>`).join('');
+  const hpP=Math.max(0,me.hp/me.mhp*100),stP=Math.max(0,me.st/me.mst*100);
+  const z=G.zones[me.loc],left=M.turnsToBcast(G);
+  let warn='';
+  if(z===1)warn=`<div class="alert">${M.JS.eun(M.AREAS[me.loc].n)} 다음 방송 때 닫혀요. <b>${left}턴</b> 안에 다른 칸으로 옮겨야 해요.</div>`;
+  const comp=me.comp!=null?G.c[me.comp]:null;
+  const wd=me.wep?M.IT[me.wep.id]:null;
+  $('status').innerHTML=`
+   <div class="me-top"><span class="mono muted">${me.no}번</span><b>${esc(me.name)}</b><span class="chips"><span class="chip">${M.CLUBS[me.club].n}</span><span class="chip">${M.PERS[me.pers].n}</span>${me.build&&M.BUILDS[me.build]?`<span class="chip">${M.BUILDS[me.build].n}</span>`:''}<span class="chip">Lv ${me.lv}</span>${injs}</span></div>
+   <div class="meters">
+    <div class="meter"><span>체력</span><span class="track"><span class="fill ${hpP<35?'hp-low':''}" style="width:${hpP}%"></span></span><span class="v">${Math.max(0,me.hp)} / ${me.mhp}</span></div>
+    <div class="meter"><span>스태미나</span><span class="track"><span class="fill st" style="width:${stP}%"></span></span><span class="v">${Math.max(0,me.st)} / ${me.mst}</span></div>
+   </div>
+   <div class="equip">
+    <div><span class="k">무기</span>${esc(w.name)}${me.wep&&me.wep.b?` <span class="bonus">+${me.wep.b}</span>`:''} <span class="muted mono">공격 ${w.atk}${wd&&wd.uses?` · 남은 ${me.wep.u}`:''} · ${M.TYPEN[w.t]} 숙련 ${M.skLv(me,w.t)}</span></div>
+    <div><span class="k">옷</span>${ar?`${ar.n} <span class="muted mono">방어 ${ar.def} · 내구 ${me.arm.d}</span>`:'<span class="muted">없음</span>'}</div>
+    <div><span class="k">보호구</span>${me.gear?`${M.IT[me.gear.id].n} <span class="muted mono">방어 ${M.IT[me.gear.id].def} · ${M.PROTN[M.IT[me.gear.id].prot]} 보호 · 내구 ${me.gear.d}</span>`:'<span class="muted">없음</span>'}</div>
+    <div><span class="k">가방</span>${me.bag?`${M.IT[me.bag.id].n} <span class="muted mono">칸 +${M.IT[me.bag.id].cap}</span>`:'<span class="muted">없음 (기본 6칸)</span>'}</div>
+    <div><span class="k">기본</span><span class="mono">공격 ${me.atk} · 방어 ${me.def}</span> <span class="muted">· 지금 ${M.AREAS[me.loc].n}</span></div>
+   </div>
+   ${warn?`<div style="margin-top:10px">${warn}</div>`:''}
+   ${escBox()}
+   ${comp?`<div class="comp"><span>동행</span><b>${esc(comp.name)}</b>${tagChip(G.rel[0][comp.id][2])}<span class="muted mono">${hpWord(comp)}</span><span style="flex:1"></span><button class="btn small" type="button" id="btn-dismiss" ${G.phase!=='act'?'disabled':''}>따로 움직이기</button></div>`:''}`;
+  const bd=$('btn-dismiss');if(bd)bd.onclick=()=>{M.dismiss(G);after();};
+}
+function escBox(){
+  if(!G.escapeKnown||G.transferId==null)return '';const me=G.c[0],h=G.c[G.transferId];
+  if(!h.alive)return `<div class="escbox"><b>탈출</b><span class="no">${esc(M.JS.i(h.name))} 쓰러져 탈출할 길이 사라졌다.</span></div>`;
+  const ck=(ok,t)=>`<span class="${ok?'ok':'no'}">${ok?'준비됨':'아직'} · ${t}</span>`;
+  return `<div class="escbox"><b>${esc(M.JS.wa(h.name))} 함께 탈출</b>
+    ${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(me.comp===h.id,`${esc(h.name)} 동행`)}${ck(M.ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2,'선착장이나 방파제에 있기')}</div>`;
+}
+function renderMap(){
+  const me=G.c[0];const adj=M.neighbors(me.loc);const radar=me.inv.some(it=>it.id==='radar');
+  const counts={};if(radar)for(const c of G.c)if(c.alive&&!c.me)counts[c.loc]=(counts[c.loc]||0)+1;
+  $('map').innerHTML=M.AREAS.map((a,i)=>{
+    const z=G.zones[i],here=i===me.loc,isAdj=adj.includes(i)&&z!==2&&G.phase==='act'&&me.alive;
+    const zt=z===2?'금지구역':z===1?'다음 방송 때 금지':'';
+    const comp=me.comp!=null&&G.c[me.comp].loc===i&&!here;
+    const label=`${a.n}${here?', 지금 있는 곳':''}${zt?', '+zt:''}${isAdj?', 누르면 이동':''}`;
+    return `<button type="button" class="tile z${z} ${here?'here':''} ${isAdj?'adj':''}" data-i="${i}" aria-label="${label}" ${isAdj?'':'aria-disabled="true"'}>
+      <span class="tn">${a.n}</span><span class="tm">${M.areaMods(a).join(' · ')}</span>${zt?`<span class="tz">${z===2?'금지':'예고'}</span>`:''}
+      ${here?'<span class="you" aria-hidden="true">나</span>':''}${radar&&counts[i]?`<span class="cnt" aria-label="${counts[i]}명">${counts[i]}</span>`:''}
+      ${comp?'<span class="cnt" style="left:6px;right:auto;color:var(--heart)">동행</span>':''}</button>`;}).join('');
+  $('map').querySelectorAll('.tile.adj').forEach(b=>b.onclick=()=>doAct({type:'move',to:+b.dataset.i}));
+  const cost=Math.round(10*(me.club==='track'?.6:1)*(me.inj.leg?1.5:1));
+  $('maphint').textContent=`테두리가 진한 칸을 누르면 이동해요 (스태미나 -${cost}).`+(radar?' 레이더 덕분에 칸마다 사람 수가 보여요.':'');
+}
+function radioHTML(e){
+  const d=e.data,A=M.AREAS,names=ids=>ids.map(i=>A[i].n).join(', ');
+  const dead=d.dead.map(id=>G.c[id].name).join(', ');
+  if(d.first)return `<div class="radio"><div class="rh"><span class="stamp">방송</span><span class="mono">${d.time}</span></div>
+   <p style="margin:6px 0 0">"안녕하신가, 2학년 3반. 규칙은 하나다. 마지막 한 명만 섬을 떠난다. 네 시간마다 방송으로 닫히는 구역을 알려 주지. 닫힌 구역에 남은 사람의 밴드는 울린다."</p>
+   ${d.transfer!=null&&G.c[d.transfer]?`<p style="margin:6px 0 0">"그리고 이번 판에는 전입생이 하나 있다. ${esc(G.c[d.transfer].name)}. 작년 이 섬을 기억하는 녀석이지."</p>`:''}
+   <dl><dt>다음 방송에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd></dl></div>`;
+  return `<div class="radio"><div class="rh"><span class="stamp">방송</span><span class="mono">${d.time}</span><span class="muted" style="font-family:var(--f-body);font-weight:400;font-size:13px">남은 인원 ${d.alive}명</span></div>
+   <dl>${d.closed.length?`<dt>지금부터 금지</dt><dd class="r-red">${names(d.closed)}</dd>`:''}
+   <dt>떠난 친구들</dt><dd>${dead?esc(dead):'없음'}</dd>
+   ${d.next.length?`<dt>다음에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd>`:'<dt>다음에 닫힘</dt><dd class="muted">더 닫을 곳이 없다</dd>'}</dl>
+   ${d.warn?'<p style="margin:6px 0 0" class="r-red">"너무 조용하군. 다음 방송 전까지 아무도 떠나지 않으면, 남은 모두의 밴드가 울린다."</p>':''}
+   ${d.wipe?'<p style="margin:6px 0 0" class="r-red">"약속은 지켰다."</p>':''}</div>`;
+}
+function evHTML(e,showTime){
+  if(e.c==='radio')return radioHTML(e);
+  const tm=showTime?`<span class="tm">${M.clock(e.t).hm}</span>`:'<span class="tm"></span>';
+  return `<div class="ev ${e.c}">${tm}<div class="tx">${esc(e.x)}${e.tier?`<span class="tier">· ${M.TIERN[e.tier]}</span>`:''}${e.q?`<span class="q">${/^\(/.test(e.q)?esc(e.q):`“${esc(e.q)}”`}</span>`:''}${e.lines?`<details ${e.lines.length<=4?'open':''}><summary>주고받은 공격 ${e.lines.length}줄</summary><ul>${e.lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul></details>`:''}</div></div>`;
+}
+const visible=e=>e.v!=='hidden';
+function renderLatest(){
+  const list=G.log.filter(e=>e.n>=G.turnStart&&visible(e));
+  $('latest').innerHTML=`<h3>방금 일어난 일 <span class="label">${M.clock(G.t).hm}</span></h3><div class="feed">${list.length?list.map(e=>evHTML(e,false)).join(''):'<p class="empty">이동하거나, 둘러보거나, 쉬면 시간이 흘러요.</p>'}</div>`;
+}
+const MAT_DESC={nail:'각목이나 야구방망이에 박으면 무기가 세진다',whetstone:'베는 무기의 날을 세운다 (공격 +5, 두 번까지)',powder:'유리병에 채우면 화약병이 된다',tape:'유리조각을 감으면 유리 너클이 된다'};
+function itemMeta(it){const d=M.IT[it.id];
+  if(d.k==='w')return `${M.TYPEN[d.t]} · 공격 ${d.atk}${it.b?`+${it.b}`:''}${d.uses?` · 남은 ${it.u}`:''}`;
+  if(d.k==='m')return MAT_DESC[it.id]||'무언가와 합칠 수 있다';
+  if(it.id==='glass')return `숨겨 두면 밟은 사람이 다친다 · ${d.trap} 피해 · 올무나 청테이프와 합칠 수 있다`;
+  if(d.k==='a')return `옷 · 방어 ${d.def} · 내구 ${it.d}`;
+  if(d.k==='g')return `보호구 · 방어 ${d.def} · ${M.PROTN[d.prot]} 부상을 막는다 · 내구 ${it.d}`;
+  if(d.k==='b')return `가방 · 칸 +${d.cap}`;
+  if(d.k==='f')return `스태미나 +${d.st}`;
+  if(d.k==='h')return `체력 +${d.hp}${d.cure===1?' · 부상 하나 치료':d.cure?' · 부상 모두 치료':''}`;
+  if(d.trap)return `숨겨 두면 지나가는 사람이 걸린다 · ${d.trap} 피해`;
+  if(it.id==='radar')return '가지고 있으면 지도에 사람 수가 보인다';
+  if(it.id==='poison')return '먹을 것이나 약에 섞을 수 있다';
+  if(it.id==='fixedradio')return '등대에서 쓰면 구조를 부를 수 있다';
+  if(it.id==='nipper')return G&&G.escapeKnown?'밴드를 끊을 수 있다 · 전입생과 함께 선착장이나 방파제로':'철사나 전선을 끊는 공구';
+  if(d.k==='p')return '무전기를 고치는 데 쓰인다';
+  return '';}
+function renderInv(){
+  const me=G.c[0];const can=G.phase==='act'&&me.alive;
+  if(!can)pickMode=null;
+  const B=(op,ref,label,o)=>{o=o||{};return `<button class="btn small ${o.cls||''}" data-op="${op}" data-ref="${ref}" ${o.slot?`data-slot="${o.slot}"`:''} type="button" ${o.dis?'disabled':''} ${o.title?`title="${esc(o.title)}"`:''}>${label}</button>`;};
+  const partners=pickMode&&pickMode.kind==='craft'?M.craftPartners(me,pickMode.ref):[];
+  const cap=M.capOf(me),used=M.slotsOf(me.inv);
+  const splitFits=(ref,it)=>{const outs=M.SPLIT[it.id].map(id=>({id,pk:0}));const rest=ref==='wep'?me.inv:me.inv.filter(x=>x!==it);return M.slotsOf(rest.concat(outs))<=cap;};
+  const SLOTCHIP={wep:'들고 있음',arm:'입고 있음',gear:'착용 중',bag:'메고 있음'};
+  function btnsFor(g,slot){
+    const it=g.it,d=M.IT[it.id];const r=slot?slot:String(g.idx[0]);
+    if(pickMode){
+      if(pickMode.kind==='poison'){return !slot&&(d.k==='f'||d.k==='h')&&!it.p?B('mix',r,'여기에 섞기',{cls:'danger'}):'';}
+      if(!slot&&g.idx.map(String).includes(String(pickMode.ref)))return '<span class="chip">고른 것</span>';
+      if(slot==='wep'&&pickMode.ref==='wep')return '<span class="chip">고른 것</span>';
+      const refs=slot?[slot]:g.idx.map(String);const p=partners.find(x=>refs.includes(x.ref));
+      return p?B('craftwith',p.ref,`합치기 → ${p.out==='sharpen'?'날 세우기':M.IT[p.out].n}`,{cls:'primary'}):'';
+    }
+    let b='';
+    if(!slot){
+      if(d.k==='f')b+=B('use',r,'먹기');
+      if(d.k==='h')b+=B('use',r,'쓰기');
+      if(M.SLOT[d.k])b+=B('equip',r,d.k==='b'?'메기':d.k==='a'?'입기':d.k==='g'?'착용':'장착',{dis:d.k==='b'&&!M.canEquipBag(me,it),title:d.k==='b'&&!M.canEquipBag(me,it)?'이 가방으로는 지금 짐이 다 안 들어가요':''});
+      if(d.trap)b+=B('use',r,'여기 설치',{dis:G.zones[me.loc]===2});
+      if(it.id==='poison')b+=B('poison',r,'섞기');
+      if(d.k==='p'&&it.id!=='nipper')b+=B('use',r,'고치기',{dis:!M.canFix(me),title:me.club==='broadcast'?'고장난 무전기와 건전지가 필요해요':'고장난 무전기, 건전지, 구리선이 필요해요'});
+      if(it.id==='fixedradio')b+=B('use',r,me.loc===1?'구조 요청':'등대에서 쓸 수 있어요',{cls:'primary',dis:!(me.loc===1&&G.rescueT==null)});
+    }else{
+      const dis=slot==='bag'?M.slotsOf([...me.inv,it])>M.INV_MAX:!M.bagHasRoom(me,it);
+      b+=B('unequip',r,slot==='wep'?'가방에 넣기':'벗기',{slot,dis,title:dis?'가방에 자리가 없어요':''});
+    }
+    if(M.SPLIT[it.id])b+=B('split',r,'분해',{dis:!splitFits(slot?'wep':r,it)});
+    if((!slot||slot==='wep')&&M.craftPartners(me,r).length)b+=B('craft',r,'조합');
+    if(!slot)b+=B('drop',r,g.n>1?'하나 버리기':'버리기');
+    return b;
+  }
+  const row=(g,slot)=>{const it=g.it,d=M.IT[it.id];const pz=it.p&&it.pk?'<span class="tag-p">독</span>':'';
+    const chip=slot?` <span class="chip">${SLOTCHIP[slot]}</span>`:'';
+    const bonus=it.b?` <span class="bonus">+${it.b}</span>`:'';
+    const cnt=g.n>1?` <span class="stackn">x${g.n}</span>`:'';
+    const btns=can?btnsFor(g,slot):'';
+    return `<div class="item"><div class="grow"><span class="nm">${d.n}</span>${cnt}${bonus}${chip} ${pz}<div class="meta">${itemMeta(it)}</div></div>${btns?`<div class="btns">${btns}</div>`:''}</div>`;};
+  const rows=[];for(const s of ['wep','arm','gear','bag'])if(me[s])rows.push(row({it:me[s],idx:[],n:1},s));
+  for(const g of groupInv(me))rows.push(row(g,null));
+  let banner='';
+  if(pickMode&&pickMode.kind==='poison')banner=`<div class="picking" style="margin-bottom:8px">쥐약을 섞을 음식이나 약을 고르세요. 섞은 걸 버려 두면 누군가 주워 먹을지도 몰라요. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;
+  if(pickMode&&pickMode.kind==='craft'){const base=pickMode.ref==='wep'?me.wep:me.inv[+pickMode.ref];
+    banner=`<div class="picking craft" style="margin-bottom:8px">${esc(M.JS.wa(M.IT[base.id].n))} 합칠 것을 고르세요. 합칠 수 있는 것에만 버튼이 떠요. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;}
+  $('inv').innerHTML=`<h3>가방 <span class="label">${used} / ${cap}칸</span></h3>${banner}
+   <div class="inv-list">${rows.join('')||'<p class="empty">가방이 비었다.</p>'}</div>`;
+  $('inv').querySelectorAll('button[data-op]').forEach(b=>b.onclick=()=>{
+    const op=b.dataset.op,r=b.dataset.ref,ref=isNaN(+r)?r:+r;
+    if(op==='poison'){pickMode={kind:'poison',ref};renderInv();return;}
+    if(op==='craft'){pickMode={kind:'craft',ref:String(r)};renderInv();return;}
+    if(op==='mix'){M.itemOp(G,'use',pickMode.ref,ref);pickMode=null;after();return;}
+    if(op==='craftwith'){M.itemOp(G,'craft',pickMode.ref,String(r));pickMode=null;after();return;}
+    if(op==='unequip'){M.itemOp(G,'unequip',b.dataset.slot);after();return;}
+    if(op==='split'){M.itemOp(G,'split',String(r));after();return;}
+    M.itemOp(G,op,ref);after();});
+  const pc=$('btn-pcancel');if(pc)pc.onclick=()=>{pickMode=null;renderInv();};
+}
+function renderTabs(){
+  ['log','roster','rel'].forEach(k=>{$('tab-'+k).setAttribute('aria-selected',String(tab===k));$('pn-'+k).hidden=tab!==k;});
+  if(tab==='log')renderLog($('pn-log'),G.log.filter(visible));
+  if(tab==='roster')renderRoster($('pn-roster'),false);
+  if(tab==='rel')renderRel($('pn-rel'),false);
+}
+function renderLog(el,list){
+  const items=list.slice().reverse();let last=-1;const out=[];
+  for(const e of items){const show=e.t!==last;last=e.t;out.push(evHTML(e,show));}
+  el.innerHTML=`<div class="loglist">${out.join('')||'<p class="empty">아직 기록이 없어요.</p>'}</div>`;
+}
+function bar(v,max,cls){return `<span class="track" style="display:inline-block;width:48px;height:5px;background:var(--rule-2);border-radius:3px;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,v/max*100))}%;background:${cls}"></span></span>`;}
+function causeText(c,reveal){
+  if(c.alive)return '';const k=c.killer!=null?G.c[c.killer]:null;const known=reveal||G.kk[c.id]!=null||(k&&k.me);
+  const at=M.clock(c.deathT).s;
+  if(c.cause==='band')return `${at} · 밴드`;
+  if(c.cause==='trap')return `${at} · 덫${known&&k?` (${k.me?'내 덫':k.name+'의 덫'})`:''}`;
+  if(c.cause==='poison')return `${at} · 독${known&&k?` (${k.me?'내가 섞은 독':k.name})`:''}`;
+  return `${at}${known&&k?` · ${k.me?'내가 쓰러뜨림':k.name}`:''}`;
+}
+function renderRoster(el,reveal){
+  const rows=[...G.c].sort((a,b)=>a.no-b.no).map(c=>{
+    const r0=G.rel[0][c.id],rc=G.rel[c.id][0];
+    const theirs=c.me?'':(reveal||M.isKnown(G,c.id,0))?tagChip(rc[2]):'<span class="tg tg-none">?</span>';
+    const sub=c.me?`${M.CLUBS[c.club].n} · ${M.PERS[c.pers].n} · 나`:
+      `${c.met||reveal?M.CLUBS[c.club].n:'부서 ?'} · ${c.talked||reveal?M.PERS[c.pers].n:'성격 ?'}${c.alive&&c.seenT>=0&&!reveal?` · ${M.clock(c.seenT).hm} ${M.AREAS[c.seenLoc].n}에서 봄`:''}`;
+    const feel=c.me?'':`<div class="feel"><span>내 마음 ${tagChip(r0[2])} <span class="mini">호감 ${bar(r0[0]+100,200,'var(--heart)')} 관심 ${bar(r0[1],100,'var(--violet)')}</span></span><span>그 애 마음 ${theirs}</span></div>`;
+    const will=!c.alive&&c.willText&&(reveal||G.log.some(e=>e.c==='death'&&e.v==='seen'&&e.q===c.willText))?`<div class="hand" style="font-size:1.2em">“${esc(c.willText)}”</div>`:
+      (c.alive&&!c.me&&c.talked&&c.line?`<div class="hand muted" style="font-size:1.15em">“${esc(c.line)}”</div>`:'');
+    return `<div class="row ${c.alive?'':'dead'}"><span class="n">${String(c.no).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${c.id===G.bestie?' <span class="chip">단짝</span>':''}${!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':''}${c.sex?` <span class="chip">${c.sex}</span>`:''}${c.transfer?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal?' · '+M.TRANSFER[c.transfer].n:''}</span>`:''}<div class="sub">${sub}${c.alive?'':` · <span style="color:var(--red)">${esc(causeText(c,reveal))}</span>`}</div>${c.me&&c.bio?`<div class="sub">${esc(c.bio)}</div>`:''}${feel}${will}</div><span class="stampmark ${c.alive?'al':'dd'}" aria-label="${c.alive?'생존':'탈락'}">${c.alive?'출':'결'}</span></div>`;}).join('');
+  el.innerHTML=`<div class="roster">${rows}</div>`;
+}
+function renderRel(el,reveal){
+  const TAGS=['bestie','friend','crush','rival','enemy'];
+  const order=[G.c[0],...G.c.filter(c=>!c.me).sort((a,b)=>a.no-b.no)];
+  const known=(a,b)=>reveal||M.isKnown(G,a,b);
+  let any=0;
+  const rows=order.map(c=>{
+    const cells=TAGS.map(t=>{const names=[];
+      for(const o of order){if(o===c||G.rel[c.id][o.id][2]!==t||!known(c.id,o.id))continue;any++;
+        const mutual=G.rel[o.id][c.id][2]===t&&known(o.id,c.id);
+        const note=t==='crush'&&M.isCouple(G,c.id,o.id)?'연인':mutual?'서로':'';
+        names.push(`<span class="rn ${o.alive?'':'gone'}">${esc(o.me?'나':o.name)}${note?`<small>${note}</small>`:''}</span>`);}
+      return `<td>${names.join('')||'<span class="none">·</span>'}</td>`;}).join('');
+    const tc=c.transfer?`<small class="tc">전입생${reveal?' · '+M.TRANSFER[c.transfer].n:''}</small>`:'';
+    return `<tr class="${c.me?'me':''} ${c.alive?'':'dead'}"><th scope="row"><span class="nm">${esc(c.me?'나':c.name)}</span>${tc}</th>${cells}</tr>`;}).join('');
+  el.innerHTML=`<div class="reltable-wrap"><table class="reltable"><thead><tr><th scope="col">이름</th>${TAGS.map(t=>`<th scope="col" class="h-${t}">${M.TAGN[t]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="muted" style="font-size:13px;margin:10px 0 0">한 줄은 그 사람의 마음이에요. ${reveal?'지금은 모든 마음이 드러나 있어요.':'귓속말을 듣거나, 누군가를 감싸는 걸 보면 칸이 채워져요.'}${any?'':' 아직 아는 관계가 없어요.'}</p>`;
+}
+
+/* ---------- 선택 창 ---------- */
+function openModal(){
+  const dlg=$('dlg');const me=G.c[0];dlg.classList.remove('fightdlg');
+  if(G.phase==='dead'){
+    const k=me.killer!=null?G.c[me.killer]:null;
+    const cause=me.cause==='band'?'손목 밴드가 울렸다.':me.cause==='trap'?(k?`${k.name}의 덫에 걸렸다.`:'덫에 걸렸다.'):me.cause==='poison'?'독이 든 것을 먹었다.':(k?`${k.name}에게 쓰러졌다.`:'쓰러졌다.');
+    dlg.innerHTML=`<p class="label">${M.clock(me.deathT).s}</p><h2 id="dlg-h">출석부에 줄이 그어졌다</h2><p style="margin:0">${esc(cause)}</p>
+     ${me.will?`<p class="hand" style="margin:0">“${esc(me.will)}”</p>`:''}
+     <p class="muted" style="margin:0">남은 ${G.c.filter(c=>c.alive).length}명의 이야기는 아직 끝나지 않았어요.</p>
+     <div class="acts"><button class="btn primary" type="button" id="m-rest">남은 이야기 보기</button></div>`;
+    $('modal').hidden=false;$('m-rest').focus();
+    $('m-rest').onclick=()=>{M.runToEnd(G);saveSoon();closeModal();renderEnd();};return;}
+  const p=G.pending;if(!p){closeModal();return;}
+  if(p.type==='find'||p.type==='loot'){openPickup(p);return;}
+  if(p.type==='body'){openBody(p);return;}
+  if(p.type==='combat'){openCombat();return;}
+  const n=G.c[p.who];const w=M.wepInfo(n);const r0=G.rel[0][n.id];
+  const theirs=M.isKnown(G,n.id,0)?tagChip(G.rel[n.id][0][2]):'<span class="tg tg-none">?</span>';
+  const card=`<div class="who-card"><div><b>${esc(n.name)}</b> <span class="muted mono">${n.no}번</span>${n.id===G.bestie?' <span class="chip">단짝</span>':''}${M.isCouple(G,0,n.id)?' <span class="chip">연인</span>':''}${n.sex?` <span class="chip">${n.sex}</span>`:''}${n.transfer?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':''}</div>
+    <div class="muted">${M.CLUBS[n.club].n} · ${n.talked?M.PERS[n.pers].n:'성격 ?'} · 상태 ${hpWord(n)} · 손에 든 것: ${esc(w.name)}</div>
+    <div>내 마음 ${tagChip(r0[2])} · 그 애 마음 ${theirs}</div></div>`;
+  if(p.type==='meet'){
+    dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">${esc(n.name)}</h2>
+     <p style="margin:0">${M.AREAS[me.loc].n} 저편에 ${esc(n.name)}의 모습이 보인다. 아직 나를 못 본 것 같다.</p>${card}
+     <div class="acts"><button class="btn primary" type="button" data-c="talk">말을 건다</button><button class="btn danger" type="button" data-c="attack">공격한다</button><button class="btn" type="button" data-c="pass">모른 척 지나간다</button></div>`;
+  }else if(p.type==='propose'){
+    dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">같이 다니자는 말</h2>
+     <p class="hand" style="margin:0">“${esc(PROPOSE_LINE(n))}”</p>${card}
+     <p class="muted" style="margin:0;font-size:13px">함께 다니면 같이 움직이고 같이 싸워요. 다만 마음이 식으면 떠나거나, 등을 돌릴 수도 있어요.</p>
+     <div class="acts"><button class="btn primary" type="button" data-c="yes">같이 간다</button><button class="btn" type="button" data-c="no">혼자가 낫다</button></div>`;
+  }
+  $('modal').hidden=false;
+  dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>{M.resolve(G,b.dataset.c);closeModal();after(true);});
+  const f=dlg.querySelector('button');if(f)f.focus();
+}
+function cmpLine(it){const me=G.c[0];const d=M.IT[it.id];
+  if(d.k==='w'){const w=M.wepInfo(me);return `지금 손에 든 것: ${esc(w.name)} (공격 ${w.atk})`;}
+  if(d.k==='a')return me.arm?`지금 입은 옷: ${esc(M.IT[me.arm.id].n)} (방어 ${M.IT[me.arm.id].def}, 내구 ${me.arm.d})`:'지금 입은 옷이 없다';
+  if(d.k==='g')return me.gear?`지금 찬 보호구: ${esc(M.IT[me.gear.id].n)} (방어 ${M.IT[me.gear.id].def}, 내구 ${me.gear.d})`:'지금 찬 보호구가 없다';
+  if(d.k==='b')return me.bag?`지금 멘 가방: ${esc(M.IT[me.bag.id].n)} (칸 +${M.IT[me.bag.id].cap})`:'지금 멘 가방이 없다 (기본 6칸)';
+  return '';}
+const WEAR_LABEL={w:'바로 손에 쥔다',a:'바로 입는다',g:'바로 착용한다',b:'바로 멘다'};
+const WEAR_SHORT={w:'바로 쥔다',a:'바로 입는다',g:'바로 찬다',b:'바로 멘다'};
+/* 가방을 같은 물건끼리 묶는다: [{idx:[...], it, n}] */
+function groupInv(me){const out=[];const at={};
+  me.inv.forEach((it,i)=>{const k=M.skey(it);if(k==null){out.push({idx:[i],it,n:1});return;}
+    if(at[k]==null){at[k]=out.length;out.push({idx:[i],it,n:1});}else{const g=out[at[k]];g.idx.push(i);g.n++;}});
+  return out;}
+function openPickup(p){
+  const dlg=$('dlg');const me=G.c[0];const pool=G.pool[p.loc];
+  const done=c=>{M.resolve(G,c);closeModal();after(true);};
+  const bagLine=`가방 ${M.slotsOf(me.inv)} / ${M.capOf(me)}칸`;
+  if(p.type==='find'){
+    const it=pool.find(x=>x.uid===p.uid);if(!it){done('leave');return;}
+    const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
+    const wearDis=d.k==='b'&&!M.canEquipBag(me,it);
+    const cmp=cmpLine(it);
+    const have=me.inv.filter(x=>x.id===it.id).length;
+    dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">${esc(d.n)}${it.b?` <span class="bonus">+${it.b}</span>`:''}</h2>
+     <div class="found"><span class="meta">${itemMeta(it)}</span>${cmp?`<span class="cmp">${cmp}</span>`:''}${have?`<span class="cmp">가방에 이미 ${have}개 있다. 같은 칸에 겹쳐 담긴다.</span>`:''}${it.p&&it.pk?'<span class="warn">냄새가 이상하다. 독이 든 것 같다.</span>':''}</div>
+     <p class="muted" style="margin:0;font-size:13px">${bagLine}${room?'':' · 꽉 찼어요'}</p>
+     <div class="acts">
+      ${room?`<button class="btn primary" type="button" data-c="take">가방에 넣는다</button>`:''}
+      ${wear?`<button class="btn ${room?'':'primary'}" type="button" data-c="equip" ${wearDis?'disabled title="이 가방으로는 지금 짐이 다 안 들어가요"':''}>${WEAR_LABEL[d.k]}</button>`:''}
+      <button class="btn" type="button" data-c="leave">그냥 둔다</button>
+     </div>
+     ${room?'':`<div class="swaplist"><p class="muted" style="margin:0;font-size:13px">가방에서 하나를 내려놓으면 대신 챙길 수 있어요.</p><div class="btns">${groupInv(me).map(g=>`<button class="btn small" type="button" data-c="swap:${g.idx[0]}">${esc(M.IT[g.it.id].n)}${g.n>1?` x${g.n}`:''} 내려놓기</button>`).join('')}</div></div>`}`;
+  }else{
+    const v=G.c[p.who];const items=p.uids.map(u=>pool.find(x=>x.uid===u)).filter(Boolean);
+    if(!items.length){done('leave');return;}
+    dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">${esc(v.name)}의 소지품</h2>
+     <p style="margin:0">쓰러진 자리에 소지품이 흩어졌다. 하나만 챙길 수 있다. 나머지는 이 자리에 남는다.</p>
+     <div class="lootlist">${items.map(it=>{const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
+       return `<div class="row2"><div class="grow"><b>${esc(d.n)}</b>${it.b?` <span class="bonus">+${it.b}</span>`:''}${it.p&&it.pk?' <span class="tag-p">독</span>':''}<div class="meta mono muted" style="font-size:12px">${itemMeta(it)}</div></div>
+        ${room?`<button class="btn small primary" type="button" data-c="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-c="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}</div>`;}).join('')}</div>
+     <p class="muted" style="margin:0;font-size:13px">${bagLine}</p>
+     <div class="acts"><button class="btn" type="button" data-c="leave">아무것도 챙기지 않는다</button></div>`;
+  }
+  $('modal').hidden=false;
+  dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>done(b.dataset.c));
+  const f=dlg.querySelector('button');if(f)f.focus();
+}
+function openBody(p){
+  const dlg=$('dlg');const me=G.c[0];
+  const used=M.slotsOf(me.inv),cap=M.capOf(me);const full=used>=cap;
+  let bodies=M.bodiesAt(G,p.loc).slice();
+  if(p.focus!=null)bodies.sort((a,b)=>(b.v===p.focus)-(a.v===p.focus));
+  const focus=p.free&&p.focus!=null?G.c[p.focus]:null;
+  const secs=bodies.map(b=>{const v=G.c[b.v];
+    return `<div class="bodysec"><div class="bh"><b>${esc(v.name)}</b><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></div>
+     <div class="lootlist">${b.items.map(it=>{const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
+       return `<div class="row2"><div class="grow"><b>${esc(d.n)}</b>${it.b?` <span class="bonus">+${it.b}</span>`:''}${it.p&&it.pk?' <span class="tag-p">독</span>':''}<div class="meta mono muted" style="font-size:12px">${itemMeta(it)}</div>${wear?`<div class="muted" style="font-size:12px">${cmpLine(it)}</div>`:''}</div>
+        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}</div></div>`;}).join('')}</div></div>`;}).join('');
+  dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p>
+   <h2 id="dlg-h">${focus?`${esc(focus.name)}의 소지품`:'쓰러진 사람의 소지품'}</h2>
+   <p style="margin:0">${focus?'쓰러진 자리에 소지품이 남았다.':'남겨진 것들을 하나씩 살폈다.'} 필요한 만큼 챙길 수 있고, 남긴 건 그 자리에 그대로 남는다.</p>
+   ${secs||'<p class="empty" style="margin:0">더 챙길 게 없다.</p>'}
+   <p class="muted" style="margin:0;font-size:13px">가방 ${used} / ${cap}칸${full?' · 꽉 찼어요. 이미 있는 물건은 같은 칸에 겹쳐 담기고, 입거나 멜 것은 바로 착용할 수 있어요. 아래에서 가방을 비울 수도 있어요.':''}</p>
+   ${full?`<div class="swaplist"><div class="btns">${groupInv(me).map(g=>`<button class="btn small" type="button" data-b="drop:${g.idx[0]}">${esc(M.IT[g.it.id].n)}${g.n>1?` x${g.n}`:''} 내려놓기</button>`).join('')}</div></div>`:''}
+   <div class="acts"><button class="btn ${secs?'':'primary'}" type="button" data-c="done">다 챙겼다</button></div>`;
+  $('modal').hidden=false;
+  dlg.querySelectorAll('button[data-b]').forEach(b=>b.onclick=()=>{const[c,a]=b.dataset.b.split(':');if(M.bodyOp(G,c,a)){saveSoon();renderGame();}openBody(G.pending);});
+  dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>{M.resolve(G,b.dataset.c);closeModal();after(true);});
+  const f=dlg.querySelector('button');if(f)f.focus();
+}
+function hpLevel(c){const r=c.hp/c.mhp;return r>.75?0:r>.45?1:r>.2?2:3;}
+const chanceWord=p=>p>=.7?'가능성 높음':p>=.45?'가능성 보통':p>=.2?'가능성 낮음':'거의 불가능';
+function openCombat(){
+  const C=G.combat;const dlg=$('dlg');const me=G.c[0];
+  if(!C){closeModal();after(true);return;}
+  const inFight=c=>c.alive&&c.loc===C.loc&&!C.out.includes(c.id);
+  const foes=C.foes.map(id=>G.c[id]).filter(inFight);
+  const allies=C.mine.map(id=>G.c[id]).filter(c=>!c.me&&inFight(c));
+  const w=M.wepInfo(me);const hpP=Math.max(0,me.hp/me.mhp*100),stP=Math.max(0,me.st/me.mst*100);
+  const foeCards=foes.map(f=>{const fw=M.wepInfo(f);const theirs=M.isKnown(G,f.id,0)?tagChip(G.rel[f.id][0][2]):'<span class="tg tg-none">?</span>';
+    return `<div class="foe"><div class="fn"><b>${esc(f.name)}</b><span class="hpw h${hpLevel(f)}">${hpWord(f)}</span></div>
+     <div class="muted">${esc(fw.name)} · ${M.CLUBS[f.club].n}${f.talked?` · ${M.PERS[f.pers].n}`:''}</div>
+     <div>내 마음 ${tagChip(G.rel[0][f.id][2])} · 그 애 마음 ${theirs}</div></div>`;}).join('');
+  const log=C.lines.slice(-14).map(l=>/^\d+라운드$/.test(l)?`<div class="rd">${esc(l)}</div>`:/^[^:]{1,10}: “/.test(l)?`<div class="q">${esc(l)}</div>`:`<div>${esc(l)}</div>`).join('');
+  const bag=groupInv(me).filter(g=>{const k=M.IT[g.it.id].k;return k==='f'||k==='h'||k==='w';});
+  const multi=foes.length>1;
+  const title=foes.length===1?`${M.JS.wa(foes[0].name)}의 싸움`:'싸움';
+  dlg.classList.add('fightdlg');
+  dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[C.loc].n} · ${C.round}라운드 · 싸우는 동안 시간은 멈춰 있다</p>
+   <h2 id="dlg-h">${esc(title)}</h2>
+   <div class="foes">${foeCards}</div>
+   <div class="mybox">
+    <div><b>나</b> <span class="muted">· ${esc(w.name)} (공격 ${w.atk})${me.guard?' · 방어 자세':''}</span></div>
+    <div class="meters">
+     <div class="meter"><span>체력</span><span class="track"><span class="fill ${hpP<35?'hp-low':''}" style="width:${hpP}%"></span></span><span class="v">${Math.max(0,me.hp)} / ${me.mhp}</span></div>
+     <div class="meter"><span>스태미나</span><span class="track"><span class="fill st" style="width:${stP}%"></span></span><span class="v">${Math.max(0,me.st)} / ${me.mst}</span></div>
+    </div>
+    ${allies.length?`<div class="muted">곁에서 함께 싸우는 사람: ${allies.map(a=>`${esc(a.name)} (${hpWord(a)})`).join(', ')}</div>`:''}
+   </div>
+   ${log?`<div class="clog" id="clog">${log}</div>`:''}
+   ${C.free==='me'?'<p class="fhint" style="color:var(--green)">상대는 아직 자세를 잡지 못했다. 이번 라운드에는 반격이 오지 않는다.</p>':''}
+   <div class="cacts">
+    ${foes.map(f=>`<button class="btn danger" type="button" data-a="attack:${f.id}">${multi?`${esc(f.given)} 공격`:'공격한다'}<small>스태미나 -3</small></button>`).join('')}
+    <button class="btn" type="button" data-a="defend">막는다<small>받는 피해 크게 줄임 · 스태미나 +4</small></button>
+    <button class="btn" type="button" data-a="flee">도망친다<small>${chanceWord(M.fleeChance(G))} · 스태미나 -6</small></button>
+    ${foes.map(f=>`<button class="btn ${multi?'':'full'}" type="button" data-a="talk:${f.id}">${multi?`${esc(f.given)}에게 `:''}그만하자고 말한다<small>마음이 통하면 물러날지도</small></button>`).join('')}
+   </div>
+   ${bag.length?`<details class="cbag"><summary>가방에서 꺼내 쓴다 (이번 라운드를 쓴다)</summary><div class="btns">${bag.map(g=>{const d=M.IT[g.it.id];
+     return `<button class="btn small" type="button" data-a="use:${g.idx[0]}">${esc(d.n)}${g.n>1?` x${g.n}`:''} ${d.k==='w'?'바꿔 쥐기':d.k==='f'?'먹기':'쓰기'}</button>`;}).join('')}</div></details>`:''}`;
+  $('modal').hidden=false;
+  const cl=$('clog');if(cl)cl.scrollTop=cl.scrollHeight;
+  dlg.querySelectorAll('button[data-a]').forEach(b=>b.onclick=()=>{
+    M.combatAct(G,b.dataset.a);saveSoon();renderGame();
+    if(G.phase==='pending'&&G.pending&&G.pending.type==='combat')openCombat();
+    else{dlg.classList.remove('fightdlg');closeModal();after(true);}
+  });
+  const f=dlg.querySelector('.cacts button');if(f)f.focus();
+}
+const PROPOSE_LINE=n=>M.PROPOSE[n.pers];
+function closeModal(){$('modal').hidden=true;}
+
+/* ---------- 끝 ---------- */
+function renderEnd(){
+  show('scr-end');const me=G.c[0];const res=G.result||{type:'none'};
+  const rank=me.alive?1:G.c.length-G.order.indexOf(0);
+  let head='',sub='';
+  if(res.type==='win'){head='마지막 한 명';sub='섬에 남은 건 나 하나뿐이었다. 손목의 밴드가 풀렸다.';}
+  else if(res.type==='rescue'){const s=res.survivors.map(id=>G.c[id]);head='안개 너머의 배';sub=`무전을 듣고 온 배가 ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
+  else if(res.type==='escape'){const h=G.c[res.with[1]];head='안개 속으로';sub=`${M.JS.wa(h.name)} 함께 밴드를 끊고 작은 배로 섬을 빠져나왔다.`;}
+  else if(res.type==='npc'){const w=G.c[res.winner];head=`${w.name}만 섬을 떠났다`;sub=`마지막까지 남은 건 ${M.JS.ida(w.name)}.`;}
+  else if(res.pact){const[a,b]=res.pact.map(id=>G.c[id]);head='끝까지 손을 들지 않았다';sub=`마지막에 남은 ${M.JS.wa(a.me?'나':a.name)} ${b.me?'나':b.name}. 둘은 서로를 해치지 않았고, 마지막 방송과 함께 섬은 조용해졌다.`;}
+  else{head='아무도 남지 않았다';sub='마지막 방송이 끝나고, 섬은 다시 조용해졌다.';}
+  const lived=me.alive?G.t:me.deathT;
+  const chron=G.log.filter(e=>e.imp);
+  $('scr-end').innerHTML=`
+   <div class="head"><p class="label">${M.clock(G.t).s} · 물안개섬</p><h1>${esc(head)}</h1><p class="lede" style="max-width:40em;margin:0">${esc(sub)}</p>
+    ${G.transferId!=null?`<p class="muted" style="margin:10px 0 0;max-width:40em">전입생 ${esc(G.c[G.transferId].name)}의 정체는 <b>${M.TRANSFER[G.c[G.transferId].transfer].n}</b>${M.TRANSFER[G.c[G.transferId].transfer].n==='사냥꾼'?'이었다':'였다'}. ${M.TRANSFER[G.c[G.transferId].transfer].desc}</p>`:''}</div>
+   <div class="sum">
+    <div><span class="label">내 순위</span><b>${rank}등 / ${G.c.length}명</b></div>
+    <div><span class="label">버틴 시간</span><b>${Math.floor(lived/2)}시간${lived%2?' 30분':''}</b></div>
+    <div><span class="label">쓰러뜨린 사람</span><b>${me.kills}명</b></div>
+    <div><span class="label">레벨</span><b>Lv ${me.lv}</b></div>
+   </div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" type="button" id="btn-again">다시 출석부에 이름 쓰기</button><button class="btn" type="button" id="btn-end-home">처음 화면</button></div>
+   <div class="endgrid">
+    <section class="card"><h3>마지막 출석부</h3><div id="end-roster"></div></section>
+    <section class="col">
+     <section class="card"><h3>모든 마음이 드러난 관계표</h3><div id="end-rel"></div></section>
+     <section class="card"><h3>섬에서 있었던 일</h3><p class="muted" style="margin:0 0 8px;font-size:13px">내가 몰랐던 일까지 모두 적혀 있어요.</p><div class="chron" id="end-chron"></div></section>
+    </section>
+   </div>`;
+  renderRoster($('end-roster'),true);renderRel($('end-rel'),true);renderLog($('end-chron'),chron);
+  $('btn-again').onclick=()=>openMake();
+  $('btn-end-home').onclick=()=>{G=null;show('scr-title');renderTitle();};
+}
+
+/* ---------- 시작 ---------- */
+function boot(data){
+  if(data&&data.save){try{G=M.migrate(JSON.parse(data.save));enterGame();return;}catch(e){}}
+  renderTitle();show('scr-title');
+}
+const hot=window.claude&&window.claude.hot;
+try{if(hot&&hot.snapshot)hot.snapshot(()=>({save:G?JSON.stringify(G):null}));}catch(e){}
+try{if(hot&&hot.ready)hot.ready(boot);else boot((hot&&hot.data)||{});}catch(e){boot({});}
+window.addEventListener('pagehide',()=>{if(dirty)flushSave();});
+})();
+</script>
+</body>
+</html>
