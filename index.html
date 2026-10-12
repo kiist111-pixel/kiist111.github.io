@@ -664,6 +664,7 @@ const CLUBS={
  baseball:{n:'야구부',sk:{blunt:20},d:'휘두르는 무기에 익숙하다'},
  taekwondo:{n:'태권도부',sk:{fist:25},d:'맨손이 곧 무기다'},
  archery:{n:'양궁부',sk:{bow:20,throw:5},d:'활을 잡으면 손이 떨리지 않는다'},
+ shooting:{n:'사격부',sk:{shoot:25},d:'총을 다룰 줄 안다. 가끔 공기총을 들고 시작한다'},
  track:{n:'육상부',sk:{},d:'이동할 때 힘이 덜 든다'},
  cooking:{n:'요리부',sk:{cut:10},d:'음식에 든 독을 알아본다'},
  drama:{n:'연극부',sk:{},d:'말로 사람 마음을 움직인다'},
@@ -799,7 +800,7 @@ function newGame(o){
   for(const s of sps){const c=mkChar(G.c.length,s.name,s.pers,s.club,false);c.line=pick(LINE1[c.pers]);c.sex=s.sex;c.special=s.rel;
     applyBuild(c,pick(Object.keys(BUILDS)));if(s.hpMod){c.mhp+=s.hpMod;c.hp=c.mhp;}c.woundRoll=1;G.c.push(c);}
   [...G.c].sort((a,b)=>a.name.localeCompare(b.name,'ko')).forEach((c,i)=>c.no=i+1);
-  for(const c of G.c){c.arm=mkItem('uniform');c.wep=mkItem(wpick(START_W));c.inv.push(mkItem(pick(['water','bread','riceball','choco'])));c.inv.push(mkItem(wpick(START_X)));}
+  for(const c of G.c){c.arm=mkItem('uniform');c.wep=mkItem(c.club==='shooting'&&R()<.35?'airgun':wpick(START_W));c.inv.push(mkItem(pick(['water','bread','riceball','choco'])));c.inv.push(mkItem(wpick(START_X)));}
   AREAS.forEach(a=>{const p=[];for(const e of a.pool){const[id,pr]=e.split(':');if(!pr||R()<+pr)p.push(mkItem(id,.06));}const k=ri(1,2);for(let j=0;j<k;j++)p.push(mkItem(pick(FILLER),.06));G.pool.push(shuffle(p));G.traps.push([]);});
   G.transferId=null;
   if(R()<TRANSFER_CHANCE){const type=R()<.5?'hunter':'helper';const T=TRANSFER[type];
