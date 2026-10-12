@@ -233,6 +233,20 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 .bodysec{display:grid;gap:8px;border:1px solid var(--rule);border-radius:var(--r);padding:10px 12px}
 .bodysec .bh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
 .bodysec .bh b{font-family:var(--f-display);font-weight:400;font-size:16px}
+.bodylist{display:grid;gap:8px}
+.bodysec.fold{display:block;padding:0}
+.bodysec.fold>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:10px 12px}
+.bodysec.fold>summary::-webkit-details-marker{display:none}
+.bodysec.fold>summary::after{content:'';grid-column:2;grid-row:1/span 2;width:8px;height:8px;border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);transform:rotate(45deg);margin:0 4px 4px 0;transition:transform .15s}
+.bodysec.fold[open]>summary::after{transform:rotate(-135deg);margin:4px 4px 0 0}
+.bodysec.fold>summary:hover{background:var(--sheet-2)}
+.bodysec.fold>summary:hover::after{border-color:var(--accent)}
+.bodysec.fold[open]{border-color:var(--ink-2)}
+.bodysec.fold[open]>summary{border-bottom:1px solid var(--rule-2)}
+.bodysec.fold .cnt{font-size:12px;color:var(--accent)}
+.bodysec.fold .peek{grid-column:1;font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bodysec.fold[open] .peek{display:none}
+.bodysec.fold>.lootlist{padding:10px 12px}
 
 .feed{display:grid;gap:8px}
 .ev{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:8px;font-size:14px;line-height:1.55}
@@ -2199,28 +2213,42 @@ function openPickup(p){
   dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>done(b.dataset.c));
   const f=dlg.querySelector('button');if(f)f.focus();
 }
-function openBody(p){
+let bodyKey=null;const bodyOpen=new Set();
+function openBody(p,keep){
   const dlg=$('dlg');const me=G.c[0];
   const used=M.slotsOf(me.inv),cap=M.capOf(me);const full=used>=cap;
   let bodies=M.bodiesAt(G,p.loc).slice();
   if(p.focus!=null)bodies.sort((a,b)=>(b.v===p.focus)-(a.v===p.focus));
   const focus=p.free&&p.focus!=null?G.c[p.focus]:null;
+  const key=G.t+':'+p.loc;
+  if(bodyKey!==key){bodyKey=key;bodyOpen.clear();if(p.focus!=null)bodyOpen.add(p.focus);}
+  const fold=bodies.length>1;
   const secs=bodies.map(b=>{const v=G.c[b.v];
-    return `<div class="bodysec"><div class="bh"><b>${esc(v.name)}</b><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></div>
-     <div class="lootlist">${b.items.map(it=>{const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
+    const names=b.items.map(it=>M.IT[it.id].n);
+    const peek=names.slice(0,2).join(', ')+(names.length>2?` 외 ${names.length-2}개`:'');
+    const list=`<div class="lootlist">${b.items.map(it=>{const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
        return `<div class="row2"><div class="grow"><b>${esc(d.n)}</b>${it.b?` <span class="bonus">+${it.b}</span>`:''}${it.p&&it.pk?' <span class="tag-p">독</span>':''}<div class="meta mono muted" style="font-size:12px">${itemMeta(it)}</div>${wear?`<div class="muted" style="font-size:12px">${cmpLine(it)}</div>`:''}</div>
-        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}</div></div>`;}).join('')}</div></div>`;}).join('');
+        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}</div></div>`;}).join('')}</div>`;
+    if(!fold)return `<div class="bodysec" data-v="${b.v}"><div class="bh"><b>${esc(v.name)}</b><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></div>${list}</div>`;
+    return `<details class="bodysec fold" data-v="${b.v}" ${bodyOpen.has(b.v)?'open':''}><summary><span class="bh"><b>${esc(v.name)}</b><span class="cnt mono">${names.length}개</span><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></span><span class="peek">${esc(peek)}</span></summary>${list}</details>`;}).join('');
   dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p>
    <h2 id="dlg-h">${focus?`${esc(focus.name)}의 소지품`:'쓰러진 사람의 소지품'}</h2>
-   <p style="margin:0">${focus?'쓰러진 자리에 소지품이 남았다.':'남겨진 것들을 하나씩 살폈다.'} 필요한 만큼 챙길 수 있고, 남긴 건 그 자리에 그대로 남는다.</p>
-   ${secs||'<p class="empty" style="margin:0">더 챙길 게 없다.</p>'}
+   <p style="margin:0">${focus?'쓰러진 자리에 소지품이 남았다.':'남겨진 것들을 하나씩 살폈다.'} 필요한 만큼 챙길 수 있고, 남긴 건 그 자리에 그대로 남는다.${fold?` 이곳에 쓰러진 사람은 ${bodies.length}명. 이름을 누르면 소지품이 펼쳐진다.`:''}</p>
+   ${secs?`<div class="bodylist">${secs}</div>`:'<p class="empty" style="margin:0">더 챙길 게 없다.</p>'}
    <p class="muted" style="margin:0;font-size:13px">가방 ${used} / ${cap}칸${full?' · 꽉 찼어요. 이미 있는 물건은 같은 칸에 겹쳐 담기고, 입거나 멜 것은 바로 착용할 수 있어요. 아래에서 가방을 비울 수도 있어요.':''}</p>
    ${full?`<div class="swaplist"><div class="btns">${groupInv(me).map(g=>`<button class="btn small" type="button" data-b="drop:${g.idx[0]}">${esc(M.IT[g.it.id].n)}${g.n>1?` x${g.n}`:''} 내려놓기</button>`).join('')}</div></div>`:''}
    <div class="acts"><button class="btn ${secs?'':'primary'}" type="button" data-c="done">다 챙겼다</button></div>`;
   $('modal').hidden=false;
-  dlg.querySelectorAll('button[data-b]').forEach(b=>b.onclick=()=>{const[c,a]=b.dataset.b.split(':');if(M.bodyOp(G,c,a)){saveSoon();renderGame();}openBody(G.pending);});
+  dlg.querySelectorAll('details.bodysec').forEach(d=>d.addEventListener('toggle',()=>{const v=+d.dataset.v;if(d.open)bodyOpen.add(v);else bodyOpen.delete(v);}));
+  dlg.querySelectorAll('button[data-b]').forEach(b=>b.onclick=()=>{const[c,a]=b.dataset.b.split(':');
+    const sec=b.closest('[data-v]');const k={top:dlg.scrollTop,v:sec?sec.dataset.v:null};
+    if(M.bodyOp(G,c,a)){saveSoon();renderGame();}openBody(G.pending,k);});
   dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>{M.resolve(G,b.dataset.c);closeModal();after(true);});
-  const f=dlg.querySelector('button');if(f)f.focus();
+  if(keep){dlg.scrollTop=keep.top;
+    const sec=keep.v!=null&&dlg.querySelector(`[data-v="${keep.v}"]`);
+    const t=sec&&(sec.querySelector('button[data-b]')||sec.querySelector('summary'));
+    (t||dlg.querySelector('button[data-c]')).focus({preventScroll:true});return;}
+  const f=dlg.querySelector('summary, button');if(f)f.focus();
 }
 function hpLevel(c){const r=c.hp/c.mhp;return r>.75?0:r>.45?1:r>.2?2:3;}
 const chanceWord=p=>p>=.7?'가능성 높음':p>=.45?'가능성 보통':p>=.2?'가능성 낮음':'거의 불가능';
