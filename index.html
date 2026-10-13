@@ -164,6 +164,8 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 .alert{border:1px solid var(--red);background:var(--red-wash);color:var(--ink);border-radius:var(--r);padding:8px 12px;font-size:14px}
 .alert.amber{border-color:var(--amber);background:var(--amber-wash)}
 .comp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px;border-top:1px dashed var(--rule);padding-top:10px;margin-top:10px}
+.comp.more{border-top-style:dotted;margin-top:6px;padding-top:6px}
+.chip.bond{border-color:var(--cyan);color:var(--cyan)}
 
 .mapframe{position:relative;padding:7px;
   background:
@@ -721,6 +723,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.uses||0,d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
+  if(G.trio===undefined)G.trio=[];if(G.c[0].comp2===undefined)G.c[0].comp2=null;
   if(G.btr===undefined)G.btr=null;
   const fix=it=>{if(it&&!it.uid)it.uid=newUid();};
   for(const p of G.pool)p.forEach(fix);
@@ -876,8 +879,24 @@ const SPECIALS=[
  {when:['범지민'],add:{name:'윤하루',sex:'남',club:'archery',pers:'neunggeul',rel:'lover'}},
  {when:['범원','한윤희','백나루','지원우'],add:{name:'성시우',sex:'남',club:'home',pers:'dajeong',rel:'bestie',hpMod:-2}},
  {when:['윤하루'],add:{name:'범지민',sex:'여',club:'broadcast',pers:'dajeong',rel:'lover'}},
+ {when:['범원'],add:{name:'한윤희',club:'archery',pers:'dajeong',rel:'friend'}},
+ {when:['한윤희'],add:{name:'범원',club:'archery',pers:'dahyeol',rel:'friend'}},
 ];
 function specialsFor(name){return SPECIALS.filter(s=>s.when.includes(name)).map(s=>s.add);}
+/* 절대 서로를 배신하지 않는 사이: 공격하지 않고, 등을 돌리지 않고, 마음이 친구 아래로 식지 않는다 */
+const BONDS=[['범원','한윤희']];
+function bonded(a,b){return !!(a&&b)&&BONDS.some(([x,y])=>(a.name===x&&b.name===y)||(a.name===y&&b.name===x));}
+/* 동행은 보통 한 명. G.trio에 든 두 사람은 함께 데리고 다닐 수 있다(me.comp + me.comp2) */
+function myComps(G){const me=G.c[0];return [me.comp,me.comp2].filter(x=>x!=null);}
+function isMyComp(G,id){const me=G.c[0];return id!=null&&(me.comp===id||me.comp2===id);}
+function canJoinMe(G,n){const me=G.c[0];if(n.comp!=null||isMyComp(G,n.id))return false;if(me.comp==null)return true;
+  const T=G.trio||[];return me.comp2==null&&T.includes(me.comp)&&T.includes(n.id);}
+function addMyComp(G,n){const me=G.c[0];if(me.comp==null)me.comp=n.id;else me.comp2=n.id;n.comp=0;}
+function unpair(G,a,b){
+  if(a.me||b.me){const me=a.me?a:b,m=a.me?b:a;
+    if(me.comp===m.id){me.comp=me.comp2!=null?me.comp2:null;me.comp2=null;}else if(me.comp2===m.id)me.comp2=null;
+    if(m.comp===0)m.comp=null;return;}
+  if(a.comp===b.id)a.comp=null;if(b.comp===a.id)b.comp=null;}
 function isCouple(G,a,b){return (G.couples||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a));}
 const CHAT={
  dajeong:['우리 나가면 제일 먼저 뭐 먹을까?','너 손 차갑다. 이거 덮어.','무서우면 무섭다고 해도 돼. 나도 그래.'],
@@ -903,7 +922,7 @@ function newGame(o){
   const used=new Set([me.given,...sps.map(s=>s.name.slice(1))]);const names=[];
   while(names.length<CLASS_SIZE-1-sps.length){const g=pick(GIV);if(used.has(g))continue;used.add(g);names.push(pick(SUR)+g);}
   names.forEach((n,i)=>{const c=mkChar(i+1,n,pick(PK),pick(clubs),false);c.line=pick(LINE1[c.pers]);G.c.push(c);});
-  for(const s of sps){const c=mkChar(G.c.length,s.name,s.pers,s.club,false);c.line=pick(LINE1[c.pers]);c.sex=s.sex;c.special=s.rel;
+  for(const s of sps){const c=mkChar(G.c.length,s.name,s.pers,s.club,false);c.line=pick(LINE1[c.pers]);c.sex=s.sex||pick(['남','여']);c.special=s.rel;
     applyBuild(c,pick(Object.keys(BUILDS)));if(s.hpMod){c.mhp+=s.hpMod;c.hp=c.mhp;}c.woundRoll=1;G.c.push(c);}
   [...G.c].sort((a,b)=>a.name.localeCompare(b.name,'ko')).forEach((c,i)=>c.no=i+1);
   for(const c of G.c){c.arm=mkItem('uniform');c.wep=mkItem(c.club==='shooting'&&R()<.35?'airgun':wpick(START_W));c.inv.push(mkItem(pick(['water','bread','riceball','choco'])));c.inv.push(mkItem(wpick(START_X)));}
@@ -939,6 +958,9 @@ function initRel(G,o){
   const f=spB?spB.id:hasBestie?npcs.find(x=>!G.c[x].special&&!G.c[x].transfer):null;G.bestie=f;
   if(f!=null){S(0,f,ri(68,78),ri(40,55),'bestie');S(f,0,ri(68,80),ri(40,60),'bestie');}
   G.btr=f!=null?{on:!G.c[f].special&&R()<.1+PERS[G.c[f].pers].betray*.8?1:0,n:ri(4,10),done:null,hint:0}:null;
+  for(const c of G.c.filter(c=>c.special==='friend')){S(0,c.id,ri(66,76),ri(36,50),'friend');S(c.id,0,ri(68,78),ri(36,50),'friend');know(G,c.id,0);}
+  const partner=G.c.find(c=>!c.me&&c.special&&bonded(c,G.c[0]));
+  G.trio=partner?G.c.filter(c=>!c.me&&(c===partner||c.special==='bestie')).map(c=>c.id):[];
   for(const c of G.c.filter(c=>c.special==='lover')){S(0,c.id,ri(80,90),ri(80,90),'crush');S(c.id,0,ri(82,92),ri(80,92),'crush');
     know(G,c.id,0);c.confessed=true;G.couples.push([0,c.id]);}
   const others=npcs.filter(x=>x!==f&&!G.c[x].special&&!G.c[x].transfer);
@@ -996,6 +1018,7 @@ const INNER={
 function changeRel(G,a,b,dl,di){
   if(a.id===b.id)return;const r=G.rel[a.id][b.id];
   r[0]=clamp(Math.round(r[0]+dl),-100,100);r[1]=clamp(Math.round(r[1]+di),0,100);
+  if(bonded(a,b))r[0]=Math.max(r[0],35);
   const nt=calcTag(r);
   if(nt!==r[2]&&(nt===''||R()<.6)){const old=r[2];r[2]=nt;
     if(a.me){if(old!=='bestie'||nt!=='')ev(G,'seen','inner',INNER[nt](b.name),{imp:nt!==''?1:0});}
@@ -1047,7 +1070,7 @@ function revealSecret(G,h,me){
   if(h.transfer!=='helper'||G.escapeKnown||rel(G,h,me).like<45)return false;
   G.escapeKnown=true;know(G,h.id,0);ev(G,'seen','heart',`${JS.i(h.name)} 목소리를 낮췄다.`,{q:HELPER_SECRET,imp:1});return true;}
 function canEscape(G){const me=G.c[0];if(!me.alive||!G.escapeKnown||G.transferId==null)return false;const h=G.c[G.transferId];
-  return h.alive&&me.comp===h.id&&h.loc===me.loc&&me.inv.some(x=>x.id==='nipper')&&ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2;}
+  return h.alive&&isMyComp(G,h.id)&&h.loc===me.loc&&me.inv.some(x=>x.id==='nipper')&&ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2;}
 /* 동행과 쉬면서 이야기하기: 쉬기만큼 회복하고 서로 마음이 가까워진다 */
 function chatWith(G,me,m){
   m.talked=true;
@@ -1123,6 +1146,7 @@ function emergencyUse(G,c){
 /* ----- 결정 ----- */
 function aliveCount(G){return G.c.filter(c=>c.alive).length;}
 function npcDecide(G,a,b){
+  if(bonded(a,b))return R()<.85?'talk':'pass';
   if(a.transfer==='hunter')return R()<(a.hp<a.mhp*.25?.5:.9)?'attack':'pass';
   if(a.transfer==='helper'){if(a.revenge===b.id)return 'attack';return R()<.75?'talk':'pass';}
   const P=PERS[a.pers],r=rel(G,a,b);
@@ -1216,15 +1240,15 @@ function npcPhase(G){
 function encounterPhase(G){
   const me=G.c[0];const used=new Set();let pe=null,pFirst=false;
   if(me.alive){
-    const here=shuffle(G.c.filter(c=>c.alive&&!c.me&&c.loc===me.loc&&c.id!==me.comp));
+    const here=shuffle(G.c.filter(c=>c.alive&&!c.me&&c.loc===me.loc&&!isMyComp(G,c.id)));
     const base=me.searched?.6:me.rested?.32:.5;const ar=AREAS[me.loc];
     for(const n of here){if(R()<base*ar.d*(n.rested?.6:1)){pe=n;break;}}
-    if(pe){used.add(0);if(me.comp!=null)used.add(me.comp);used.add(pe.id);if(pe.comp!=null)used.add(pe.comp);
+    if(pe){used.add(0);myComps(G).forEach(id=>used.add(id));used.add(pe.id);if(pe.comp!=null)used.add(pe.comp);
       const ps=R()+(me.club==='photo'?.3:0)+(me.rested?.15:0);
       const ns=R()+(pe.club==='photo'?.3:0)+(pe.rested?.15:0)+(pe.pers==='sosim'?.1:0);
       pFirst=ps>=ns;}
   }
-  if(me.alive&&me.comp!=null)used.add(me.comp);
+  if(me.alive)myComps(G).forEach(id=>used.add(id));
   const byLoc={};
   for(const c of G.c)if(c.alive&&!c.me&&!used.has(c.id))(byLoc[c.loc]=byLoc[c.loc]||[]).push(c);
   for(const loc in byLoc){
@@ -1278,17 +1302,17 @@ function talk(G,a,b){
   changeRel(G,b,a,D[0]+ri(-3,3),D[1]*PERS[b.pers].ig);
   changeRel(G,a,b,D[0]*.8+ri(-3,3),D[1]*PERS[a.pers].ig);
   if(npc){const p=npc===a?b:a;
-    if(revealSecret(G,npc,p)){if(p.comp==null&&npc.comp==null){G.pending={type:'propose',who:npc.id};G.phase='pending';}return;}
+    if(revealSecret(G,npc,p)){if(canJoinMe(G,npc)){G.pending={type:'propose',who:npc.id};G.phase='pending';}return;}
     const r=rel(G,npc,p);
     if(r.tag==='crush'&&!npc.confessed&&(tier==='great'||tier==='good')&&r.like>=60&&r.int>=56&&R()<.7){
       npc.confessed=true;know(G,npc.id,p.id);ev(G,'seen','heart',`${JS.i(npc.name)} 고백했다.`,{q:CONFESS[npc.pers],imp:1});changeRel(G,p,npc,8,20);
     }else if((tier==='great'&&R()<.55)||(tier==='good'&&R()<.35))gossip(G,npc,p);
     if(tier==='great'&&R()<.3)gift(G,npc,p);
-    if(tier==='disaster'&&R()<PERS[npc.pers].agg+.15){fight(G,npc,p,{ambush:false,head:`${JS.i(npc.name)} 참지 못하고 달려들었다!`});return;}
+    if(tier==='disaster'&&!bonded(npc,p)&&R()<PERS[npc.pers].agg+.15){fight(G,npc,p,{ambush:false,head:`${JS.i(npc.name)} 참지 못하고 달려들었다!`});return;}
     const r2=rel(G,npc,p);
-    if(p.alive&&npc.alive&&p.comp==null&&npc.comp==null&&(tier==='great'||tier==='good')&&r2.like>=40&&(r2.tag==='friend'||r2.tag==='bestie'||r2.tag==='crush')&&R()<.6){G.pending={type:'propose',who:npc.id};G.phase='pending';}
+    if(p.alive&&npc.alive&&canJoinMe(G,npc)&&(tier==='great'||tier==='good')&&r2.like>=40&&(r2.tag==='friend'||r2.tag==='bestie'||r2.tag==='crush')&&R()<.6){G.pending={type:'propose',who:npc.id};G.phase='pending';}
   }else{
-    if(tier==='disaster'&&R()<PERS[b.pers].agg+.1){fight(G,b,a,{ambush:false});return;}
+    if(tier==='disaster'&&!bonded(a,b)&&R()<PERS[b.pers].agg+.1){fight(G,b,a,{ambush:false});return;}
     const ra=rel(G,a,b),rb=rel(G,b,a);
     if(a.comp==null&&b.comp==null&&ra.like>=40&&rb.like>=40&&R()<.5){a.comp=b.id;b.comp=a.id;ev(G,vis,'pair',`${JS.wa(a.name)} ${JS.i(b.name)} 함께 다니기 시작했다.`,{imp:1});}
   }
@@ -1339,15 +1363,15 @@ function spareChance(G,f){const me=G.c[0],C=G.combat;const r=rel(G,f,me);let p=.
   p-=((C&&C.talks[f.id])||0)*.12;return clamp(p,.02,.9);}
 function startCombat(G,A,B,o){
   const me=G.c[0];const loc=me.loc;
-  if(A.comp===B.id){A.comp=null;B.comp=null;}
   const foe=A.me?B:A;
+  if(isMyComp(G,foe.id))unpair(G,me,foe);
   const mine=[0],foes=[foe.id];
-  if(me.comp!=null){const m=G.c[me.comp];if(m&&m.alive&&m.loc===loc&&m!==foe)mine.push(m.id);}
-  if(foe.comp!=null&&foe.comp!==0){const m=G.c[foe.comp];if(m&&m.alive&&m.loc===loc&&!mine.includes(m.id))foes.push(m.id);}
+  for(const id of myComps(G)){const m=G.c[id];if(m&&m.alive&&m.loc===loc&&m!==foe)mine.push(m.id);}
+  if(foe.comp!=null&&foe.comp!==0){const m=G.c[foe.comp];if(m&&m.alive&&m.loc===loc&&!mine.includes(m.id)&&!bonded(m,me))foes.push(m.id);}
   const head=ev(G,'seen','fight',o.head||(A.me?`${JS.eul(foe.name)} 공격했다.`:`${JS.wa(foe.name)} 싸움이 붙었다.`),{imp:1,q:o.q});
   const lines=[];
   const inv=new Set([...mine,...foes]);
-  for(const c of G.c){if(!c.alive||c.me||inv.has(c.id)||c.loc!==loc)continue;const r=rel(G,c,B);
+  for(const c of G.c){if(!c.alive||c.me||inv.has(c.id)||c.loc!==loc)continue;if(!B.me&&bonded(c,me))continue;const r=rel(G,c,B);
     if((r.tag==='crush'||r.tag==='bestie')&&r.like>=55&&rel(G,c,A).like<40&&R()<.7){(B.me?mine:foes).push(c.id);know(G,c.id,B.id);lines.push(`${JS.i(c.name)} ${nm(B)}의 앞을 막아섰다!`);break;}}
   for(const id of (B.me?mine:foes))changeRel(G,G.c[id],A,-28,24);
   changeRel(G,A,B,-10,10);
@@ -1377,7 +1401,7 @@ function combatAct(G,action){
   }else if(cmd==='flee'){
     me.st-=6;if(me.st<0)stOver(G,me);
     if(R()<fleeChance(G)){const to=fleeTo(G,me);
-      if(to!=null){me.loc=to;const m=me.comp!=null?G.c[me.comp]:null;if(m&&m.alive&&C.mine.includes(m.id))m.loc=to;
+      if(to!=null){me.loc=to;for(const id of myComps(G)){const m=G.c[id];if(m&&m.alive&&C.mine.includes(m.id))m.loc=to;}
         L.push(`${JS.ro(AREAS[to].n)} 달아났다.`);endCombat(G,'fled');return true;}
       L.push('도망칠 곳이 없다.');}
     else L.push('도망치려 했지만 길이 막혔다.');
@@ -1515,7 +1539,9 @@ function kill(G,v,k,cause){
   if(!v.alive)return;
   v.alive=false;v.hp=0;v.deathT=G.t;v.killer=k?k.id:null;v.cause=cause;G.deathsSince.push(v.id);G.lastDeathT=G.t;G.order.push(v.id);
   if(k){k.kills++;if(cause==='fight'){k.exp+=4;levelCheck(G,k,null);}}
-  if(v.comp!=null){const m=G.c[v.comp];if(m&&m.comp===v.id)m.comp=null;v.comp=null;}
+  if(v.me){for(const id of myComps(G)){const m=G.c[id];if(m&&m.comp===0)m.comp=null;}v.comp=null;v.comp2=null;}
+  else if(v.comp===0)unpair(G,G.c[0],v);
+  else if(v.comp!=null){const m=G.c[v.comp];if(m&&m.comp===v.id)m.comp=null;v.comp=null;}
   const drops=[...v.inv];for(const s of ['wep','arm','gear','bag'])if(v[s])drops.push(v[s]);v.inv=[];v.wep=null;v.arm=null;v.gear=null;v.bag=null;
   if(k&&!k.me&&k.alive&&k.loc===v.loc&&cause==='fight'){
     let bi=-1,bs=k.wep?wscore(k,k.wep):0;drops.forEach((it,i)=>{const s=wscore(k,it);if(s>bs+2){bs=s;bi=i;}});
@@ -1526,7 +1552,7 @@ function kill(G,v,k,cause){
   if(cause==='band'||!G.bodies){for(const it of drops)G.pool[v.loc].push(it);}
   else{body={v:v.id,t:G.t,items:drops,seen:0};G.bodies[v.loc].push(body);}
   const me0=G.c[0];
-  const lootFor=!!(body&&!v.me&&cause==='fight'&&k&&me0.alive&&me0.loc===v.loc&&(k.me||k.id===me0.comp)&&drops.length&&!G.inFinish&&!G.pending);
+  const lootFor=!!(body&&!v.me&&cause==='fight'&&k&&me0.alive&&me0.loc===v.loc&&(k.me||isMyComp(G,k.id))&&drops.length&&!G.inFinish&&!G.pending);
   const will=v.me?(v.will||''):npcWill(G,v,k);v.willText=will;
   const vis=v.me?'seen':visAt(G,v.loc,[v,k].filter(Boolean));
   const tx=cause==='band'?`${v.me?'내':v.name+'의'} 손목 밴드가 날카롭게 울렸다. ${JS.eun(nm(v))} 그대로 쓰러졌다.`:
@@ -1547,15 +1573,15 @@ function act(G,a){
   const me=G.c[0];if(!me.alive)return false;
   if(a.type==='move'&&(!neighbors(me.loc).includes(a.to)||G.zones[a.to]===2))return false;
   if(a.type==='loot'&&!bodiesAt(G,me.loc).length)return false;
-  if(a.type==='chat'&&(me.comp==null||!G.c[me.comp].alive||G.c[me.comp].loc!==me.loc))return false;
+  if(a.type==='chat'&&!myComps(G).some(id=>G.c[id].alive&&G.c[id].loc===me.loc))return false;
   if(a.type==='escape'){if(!canEscape(G))return false;const h=G.c[G.transferId];G.turnStart=G.seq;
     ev(G,'seen','heart',`${JS.wa(h.name)} 니퍼로 서로의 밴드를 끊었다. 밴드는 아무 소리 없이 바닥에 떨어졌다. 둘은 낡은 배를 밀어 안개 속으로 나아갔다.`,{imp:1});
     G.result={type:'escape',with:[0,h.id]};G.phase='end';G.pending=null;return true;}
   resetFlags(G);G.turnStart=G.seq;G.lastAct=a.type;
-  const comp=me.comp!=null?G.c[me.comp]:null;
+  const comps=myComps(G).map(id=>G.c[id]).filter(c=>c.alive);
   if(a.type==='move'){
     ev(G,'seen','move',`${JS.ro(AREAS[a.to].n)} 이동했다.`);
-    moveChar(G,me,a.to);if(comp&&comp.alive){moveChar(G,comp,a.to);}
+    moveChar(G,me,a.to);comps.forEach(c=>moveChar(G,c,a.to));
     noticeBodies(G);
   }else if(a.type==='search'){searchArea(G,me);}
   else if(a.type==='loot'){
@@ -1565,16 +1591,18 @@ function act(G,a){
     if(me.club==='cooking')bs.forEach(b=>b.items.forEach(it=>{if(it.p)it.pk=1;}));
     G.pending={type:'body',loc:me.loc};G.phase='pending';
   }
-  else if(a.type==='rest'){restChar(G,me);if(comp&&comp.alive)restChar(G,comp);}
-  else if(a.type==='chat'){restChar(G,me,`${JS.wa(comp.name)} 몸을 기대고 쉬었다.`);restChar(G,comp);chatWith(G,me,comp);}
+  else if(a.type==='rest'){restChar(G,me);comps.forEach(c=>restChar(G,c));}
+  else if(a.type==='chat'){const cs=comps.filter(c=>c.loc===me.loc);const names=cs.map(c=>c.name);
+    restChar(G,me,`${names.slice(0,-1).map(x=>x+', ').join('')}${JS.wa(names[names.length-1])} 몸을 기대고 쉬었다.`);cs.forEach(c=>{restChar(G,c);chatWith(G,me,c);});}
   if(G.phase==='pending'){G.stage='afterPlayer';return true;}
   return continueTurn(G);
 }
 function continueTurn(G){
   G.stage=null;
-  const me=G.c[0];const comp=me.comp!=null?G.c[me.comp]:null;
-  if(G.lastAct==='search'&&comp&&comp.alive&&me.alive)searchArea(G,comp);
-  if(comp&&comp.alive){emergencyUse(G,comp);autoEquip(G,comp);}
+  const me=G.c[0];
+  for(const comp of myComps(G).map(id=>G.c[id])){
+    if(G.lastAct==='search'&&comp.alive&&me.alive)searchArea(G,comp);
+    if(comp.alive){emergencyUse(G,comp);autoEquip(G,comp);}}
   if(checkEnd(G))return true;
   npcPhase(G);if(checkEnd(G))return true;
   encounterPhase(G);if(checkEnd(G))return true;
@@ -1625,13 +1653,14 @@ function resolve(G,choice){
   }
   const n=G.c[p.who];
   if(p.type==='meet'){
+    if(choice==='attack'&&bonded(n,me))choice='talk';
     if(choice==='attack'){fight(G,me,n,{ambush:true,head:`${JS.eul(n.name)} 기습했다.`});}
     else if(choice==='talk'){
       if(npcDecide(G,n,me)==='attack'&&R()<.6){fight(G,n,me,{ambush:false,head:`말을 꺼내기도 전에 ${JS.i(n.name)} 달려들었다!`});}
       else talk(G,me,n);
     }else{ev(G,'seen','meet',`숨을 죽이고 ${n.name}에게서 멀어졌다.`);}
   }else if(p.type==='propose'){
-    if(choice==='yes'){me.comp=n.id;n.comp=0;ev(G,'seen','pair',`${JS.wa(n.name)} 함께 다니기로 했다.`,{imp:1});changeRel(G,n,me,5,5);changeRel(G,me,n,5,5);}
+    if(choice==='yes'&&canJoinMe(G,n)){const two=me.comp!=null;addMyComp(G,n);ev(G,'seen','pair',two?`${JS.wa(n.name)}도 함께 다니기로 했다. 이제 셋이다.`:`${JS.wa(n.name)} 함께 다니기로 했다.`,{imp:1});changeRel(G,n,me,5,5);changeRel(G,me,n,5,5);}
     else{changeRel(G,n,me,-6,4);ev(G,'seen','meet',`${JS.i(n.name)} 조금 서운한 얼굴로 돌아섰다.`);}
   }
   proceed(G);
@@ -1641,11 +1670,11 @@ function btrAct(G,m,me,together){const B=G.btr;const r=rel(G,m,me);
   if(r.like>=85&&R()<.5){B.done='spared';changeRel(G,m,me,8,10);
     ev(G,'seen','pair',together?`${JS.i(m.name)} 무기를 쥐었다가, 한참 만에 천천히 내려놓았다.`:`${JS.i(m.name)} 나를 보고 무기를 들었다가, 그대로 내렸다.`,{q:'…못 하겠다. 너한테는.',imp:1});return 'spared';}
   const rm=G.rel[m.id][0];know(G,m.id,0);
-  if(R()<.35+PERS[m.pers].agg){B.done='fight';if(me.comp===m.id){me.comp=null;m.comp=null;}
+  if(R()<.35+PERS[m.pers].agg){B.done='fight';if(isMyComp(G,m.id))unpair(G,me,m);
     fight(G,m,me,{ambush:true,head:together?`단짝 ${JS.i(m.name)} 등 뒤에서 나를 노렸다!`:`단짝 ${JS.i(m.name)} 나를 보자마자 덮쳐 왔다!`,q:BTR_FIGHT[m.pers]});
     G.rel[0][m.id]=[-60,20,'enemy'];G.rel[m.id][0]=[-50,Math.min(30,rm[1]),'enemy'];return 'fight';}
   B.done='leave';let stolen=null;
-  if(together){me.comp=null;m.comp=null;
+  if(together){unpair(G,me,m);
     const cand=me.inv.map((it,i)=>i).filter(i=>'fhw'.includes(IT[me.inv[i].id].k));
     if(cand.length&&R()<.6){const i=pick(cand);const it=me.inv[i];if(bagHasRoom(m,it)){me.inv.splice(i,1);m.inv.push(it);stolen=IT[it.id].n;}}}
   G.rel[0][m.id]=[-40,Math.max(62,G.rel[0][m.id][1]),'rival'];G.rel[m.id][0]=[-5,rm[1],''];
@@ -1657,17 +1686,20 @@ function btrTurn(G,m,me,n){const B=G.btr;if(!B||!B.on||B.done||m.id!==G.bestie)r
   return R()<.35?btrAct(G,m,me,true):null;}
 function companionChecks(G){
   const me=G.c[0];const n=aliveCount(G);
-  if(me.alive&&me.comp!=null){const m=G.c[me.comp];
-    if(!m.alive){me.comp=null;}
-    else{changeRel(G,m,me,1,1);const r=rel(G,m,me);const bt=btrTurn(G,m,me,n);
-      if(bt==='fight'){if(G.phase!=='act')return;}
-      else if(bt){}
-      else if(n===2&&m.transfer!=='helper'){me.comp=null;m.comp=null;ev(G,'seen','pair',`이제 ${JS.wa(m.name)} 나, 둘만 남았다. ${JS.i(m.name)} 조용히 손을 놓았다.`,{q:PARTING[m.pers],imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}
-      else{let b=PERS[m.pers].betray*(n<=4?2.5:1)*(r.like<40?1.6:r.like>=70?.1:.6)*.07;if(r.tag==='crush')b*=.2;if(m.transfer==='helper')b=0;if(m.transfer==='hunter')b*=4;
-        if(R()<b){me.comp=null;m.comp=null;know(G,m.id,0);fight(G,m,me,{ambush:true,head:`${JS.i(m.name)} 등 뒤에서 나를 노렸다!`,q:BETRAY[m.pers]||'…미안해.'});if(G.phase!=='act')return;}
-        else if(r.like<15){me.comp=null;m.comp=null;ev(G,'seen','pair',`${JS.i(m.name)} 말없이 떠났다.`,{imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}}}
+  if(me.alive)for(const id of myComps(G)){const m=G.c[id];
+    if(!m.alive){unpair(G,me,m);continue;}
+    changeRel(G,m,me,1,1);const r=rel(G,m,me);
+    if(bonded(m,me))continue;
+    const bt=btrTurn(G,m,me,n);
+    if(bt==='fight'){if(G.phase!=='act')return;continue;}
+    if(bt)continue;
+    if(n===2&&m.transfer!=='helper'){unpair(G,me,m);ev(G,'seen','pair',`이제 ${JS.wa(m.name)} 나, 둘만 남았다. ${JS.i(m.name)} 조용히 손을 놓았다.`,{q:PARTING[m.pers],imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;continue;}
+    let b=PERS[m.pers].betray*(n<=4?2.5:1)*(r.like<40?1.6:r.like>=70?.1:.6)*.07;if(r.tag==='crush')b*=.2;if(m.transfer==='helper')b=0;if(m.transfer==='hunter')b*=4;
+    if(R()<b){unpair(G,me,m);know(G,m.id,0);fight(G,m,me,{ambush:true,head:`${JS.i(m.name)} 등 뒤에서 나를 노렸다!`,q:BETRAY[m.pers]||'…미안해.'});if(G.phase!=='act')return;}
+    else if(r.like<15){unpair(G,me,m);ev(G,'seen','pair',`${JS.i(m.name)} 말없이 떠났다.`,{imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}
   }
   for(const a of G.c){if(!a.alive||a.me||a.comp==null||a.comp===0||a.id>a.comp)continue;const b=G.c[a.comp];if(!b.alive){a.comp=null;continue;}
+    if(bonded(a,b))continue;
     for(const[x,y]of[[a,b],[b,a]]){const r=rel(G,x,y);let p=PERS[x.pers].betray*(n<=4?2.5:1)*(r.like<40?1.6:r.like>=70?.1:.6)*.07;if(r.tag==='crush')p*=.2;
       if(R()<p){x.comp=null;y.comp=null;fight(G,x,y,{ambush:true,head:`${JS.i(x.name)} ${JS.eul(y.name)} 배신했다.`,q:BETRAY[x.pers]});break;}
       if(n===2){x.comp=null;y.comp=null;break;}}
@@ -1793,9 +1825,9 @@ function itemOp(G,op,idx,arg){
 }
 function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!has('battery'))return false;return me.club==='broadcast'||has('wire');}
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
-function dismiss(G){const me=G.c[0];if(me.comp==null||G.phase!=='act')return;const m=G.c[me.comp];me.comp=null;m.comp=null;changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
+function dismiss(G,id){const me=G.c[0];if(id==null)id=me.comp;if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -1909,6 +1941,7 @@ function renderReveal(){
     ${b?`<dt>몸</dt><dd>${b.n} <span class="muted">· 체력 ${me.mhp} · 스태미나 ${me.mst} · 공격 ${me.atk} · 방어 ${me.def}</span></dd>`:''}
     <dt>시작 소지품</dt><dd>${esc(items)}, 교복</dd>
     <dt>단짝</dt><dd>${f?`<b>${esc(f.name)}</b> <span class="muted">· ${M.CLUBS[f.club].n}</span>`:'<span class="muted">없음</span>'}</dd>
+    ${G.c.filter(c=>!c.me&&c.special==='friend').map(c=>`<dt>친구</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}${M.bonded(me,c)?' · 무슨 일이 있어도 서로 등을 돌리지 않는 사이':''}</span></dd>`).join('')}
     ${G.c.filter(c=>!c.me&&M.isCouple(G,0,c.id)).map(c=>`<dt>연인</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}</span></dd>`).join('')}
     ${G.transferId!=null?`<dt>전입생</dt><dd><b>${esc(G.c[G.transferId].name)}</b> <span class="muted">· 작년 이 게임의 우승자라는 소문이 있다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
     ${hints.length?`<dt>예감</dt><dd>${hints.map(esc).join('<br>')}</dd>`:''}
@@ -1948,9 +1981,9 @@ function renderGame(){
   const can=G.phase==='act'&&me.alive;$('act-search').disabled=!can;$('act-rest').disabled=!can;
   const bs=M.bodiesAt(G,me.loc);const lb=$('act-loot');lb.hidden=!(me.alive&&bs.length);lb.disabled=!can;
   lb.title=bs.map(b=>G.c[b.v].name).join(', ');
-  const comp=me.comp!=null?G.c[me.comp]:null;const cb=$('act-chat');cb.hidden=!(me.alive&&comp&&comp.alive&&comp.loc===me.loc);cb.disabled=!can;
+  const here=M.myComps(G).map(id=>G.c[id]).filter(c=>c.alive&&c.loc===me.loc);const cb=$('act-chat');cb.hidden=!(me.alive&&here.length);cb.disabled=!can;
   const eb=$('act-escape');eb.hidden=!M.canEscape(G);eb.disabled=!can;
-  if(comp)cb.title=`${M.JS.wa(comp.name)} 쉬면서 이야기해요. 쉬기만큼 회복하고 서로 가까워져요.`;
+  if(here.length){const nms=here.map(c=>c.name);cb.title=`${nms.slice(0,-1).map(x=>x+', ').join('')}${M.JS.wa(nms[nms.length-1])} 쉬면서 이야기해요. 쉬기만큼 회복하고 서로 가까워져요.`;}
 }
 function renderDock(){
   const me=G.c[0];const hp=Math.max(0,me.hp),st=Math.max(0,me.st);
@@ -1967,7 +2000,7 @@ function renderStatus(){
   const z=G.zones[me.loc],left=M.turnsToBcast(G);
   let warn='';
   if(z===1)warn=`<div class="alert">${M.JS.eun(M.AREAS[me.loc].n)} 다음 방송 때 닫혀요. <b>${left}턴</b> 안에 다른 칸으로 옮겨야 해요.</div>`;
-  const comp=me.comp!=null?G.c[me.comp]:null;
+  const comps=M.myComps(G).map(id=>G.c[id]);
   const wd=me.wep?M.IT[me.wep.id]:null;
   $('status').innerHTML=`
    <div class="me-top"><span class="mono muted">${me.no}번</span><b>${esc(me.name)}</b><span class="chips"><span class="chip">${M.CLUBS[me.club].n}</span><span class="chip">${M.PERS[me.pers].n}</span>${me.build&&M.BUILDS[me.build]?`<span class="chip">${M.BUILDS[me.build].n}</span>`:''}<span class="chip">Lv ${me.lv}</span>${injs}</span></div>
@@ -1984,15 +2017,15 @@ function renderStatus(){
    </div>
    ${warn?`<div style="margin-top:10px">${warn}</div>`:''}
    ${escBox()}
-   ${comp?`<div class="comp"><span>동행</span><b>${esc(comp.name)}</b>${tagChip(G.rel[0][comp.id][2])}<span class="muted mono">${hpWord(comp)}</span><span style="flex:1"></span><button class="btn small" type="button" id="btn-dismiss" ${G.phase!=='act'?'disabled':''}>따로 움직이기</button></div>`:''}`;
-  const bd=$('btn-dismiss');if(bd)bd.onclick=()=>{M.dismiss(G);after();};
+   ${comps.map((comp,k)=>`<div class="comp${k?' more':''}"><span>동행</span><b>${esc(comp.name)}</b>${tagChip(G.rel[0][comp.id][2])}${M.bonded(me,comp)?'<span class="chip bond">끝까지 한편</span>':''}<span class="muted mono">${hpWord(comp)}</span><span style="flex:1"></span><button class="btn small" type="button" data-dismiss="${comp.id}" ${G.phase!=='act'?'disabled':''}>따로 움직이기</button></div>`).join('')}`;
+  $('status').querySelectorAll('button[data-dismiss]').forEach(bd=>bd.onclick=()=>{M.dismiss(G,+bd.dataset.dismiss);after();});
 }
 function escBox(){
   if(!G.escapeKnown||G.transferId==null)return '';const me=G.c[0],h=G.c[G.transferId];
   if(!h.alive)return `<div class="escbox"><b>탈출</b><span class="no">${esc(M.JS.i(h.name))} 쓰러져 탈출할 길이 사라졌다.</span></div>`;
   const ck=(ok,t)=>`<span class="${ok?'ok':'no'}">${ok?'준비됨':'아직'} · ${t}</span>`;
   return `<div class="escbox"><b>${esc(M.JS.wa(h.name))} 함께 탈출</b>
-    ${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(me.comp===h.id,`${esc(h.name)} 동행`)}${ck(M.ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2,'선착장이나 방파제에 있기')}</div>`;
+    ${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(M.isMyComp(G,h.id),`${esc(h.name)} 동행`)}${ck(M.ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2,'선착장이나 방파제에 있기')}</div>`;
 }
 function renderMap(){
   const me=G.c[0];const adj=M.neighbors(me.loc);const radar=me.inv.some(it=>it.id==='radar');
@@ -2000,7 +2033,7 @@ function renderMap(){
   $('map').innerHTML=M.AREAS.map((a,i)=>{
     const z=G.zones[i],here=i===me.loc,isAdj=adj.includes(i)&&z!==2&&G.phase==='act'&&me.alive;
     const zt=z===2?'금지구역':z===1?'다음 방송 때 금지':'';
-    const comp=me.comp!=null&&G.c[me.comp].loc===i&&!here;
+    const comp=!here&&M.myComps(G).some(id=>G.c[id].alive&&G.c[id].loc===i);
     const label=`${a.n}${here?', 지금 있는 곳':''}${zt?', '+zt:''}${isAdj?', 누르면 이동':''}`;
     return `<button type="button" class="tile z${z} ${here?'here':''} ${isAdj?'adj':''}" data-i="${i}" aria-label="${label}" ${isAdj?'':'aria-disabled="true"'}>
       <span class="tn">${a.n}</span><span class="tm">${M.areaMods(a).join(' · ')}</span>${zt?`<span class="tz">${z===2?'금지':'예고'}</span>`:''}
@@ -2186,11 +2219,12 @@ function openModal(){
   if(p.type==='meet'){
     dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">${esc(n.name)}</h2>
      <p style="margin:0">${M.AREAS[me.loc].n} 저편에 ${esc(n.name)}의 모습이 보인다. 아직 나를 못 본 것 같다.</p>${card}
-     <div class="acts"><button class="btn primary" type="button" data-c="talk">말을 건다</button><button class="btn danger" type="button" data-c="attack">공격한다</button><button class="btn" type="button" data-c="pass">모른 척 지나간다</button></div>`;
+     ${M.bonded(me,n)?`<p class="muted" style="margin:0;font-size:13px">${esc(M.JS.wa(me.name))} ${esc(n.name)}, 둘은 무슨 일이 있어도 서로에게 손을 들지 않는다.</p>`:''}
+     <div class="acts"><button class="btn primary" type="button" data-c="talk">말을 건다</button>${M.bonded(me,n)?'':'<button class="btn danger" type="button" data-c="attack">공격한다</button>'}<button class="btn" type="button" data-c="pass">모른 척 지나간다</button></div>`;
   }else if(p.type==='propose'){
     dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">같이 다니자는 말</h2>
      <p class="hand" style="margin:0">“${esc(PROPOSE_LINE(n))}”</p>${card}
-     <p class="muted" style="margin:0;font-size:13px">함께 다니면 같이 움직이고 같이 싸워요. 다만 마음이 식으면 떠나거나, 등을 돌릴 수도 있어요.</p>
+     <p class="muted" style="margin:0;font-size:13px">${me.comp!=null?`${esc(G.c[me.comp].name)}까지 셋이 함께 움직이고 함께 싸워요. `:'함께 다니면 같이 움직이고 같이 싸워요. '}${M.bonded(me,n)?`${esc(M.JS.eun(n.name))} 무슨 일이 있어도 등을 돌리지 않아요.`:'다만 마음이 식으면 떠나거나, 등을 돌릴 수도 있어요.'}</p>
      <div class="acts"><button class="btn primary" type="button" data-c="yes">같이 간다</button><button class="btn" type="button" data-c="no">혼자가 낫다</button></div>`;
   }
   $('modal').hidden=false;
