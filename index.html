@@ -301,6 +301,10 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 .lootlist .grow{flex:1;min-width:9em}
 .swaplist{display:grid;gap:6px}
 .swaplist .btns{display:flex;flex-wrap:wrap;gap:6px}
+.bagfix{display:grid;gap:6px;margin-top:6px}
+.bagfix .bf{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule-2);padding-top:6px}
+.bagfix .bf:first-child{border-top:0;padding-top:0}
+.bagfix .bf .nm{font-size:14px}
 
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--rule)}
 .tabs button{appearance:none;border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -1670,6 +1674,7 @@ function pickUp(G,p,choice){
     return;}
   const it=pool[pi],d=IT[it.id];
   if(cmd==='take'){if(!bagHasRoom(me,it))return;pool.splice(pi,1);addToBag(me,it);ev(G,'seen','find',`${JS.eul(d.n)} 가방에 넣었다.`);}
+  else if(cmd==='eat'&&(d.k==='f'||d.k==='h')){pool.splice(pi,1);eatHere(G,me,it);}
   else if(cmd==='equip'&&SLOT[d.k]){
     if(d.k==='b'&&!canEquipBag(me,it))return;
     pool.splice(pi,1);const tail=wearFrom(G,me,it);
@@ -1679,13 +1684,21 @@ function pickUp(G,p,choice){
     if(bagHasRoom(me,it))addToBag(me,it);else pool.push(it);
     ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓고 ${JS.eul(d.n)} 챙겼다.`);}
 }
+/* 줍기·시체 뒤지기 창이 떠 있는 동안 가방의 먹을 것이나 약을 쓴다. 창은 그대로 남는다 */
+function pendingEat(G,idx){const p=G.pending;if(!p||G.phase!=='pending'||!['find','loot','body'].includes(p.type))return false;
+  const me=G.c[0];const it=me.inv[idx];if(!it)return false;const k=IT[it.id].k;if(k!=='f'&&k!=='h')return false;
+  consume(G,me,idx);afterEat(G);return true;}
+function afterEat(G){const me=G.c[0];if(!me.alive){G.pending=null;G.phase='act';checkEnd(G);}}
+function eatHere(G,me,it){me.inv.push(it);consume(G,me,me.inv.length-1);}
 function bodyOp(G,cmd,arg){
   const p=G.pending;if(!p||p.type!=='body'||G.phase!=='pending')return false;
   const me=G.c[0];
+  if(cmd==='eatbag')return pendingEat(G,+arg);
   if(cmd==='drop'){const i=+arg;if(!me.inv[i])return false;const out=dropStack(G,me,i);ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓았다.`);return true;}
   let b=null,i=-1;for(const x of G.bodies[p.loc]){const j=x.items.findIndex(it=>it.uid===arg);if(j>=0){b=x;i=j;break;}}
   if(!b)return false;const it=b.items[i],d=IT[it.id],who=G.c[b.v].name;
   if(cmd==='take'){if(!bagHasRoom(me,it))return false;b.items.splice(i,1);addToBag(me,it);ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} 챙겼다.`);return true;}
+  if(cmd==='eat'&&(d.k==='f'||d.k==='h')){b.items.splice(i,1);eatHere(G,me,it);afterEat(G);return true;}
   if(cmd==='equip'&&SLOT[d.k]){if(d.k==='b'&&!canEquipBag(me,it))return false;
     b.items.splice(i,1);const tail=wearFrom(G,me,it);
     ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} ${WEARV[d.k]}.${tail}`);return true;}
@@ -1877,7 +1890,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=me.comp;if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2330,9 +2343,10 @@ function openPickup(p){
      <div class="acts">
       ${room?`<button class="btn primary" type="button" data-c="take">가방에 넣는다</button>`:''}
       ${wear?`<button class="btn ${room?'':'primary'}" type="button" data-c="equip" ${wearDis?'disabled title="이 가방으로는 지금 짐이 다 안 들어가요"':''}>${WEAR_LABEL[d.k]}</button>`:''}
+      ${eatable(d)?`<button class="btn" type="button" data-c="eat">그 자리에서 ${d.k==='f'?'먹는다':'쓴다'}</button>`:''}
       <button class="btn" type="button" data-c="leave">그냥 둔다</button>
      </div>
-     ${room?'':`<div class="swaplist"><p class="muted" style="margin:0;font-size:13px">가방에서 하나를 내려놓으면 대신 챙길 수 있어요.</p><div class="btns">${groupInv(me).map(g=>`<button class="btn small" type="button" data-c="swap:${g.idx[0]}">${esc(M.IT[g.it.id].n)}${g.n>1?` x${g.n}`:''} 내려놓기</button>`).join('')}</div></div>`}`;
+     ${room?'':`<div class="swaplist"><p class="muted" style="margin:0;font-size:13px">가방에서 하나를 먹거나 내려놓으면 대신 챙길 수 있어요. 겹쳐 담긴 건 다 먹어야 칸이 비어요.</p>${bagFixRows(me,'find')}</div>`}`;
   }else{
     const v=G.c[p.who];const items=p.uids.map(u=>pool.find(x=>x.uid===u)).filter(Boolean);
     if(!items.length){done('leave');return;}
@@ -2346,8 +2360,17 @@ function openPickup(p){
   }
   $('modal').hidden=false;
   dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>done(b.dataset.c));
+  dlg.querySelectorAll('button[data-eat]').forEach(b=>b.onclick=()=>{M.pendingEat(G,+b.dataset.eat);saveSoon();renderGame();
+    if(G.phase==='pending')openModal();else{closeModal();after(true);}});
   const f=dlg.querySelector('button');if(f)f.focus();
 }
+const eatable=d=>d.k==='f'||d.k==='h';
+/* 가방이 꽉 찼을 때 비우는 줄: 먹을 것·약은 먹기/쓰기, 모든 것은 내려놓기 */
+function bagFixRows(me,mode){
+  return `<div class="bagfix">${groupInv(me).map(g=>{const d=M.IT[g.it.id];const i=g.idx[0];
+    const eat=eatable(d)?(mode==='body'?`<button class="btn small" type="button" data-b="eatbag:${i}">${g.n>1?'하나 ':''}${d.k==='f'?'먹기':'쓰기'}</button>`:`<button class="btn small" type="button" data-eat="${i}">${g.n>1?'하나 ':''}${d.k==='f'?'먹기':'쓰기'}</button>`):'';
+    const drop=mode==='body'?`<button class="btn small" type="button" data-b="drop:${i}">내려놓기</button>`:`<button class="btn small" type="button" data-c="swap:${i}">내려놓고 대신 챙기기</button>`;
+    return `<div class="bf"><span class="nm">${esc(d.n)}${g.n>1?` <span class="stackn">x${g.n}</span>`:''}${g.it.p&&g.it.pk?' <span class="tag-p">독</span>':''}</span><span class="btns">${eat}${drop}</span></div>`;}).join('')}</div>`;}
 let bodyKey=null;const bodyOpen=new Set();
 function openBody(p,keep){
   const dlg=$('dlg');const me=G.c[0];
@@ -2363,21 +2386,21 @@ function openBody(p,keep){
     const peek=names.slice(0,2).join(', ')+(names.length>2?` 외 ${names.length-2}개`:'');
     const list=`<div class="lootlist">${b.items.map(it=>{const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
        return `<div class="row2"><div class="grow"><b>${esc(d.n)}</b>${it.b?` <span class="bonus">+${it.b}</span>`:''}${it.p&&it.pk?' <span class="tag-p">독</span>':''}<div class="meta mono muted" style="font-size:12px">${itemMeta(it)}</div>${wear?`<div class="muted" style="font-size:12px">${cmpLine(it)}</div>`:''}</div>
-        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}</div></div>`;}).join('')}</div>`;
+        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}${eatable(d)?`<button class="btn small" type="button" data-b="eat:${it.uid}">${d.k==='f'?'먹기':'쓰기'}</button>`:''}</div></div>`;}).join('')}</div>`;
     if(!fold)return `<div class="bodysec" data-v="${b.v}"><div class="bh"><b>${esc(v.name)}</b><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></div>${list}</div>`;
     return `<details class="bodysec fold" data-v="${b.v}" ${bodyOpen.has(b.v)?'open':''}><summary><span class="bh"><b>${esc(v.name)}</b><span class="cnt mono">${names.length}개</span><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></span><span class="peek">${esc(peek)}</span></summary>${list}</details>`;}).join('');
   dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p>
    <h2 id="dlg-h">${focus?`${esc(focus.name)}의 소지품`:'쓰러진 사람의 소지품'}</h2>
    <p style="margin:0">${focus?'쓰러진 자리에 소지품이 남았다.':'남겨진 것들을 하나씩 살폈다.'} 필요한 만큼 챙길 수 있고, 남긴 건 그 자리에 그대로 남는다.${fold?` 이곳에 쓰러진 사람은 ${bodies.length}명. 이름을 누르면 소지품이 펼쳐진다.`:''}</p>
    ${secs?`<div class="bodylist">${secs}</div>`:'<p class="empty" style="margin:0">더 챙길 게 없다.</p>'}
-   <p class="muted" style="margin:0;font-size:13px">가방 ${used} / ${cap}칸${full?' · 꽉 찼어요. 이미 있는 물건은 같은 칸에 겹쳐 담기고, 입거나 멜 것은 바로 착용할 수 있어요. 아래에서 가방을 비울 수도 있어요.':''}</p>
-   ${full?`<div class="swaplist"><div class="btns">${groupInv(me).map(g=>`<button class="btn small" type="button" data-b="drop:${g.idx[0]}">${esc(M.IT[g.it.id].n)}${g.n>1?` x${g.n}`:''} 내려놓기</button>`).join('')}</div></div>`:''}
+   <p class="muted" style="margin:0;font-size:13px">가방 ${used} / ${cap}칸${full?' · 꽉 찼어요. 이미 있는 물건은 같은 칸에 겹쳐 담기고, 입거나 멜 것은 바로 착용할 수 있어요. 먹을 것은 그 자리에서 먹어도 되고, 아래에서 가방을 비울 수도 있어요.':''}</p>
+   ${full?`<div class="swaplist">${bagFixRows(me,'body')}</div>`:''}
    <div class="acts"><button class="btn ${secs?'':'primary'}" type="button" data-c="done">다 챙겼다</button></div>`;
   $('modal').hidden=false;
   dlg.querySelectorAll('details.bodysec').forEach(d=>d.addEventListener('toggle',()=>{const v=+d.dataset.v;if(d.open)bodyOpen.add(v);else bodyOpen.delete(v);}));
   dlg.querySelectorAll('button[data-b]').forEach(b=>b.onclick=()=>{const[c,a]=b.dataset.b.split(':');
     const sec=b.closest('[data-v]');const k={top:dlg.scrollTop,v:sec?sec.dataset.v:null};
-    if(M.bodyOp(G,c,a)){saveSoon();renderGame();}openBody(G.pending,k);});
+    if(M.bodyOp(G,c,a)){saveSoon();renderGame();}if(G.phase!=='pending'){closeModal();after(true);return;}openBody(G.pending,k);});
   dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>{M.resolve(G,b.dataset.c);closeModal();after(true);});
   if(keep){dlg.scrollTop=keep.top;
     const sec=keep.v!=null&&dlg.querySelector(`[data-v="${keep.v}"]`);
