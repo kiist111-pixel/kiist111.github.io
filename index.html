@@ -307,6 +307,20 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .tabpanel{padding-top:12px}
+.tabs{scroll-margin-top:72px}
+.statbtn{appearance:none;background:none;border:1px solid var(--rule);border-radius:var(--r);padding:3px 8px;cursor:pointer;display:inline-flex;gap:6px;align-items:baseline}
+.statbtn:hover{border-color:var(--red)}
+.statbtn .go{font-size:12px;color:var(--ink-2)}
+.dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--f-mono);font-size:13px;margin-bottom:8px}
+.dhead b{font-size:20px;font-weight:400;color:var(--red)}
+.dlist{display:grid}
+.drow{display:grid;grid-template-columns:2.2em minmax(0,1fr);gap:4px 10px;padding:9px 2px;border-top:1px solid var(--rule-2)}
+.drow:first-child{border-top:0}
+.drow .nth{font-family:var(--f-mono);color:var(--red);padding-top:2px}
+.drow .nm{font-weight:600;text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px}
+.drow .sub{font-size:13px;color:var(--ink-2)}
+.drow .seen{color:var(--ink)}
+.drow .hand{font-size:1.15em}
 .loglist{display:grid;gap:10px;max-height:640px;overflow:auto;padding-right:4px}
 
 .roster{display:grid}
@@ -471,7 +485,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
         <li><span class="n">조우</span><div><b>먼저 발견하면 고를 수 있어요.</b> 말을 걸지, 공격할지, 모른 척 지나갈지. 먼저 들키면 상대가 고릅니다. 싸움이 붙으면 라운드마다 공격, 방어, 도망을 직접 고르고, 싸우는 동안에는 시간이 흐르지 않아요.</div></li>
         <li><span class="n">마음</span><div><b>마음은 두 가지로 쌓여요.</b> 호감과 관심. 둘 다 높으면 좋아하게 되고, 싫은데 신경 쓰이면 혐관이 됩니다. 나도 예외는 아니에요.</div></li>
         <li><span class="n">방송</span><div><b>네 시간마다 방송이 나와요.</b> 떠난 친구들의 이름과, 다음에 닫힐 구역을 알려 줍니다. 닫힌 구역에 남아 있으면 밴드가 울려요.</div></li>
-        <li><span class="n">조합</span><div><b>주운 물건은 쪼개고 합칠 수 있어요.</b> 유리병을 깨면 유리조각이 되고, 각목에 못을 박으면 쓸 만한 무기가 됩니다.</div></li>
+        <li><span class="n">조합</span><div><b>주운 물건은 쪼개고 합칠 수 있어요.</b> 유리병을 깨면 유리조각이 되고, 각목에 못을 박으면 쓸 만한 무기가 됩니다. 쇠사슬이나 잡지, 철판으로 무기와 옷을 강화할 수도 있어요.</div></li>
       </ol>
     </aside>
   </div>
@@ -555,7 +569,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
   <div class="bar" role="status" aria-live="polite">
     <span class="brand" aria-hidden="true">LAST ROLL CALL</span>
     <span class="clock" id="h-clock"></span>
-    <span class="stat alive">남은 인원 <b id="h-alive"></b></span>
+    <button type="button" class="stat alive statbtn" id="btn-dead" title="지금까지 쓰러진 사람 보기">남은 인원 <b id="h-alive"></b><span class="go">탈락자 ›</span></button>
     <span class="stat">다음 방송까지 <b id="h-next"></b></span>
     <span class="rescue" id="h-rescue" hidden></span>
     <span class="spacer"></span>
@@ -576,10 +590,12 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
         <div class="tabs" role="tablist">
           <button role="tab" type="button" id="tab-log" aria-selected="true" aria-controls="pn-log">기록</button>
           <button role="tab" type="button" id="tab-roster" aria-selected="false" aria-controls="pn-roster">출석부</button>
+          <button role="tab" type="button" id="tab-dead" aria-selected="false" aria-controls="pn-dead">탈락자</button>
           <button role="tab" type="button" id="tab-rel" aria-selected="false" aria-controls="pn-rel">관계표</button>
         </div>
         <div class="tabpanel" id="pn-log" role="tabpanel"></div>
         <div class="tabpanel" id="pn-roster" role="tabpanel" hidden></div>
+        <div class="tabpanel" id="pn-dead" role="tabpanel" hidden></div>
         <div class="tabpanel" id="pn-rel" role="tabpanel" hidden></div>
       </section>
     </div>
@@ -632,21 +648,21 @@ const JS={
 
 /* ----- 섬 ----- */
 const AREAS=[
- {n:'북쪽 곶',d:1.3,a:1,f:1,pool:['stone','stone','water','pipe','ironball','shotgun:0.35','windbreaker:0.5']},
- {n:'등대',d:1,a:1,f:1.2,pool:['water','bread','firstaid:0.5','radio:0.75','padding','molotov:0.4','lifejacket','raincoat:0.6']},
- {n:'대나무숲',d:.75,a:1,f:1,pool:['bamboo','snare','riceball','stone','choco','armguard:0.4']},
- {n:'폐광 입구',d:1,a:1,f:.85,pool:['pickaxe','wire','helmet','firecracker','water','nail','powder:0.5','workwear','kneepad:0.5','nipper:0.7']},
- {n:'선착장',d:1.2,a:1,f:1,pool:['hook','water','ramen','molotov:0.5','bottle','whetstone:0.6','tape:0.5','lifejacket:0.6','hikingpack:0.4']},
- {n:'폐교',d:1,a:.9,f:1,pool:['plank','mop','extinguisher','cutter','dart','bat:0.6','tracksuit','nail','tape:0.6','backpack','bathelmet:0.6','kneepad:0.4']},
- {n:'마을회관',d:1.2,a:1,f:1,pool:['radar','choco','painkiller','padding','battery:0.5','firecracker','nail:0.6','ecobag','raincoat:0.5','nipper:0.5']},
+ {n:'북쪽 곶',d:1.3,a:1,f:1,pool:['stone','stone','water','pipe','ironball','shotgun:0.35','windbreaker:0.5','steelplate:0.4']},
+ {n:'등대',d:1,a:1,f:1.2,pool:['water','bread','firstaid:0.5','radio:0.75','padding','molotov:0.4','lifejacket','raincoat:0.6','rope:0.5']},
+ {n:'대나무숲',d:.75,a:1,f:1,pool:['bamboo','snare','riceball','stone','choco','armguard:0.4','rope:0.6']},
+ {n:'폐광 입구',d:1,a:1,f:.85,pool:['pickaxe','wire','helmet','firecracker','water','nail','powder:0.5','workwear','kneepad:0.5','nipper:0.7','chain','steelplate:0.5']},
+ {n:'선착장',d:1.2,a:1,f:1,pool:['hook','water','ramen','molotov:0.5','bottle','whetstone:0.6','tape:0.5','lifejacket:0.6','hikingpack:0.4','rope','chain:0.5']},
+ {n:'폐교',d:1,a:.9,f:1,pool:['plank','mop','extinguisher','cutter','dart','bat:0.6','tracksuit','nail','tape:0.6','backpack','bathelmet:0.6','kneepad:0.4','magazine','cardboard:0.5']},
+ {n:'마을회관',d:1.2,a:1,f:1,pool:['radar','choco','painkiller','padding','battery:0.5','firecracker','nail:0.6','ecobag','raincoat:0.5','nipper:0.5','magazine','sewkit:0.6','pot:0.5','cardboard:0.5']},
  {n:'동백 언덕',d:1,a:1.2,f:1,pool:['sickle','stone','milk','hatchet:0.5','windbreaker:0.4','pouch:0.4']},
- {n:'염전',d:1.3,a:1,f:1,pool:['shovel','water','bottle','bread','workwear:0.6','nipper:0.4']},
- {n:'구멍가게',d:1,a:1,f:1,pool:['ramen','bread','choco','battery','milk','cutter','poison','kitchen','tape','whetstone:0.4','pouch','ecobag:0.5']},
+ {n:'염전',d:1.3,a:1,f:1,pool:['shovel','water','bottle','bread','workwear:0.6','nipper:0.4','cardboard:0.6','rope:0.5']},
+ {n:'구멍가게',d:1,a:1,f:1,pool:['ramen','bread','choco','battery','milk','cutter','poison','kitchen','tape','whetstone:0.4','pouch','ecobag:0.5','cardboard','pot:0.5','magazine:0.5']},
  {n:'보건소',d:1.2,a:1,f:1,pool:['firstaid','bandage','bandage','painkiller','bandaid','bandaid','poison:0.5','battery:0.4','armguard:0.4']},
  {n:'저수지',d:.75,a:1,f:1,pool:['airgun','riceball','water','knuckle','raincoat:0.5']},
- {n:'방파제',d:1,a:1,f:.85,pool:['wire','ironball','bottle','hook','water','glass:0.5','lifejacket:0.5','nipper:0.3']},
- {n:'해녀 탈의장',d:.75,a:1,f:1,pool:['diveknife','wetsuit','water','riceball','whetstone:0.5','pouch:0.4']},
- {n:'성당',d:1,a:1,f:1.2,pool:['candlestick','bread','bandage','beartrap','nail:0.5','backpack:0.4']},
+ {n:'방파제',d:1,a:1,f:.85,pool:['wire','ironball','bottle','hook','water','glass:0.5','lifejacket:0.5','nipper:0.3','steelplate:0.4','rope:0.4']},
+ {n:'해녀 탈의장',d:.75,a:1,f:1,pool:['diveknife','wetsuit','water','riceball','whetstone:0.5','pouch:0.4','sewkit:0.4','pot:0.5']},
+ {n:'성당',d:1,a:1,f:1.2,pool:['candlestick','bread','bandage','beartrap','nail:0.5','backpack:0.4','sewkit:0.5']},
  {n:'전망대',d:1.3,a:1.1,f:1,pool:['bow','choco','vest','dart','machete:0.4','hikingpack:0.5','bathelmet:0.3']},
 ];
 function areaMods(a){const m=[];if(a.d>1)m.push('눈에 띔');if(a.d<1)m.push('숨기 좋음');if(a.a>1)m.push('공격↑');if(a.a<1)m.push('공격↓');if(a.f>1)m.push('방어↑');if(a.f<1)m.push('방어↓');return m;}
@@ -685,17 +701,51 @@ const IT={
  mopspear:{n:'대걸레 창',k:'w',t:'cut',atk:19}, powderbottle:{n:'화약병',k:'w',t:'blast',atk:22,uses:2},
  glassknuckle:{n:'유리 너클',k:'w',t:'fist',atk:13}, spikesnare:{n:'가시 올무',k:'s',trap:34},
  nipper:{n:'니퍼',k:'p'},
+ chain:{n:'쇠사슬',k:'m'}, magazine:{n:'두꺼운 잡지',k:'m'}, cardboard:{n:'골판지',k:'m'}, sewkit:{n:'반짇고리',k:'m'},
+ steelplate:{n:'얇은 철판',k:'m'}, rope:{n:'밧줄',k:'m'}, pot:{n:'찌그러진 냄비',k:'m'},
+ pipespear:{n:'쇠파이프 창',k:'w',t:'cut',atk:25}, flail:{n:'철퇴',k:'w',t:'blunt',atk:24},
+ sling:{n:'투석끈',k:'w',t:'throw',atk:12,uses:12}, spikeknuckle:{n:'가시 너클',k:'w',t:'fist',atk:15},
+ cardarmor:{n:'골판지 갑옷',k:'a',def:6,dur:16}, pothelm:{n:'냄비 투구',k:'g',def:4,dur:22,prot:'head'},
+ magguard:{n:'잡지 팔토시',k:'g',def:3,dur:18,prot:'arm'}, cardshin:{n:'골판지 정강이대',k:'g',def:3,dur:14,prot:'leg'},
 };
 const RECIPES=[['plank','nail','nailplank'],['bat','nail','nailbat'],['mop','kitchen','mopspear'],['mop','cutter','mopspear'],
-  ['bottle','powder','powderbottle'],['snare','glass','spikesnare'],['tape','glass','glassknuckle']];
+  ['bottle','powder','powderbottle'],['snare','glass','spikesnare'],['tape','glass','glassknuckle'],
+  ['pipe','kitchen','pipespear'],['pipe','diveknife','pipespear'],['plank','chain','flail'],['rope','stone','sling'],['knuckle','nail','spikeknuckle'],
+  ['cardboard','tape','cardarmor'],['pot','tape','pothelm'],['pot','rope','pothelm'],['magazine','tape','magguard'],['cardboard','rope','cardshin']];
+/* 강화: 재료 하나를 써서 무기나 옷·보호구를 그대로 둔 채 세게 만든다. 같은 강화는 정해진 횟수까지만 */
+function modCount(it,k){return (it.mods||[]).filter(x=>x===k).length+(k==='whetstone'&&!it.mods?Math.floor((it.b||0)/5):0);}
+function maxDur(it){return (IT[it.id].dur||0)+(it.xd||0);}
+const isMelee=d=>d.k==='w'&&!d.uses&&(d.t==='cut'||d.t==='blunt'||d.t==='fist');
+const isWear=d=>d.k==='a'||d.k==='g';
+const addMod=(it,k)=>{it.mods=[...(it.mods||Array(Math.floor((it.b||0)/5)).fill('whetstone')),k];};
+const MODS={
+ whetstone:{n:'날 세우기',ok:it=>{const d=IT[it.id];return d.k==='w'&&d.t==='cut'&&!d.uses&&modCount(it,'whetstone')<2;},
+   apply:it=>{addMod(it,'whetstone');it.b=(it.b||0)+5;return `숫돌에 ${IT[it.id].n}의 날을 세웠다. 공격 +5.`;}},
+ tape:{n:'청테이프 감기',ok:it=>{const d=IT[it.id];return (isMelee(d)||isWear(d))&&!modCount(it,'tape');},
+   apply:it=>{const d=IT[it.id];addMod(it,'tape');if(d.k==='w'){it.b=(it.b||0)+2;return `${d.n} 손잡이에 청테이프를 단단히 감았다. 공격 +2.`;}
+     it.xd=(it.xd||0)+10;it.d+=10;return `${d.n}의 해진 곳을 청테이프로 보강했다. 내구 +10.`;}},
+ chain:{n:'쇠사슬 감기',ok:it=>{const d=IT[it.id];return d.k==='w'&&d.t==='blunt'&&!d.uses&&!modCount(it,'chain');},
+   apply:it=>{addMod(it,'chain');it.b=(it.b||0)+4;return `${IT[it.id].n}에 쇠사슬을 칭칭 감았다. 공격 +4.`;}},
+ magazine:{n:'잡지 덧대기',ok:it=>IT[it.id].k==='a'&&modCount(it,'magazine')<2,
+   apply:it=>{addMod(it,'magazine');it.b=(it.b||0)+2;it.xd=(it.xd||0)+4;it.d+=4;return `${IT[it.id].n} 안에 두꺼운 잡지를 덧댔다. 방어 +2.`;}},
+ steelplate:{n:'철판 덧대기',ok:it=>isWear(IT[it.id])&&!modCount(it,'steelplate'),
+   apply:it=>{const v=IT[it.id].k==='a'?4:3;addMod(it,'steelplate');it.b=(it.b||0)+v;it.xd=(it.xd||0)+6;it.d+=6;return `${IT[it.id].n}에 얇은 철판을 덧대 묶었다. 방어 +${v}.`;}},
+ sewkit:{n:'수선하기',ok:it=>isWear(IT[it.id])&&it.d<maxDur(it),
+   apply:it=>{const r=maxDur(it)-it.d;it.d=maxDur(it);return `반짇고리로 ${IT[it.id].n}의 해진 곳을 꿰맸다. 내구 +${r}.`;}},
+};
+const MODTAG={whetstone:'날 세움',tape:'테이프',chain:'쇠사슬',magazine:'잡지 덧댐',steelplate:'철판 덧댐'};
+function modFor(A,B){for(const[m,t]of[[A,B],[B,A]]){const M=MODS[m.id];if(M&&!MODS[t.id]&&M.ok(t))return {mat:m,target:t};}return null;}
 const SPLIT={bottle:['glass'],firecracker:['powder']};
 const SPLIT_T={bottle:'유리병을 바닥에 내리쳐 깨뜨렸다. 날카로운 유리조각을 챙겼다.',firecracker:'폭죽 묶음을 하나하나 풀어 화약을 모았다.'};
-function recipeFor(a,b){for(const[x,y,o]of RECIPES)if((x===a&&y===b)||(x===b&&y===a))return o;
-  const sh=(w,s)=>s==='whetstone'&&IT[w].k==='w'&&IT[w].t==='cut'&&!IT[w].uses;return sh(a,b)||sh(b,a)?'sharpen':null;}
-function craftPartners(me,ref){const A=ref==='wep'?me.wep:me.inv[+ref];if(!A)return [];const out=[];
-  const cands=me.inv.map((x,i)=>[String(i),x]);if(me.wep)cands.push(['wep',me.wep]);
-  for(const[r,x]of cands){if(r===String(ref))continue;const o=recipeFor(A.id,x.id);if(!o)continue;
-    if(o==='sharpen'){const w=IT[A.id].k==='w'?A:x;if((w.b||0)>=10)continue;}out.push({ref:r,out:o});}
+function recipeFor(a,b){for(const[x,y,o]of RECIPES)if((x===a&&y===b)||(x===b&&y===a))return o;return null;}
+const SLOTREF={wep:1,arm:1,gear:1};
+function refItem(me,r){return SLOTREF[r]?me[r]:me.inv[+r];}
+/* 고른 것(ref)과 합칠 수 있는 짝: 바꿔 만들기(RECIPES)가 먼저, 아니면 강화(MODS) */
+function craftOut(A,ra,B,rb){if(!(ra==='arm'||ra==='gear'||rb==='arm'||rb==='gear')){const o=recipeFor(A.id,B.id);if(o)return o;}
+  const m=modFor(A,B);if(!m)return null;if(SLOTREF[m.mat===A?ra:rb])return null;return 'mod:'+m.mat.id;}
+function craftPartners(me,ref){ref=String(ref);const A=refItem(me,ref);if(!A)return [];const out=[];
+  const cands=me.inv.map((x,i)=>[String(i),x]);for(const s of ['wep','arm','gear'])if(me[s])cands.push([s,me[s]]);
+  for(const[r,x]of cands){if(r===ref)continue;const o=craftOut(A,ref,x,r);if(o)out.push({ref:r,out:o});}
   return out;}
 const TYPEN={cut:'베기',blunt:'둔기',fist:'맨손',throw:'던지기',shoot:'총',bow:'활',blast:'폭발'};
 const RANGED={throw:1,shoot:1,bow:1,blast:1};
@@ -1036,7 +1086,7 @@ function wepInfo(c){
 }
 const skLv=(c,t)=>Math.floor(c.sk[t]/10);
 function wscore(c,it){const d=IT[it.id];if(d.k!=='w')return -1;if(d.uses&&it.u<=0)return d.atk/4;return (d.atk+(it.b||0))*(1+skLv(c,d.t)*.07)+(d.t==='fist'&&c.club==='taekwondo'?6:0);}
-function armorDef(c){return (c.arm?IT[c.arm.id].def:0)+(c.gear?IT[c.gear.id].def:0);}
+function armorDef(c){return (c.arm?IT[c.arm.id].def+(c.arm.b||0):0)+(c.gear?IT[c.gear.id].def+(c.gear.b||0):0);}
 function power(c){const w=wepInfo(c);return c.atk+w.atk*(1+skLv(c,w.t)*.07)+c.def*.5+armorDef(c)+c.hp*.15+c.lv*3;}
 function autoEquip(G,c){
   let bi=-1,bs=c.wep?wscore(c,c.wep):(c.club==='taekwondo'?6:0);
@@ -1557,7 +1607,7 @@ function kill(G,v,k,cause){
   const vis=v.me?'seen':visAt(G,v.loc,[v,k].filter(Boolean));
   const tx=cause==='band'?`${v.me?'내':v.name+'의'} 손목 밴드가 날카롭게 울렸다. ${JS.eun(nm(v))} 그대로 쓰러졌다.`:
     cause==='trap'?`${JS.eun(nm(v))} 덫에 걸려 쓰러졌다.`:cause==='poison'?`${JS.eun(nm(v))} 독이 든 것을 먹고 쓰러졌다.`:`${JS.eun(nm(v))} 쓰러졌다.`;
-  ev(G,vis,'death',tx,{q:will,imp:1});
+  ev(G,vis,'death',tx,{q:will,imp:1,data:{v:v.id}});
   if(vis==='seen'&&k)G.kk[v.id]=k.id;
   if(body&&vis==='seen')body.seen=1;
   if(lootFor){if(me0.club==='cooking')drops.forEach(it=>{if(it.p)it.pk=1;});G.pending={type:'body',loc:v.loc,focus:v.id,free:1};G.phase='pending';}
@@ -1792,15 +1842,15 @@ function itemOp(G,op,idx,arg){
     if(slot==='bag'){if(slotsOf([...me.inv,it])>INV_MAX)return false;}else if(!bagHasRoom(me,it))return false;
     me[slot]=null;addToBag(me,it);return true;}
   if(op==='split'||op==='craft'){
-    const get=r=>r==='wep'?me.wep:me.inv[+r];
+    const get=r=>refItem(me,r);
     const rm=refs=>{refs.filter(r=>r!=='wep').map(Number).sort((x,y)=>y-x).forEach(i=>me.inv.splice(i,1));if(refs.includes('wep'))me.wep=null;};
     const A=get(idx);if(!A)return false;
     if(op==='split'){const outs=SPLIT[A.id];if(!outs)return false;const made=outs.map(o=>mkItem(o));
       if(!fits(idx==='wep'?[]:[A],made))return false;
       rm([idx]);made.forEach(x=>addToBag(me,x));ev(G,'seen','find',SPLIT_T[A.id]);return true;}
-    const B=get(arg);if(!B||A===B)return false;const out=recipeFor(A.id,B.id);if(!out)return false;
-    if(out==='sharpen'){const w=IT[A.id].k==='w'?A:B;const ws=w===A?arg:idx;if((w.b||0)>=10)return false;
-      w.b=(w.b||0)+5;rm([ws]);ev(G,'seen','find',`숫돌에 ${IT[w.id].n}의 날을 세웠다. 공격 +5.`);return true;}
+    const B=get(arg);if(!B||A===B)return false;const out=craftOut(A,String(idx),B,String(arg));if(!out)return false;
+    if(out.startsWith('mod:')){const mat=A.id===out.slice(4)&&MODS[A.id]&&!MODS[B.id]?A:B;const tgt=mat===A?B:A;
+      const msg=MODS[mat.id].apply(tgt);rm([mat===A?String(idx):String(arg)]);ev(G,'seen','find',msg,{imp:1});return true;}
     const eq=idx==='wep'||arg==='wep';const n=mkItem(out);const toHand=eq&&IT[out].k==='w';
     if(!toHand&&!fits([A,B],[n]))return false;
     rm([idx,arg]);if(toHand&&!me.wep)me.wep=n;else addToBag(me,n);
@@ -1827,7 +1877,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=me.comp;if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -1968,7 +2018,8 @@ $('act-rest').onclick=()=>doAct({type:'rest'});
 $('act-loot').onclick=()=>doAct({type:'loot'});
 $('act-chat').onclick=()=>doAct({type:'chat'});
 $('act-escape').onclick=()=>doAct({type:'escape'});
-['log','roster','rel'].forEach(k=>{$('tab-'+k).onclick=()=>{tab=k;renderTabs();};});
+['log','roster','dead','rel'].forEach(k=>{$('tab-'+k).onclick=()=>{tab=k;renderTabs();};});
+$('btn-dead').onclick=()=>{tab='dead';renderTabs();$('tab-dead').closest('.tabs').scrollIntoView({behavior:'smooth',block:'start'});};
 
 function hpWord(c){const r=c.hp/c.mhp;return r>.75?'정상':r>.45?'경상':r>.2?'중상':'빈사';}
 function tagChip(t){return `<span class="tg tg-${t||'none'}">${M.TAGN[t||'']}</span>`;}
@@ -2010,8 +2061,8 @@ function renderStatus(){
    </div>
    <div class="equip">
     <div><span class="k">무기</span>${esc(w.name)}${me.wep&&me.wep.b?` <span class="bonus">+${me.wep.b}</span>`:''} <span class="muted mono">공격 ${w.atk}${wd&&wd.uses?` · 남은 ${me.wep.u}`:''} · ${M.TYPEN[w.t]} 숙련 ${M.skLv(me,w.t)}</span></div>
-    <div><span class="k">옷</span>${ar?`${ar.n} <span class="muted mono">방어 ${ar.def} · 내구 ${me.arm.d}</span>`:'<span class="muted">없음</span>'}</div>
-    <div><span class="k">보호구</span>${me.gear?`${M.IT[me.gear.id].n} <span class="muted mono">방어 ${M.IT[me.gear.id].def} · ${M.PROTN[M.IT[me.gear.id].prot]} 보호 · 내구 ${me.gear.d}</span>`:'<span class="muted">없음</span>'}</div>
+    <div><span class="k">옷</span>${ar?`${ar.n}${me.arm.b?` <span class="bonus">+${me.arm.b}</span>`:''} <span class="muted mono">${defTxt(me.arm)} · 내구 ${me.arm.d}</span>`:'<span class="muted">없음</span>'}</div>
+    <div><span class="k">보호구</span>${me.gear?`${M.IT[me.gear.id].n}${me.gear.b?` <span class="bonus">+${me.gear.b}</span>`:''} <span class="muted mono">${defTxt(me.gear)} · ${M.PROTN[M.IT[me.gear.id].prot]} 보호 · 내구 ${me.gear.d}</span>`:'<span class="muted">없음</span>'}</div>
     <div><span class="k">가방</span>${me.bag?`${M.IT[me.bag.id].n} <span class="muted mono">칸 +${M.IT[me.bag.id].cap}</span>`:'<span class="muted">없음 (기본 6칸)</span>'}</div>
     <div><span class="k">기본</span><span class="mono">공격 ${me.atk} · 방어 ${me.def}</span> <span class="muted">· 지금 ${M.AREAS[me.loc].n}</span></div>
    </div>
@@ -2067,13 +2118,20 @@ function renderLatest(){
   const list=G.log.filter(e=>e.n>=G.turnStart&&visible(e));
   $('latest').innerHTML=`<h3>방금 일어난 일 <span class="label">${M.clock(G.t).hm}</span></h3><div class="feed">${list.length?list.map(e=>evHTML(e,false)).join(''):'<p class="empty">이동하거나, 둘러보거나, 쉬면 시간이 흘러요.</p>'}</div>`;
 }
-const MAT_DESC={nail:'각목이나 야구방망이에 박으면 무기가 세진다',whetstone:'베는 무기의 날을 세운다 (공격 +5, 두 번까지)',powder:'유리병에 채우면 화약병이 된다',tape:'유리조각을 감으면 유리 너클이 된다'};
+const MAT_DESC={nail:'각목, 야구방망이, 너클에 박으면 더 센 무기가 된다',whetstone:'베는 무기의 날을 세운다 (공격 +5, 두 번까지)',powder:'유리병에 채우면 화약병이 된다',
+  tape:'무기 손잡이에 감으면 공격 +2, 옷이나 보호구에 감으면 내구 +10 · 유리조각, 골판지, 잡지, 냄비와 합쳐 만들 수도 있다',
+  chain:'각목과 합치면 철퇴, 다른 둔기에 감으면 공격 +4',magazine:'옷 안에 덧대면 방어 +2 (두 번까지) · 청테이프와 합치면 팔토시',
+  cardboard:'청테이프와 합치면 갑옷, 밧줄과 합치면 정강이대',sewkit:'해진 옷이나 보호구의 내구를 가득 채운다',
+  steelplate:'옷에 덧대면 방어 +4, 보호구에 덧대면 방어 +3',rope:'돌멩이와 합치면 투석끈, 냄비를 머리에 묶으면 투구, 골판지를 묶으면 정강이대',
+  pot:'청테이프나 밧줄로 머리에 고정하면 투구가 된다'};
+const modTags=it=>(it.mods&&it.mods.length)?' · '+[...new Set(it.mods)].map(k=>{const n=it.mods.filter(x=>x===k).length;return M.MODTAG[k]+(n>1?' x'+n:'');}).join(', '):'';
+const defTxt=it=>`방어 ${M.IT[it.id].def}${it.b?`+${it.b}`:''}`;
 function itemMeta(it){const d=M.IT[it.id];
-  if(d.k==='w')return `${M.TYPEN[d.t]} · 공격 ${d.atk}${it.b?`+${it.b}`:''}${d.uses?` · 남은 ${it.u}`:''}`;
+  if(d.k==='w')return `${M.TYPEN[d.t]} · 공격 ${d.atk}${it.b?`+${it.b}`:''}${d.uses?` · 남은 ${it.u}`:''}${modTags(it)}`;
   if(d.k==='m')return MAT_DESC[it.id]||'무언가와 합칠 수 있다';
   if(it.id==='glass')return `숨겨 두면 밟은 사람이 다친다 · ${d.trap} 피해 · 올무나 청테이프와 합칠 수 있다`;
-  if(d.k==='a')return `옷 · 방어 ${d.def} · 내구 ${it.d}`;
-  if(d.k==='g')return `보호구 · 방어 ${d.def} · ${M.PROTN[d.prot]} 부상을 막는다 · 내구 ${it.d}`;
+  if(d.k==='a')return `옷 · ${defTxt(it)} · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
+  if(d.k==='g')return `보호구 · ${defTxt(it)} · ${M.PROTN[d.prot]} 부상을 막는다 · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
   if(d.k==='b')return `가방 · 칸 +${d.cap}`;
   if(d.k==='f')return `스태미나 +${d.st}`;
   if(d.k==='h')return `체력 +${d.hp}${d.cure===1?' · 부상 하나 치료':d.cure?' · 부상 모두 치료':''}`;
@@ -2097,9 +2155,9 @@ function renderInv(){
     if(pickMode){
       if(pickMode.kind==='poison'){return !slot&&(d.k==='f'||d.k==='h')&&!it.p?B('mix',r,'여기에 섞기',{cls:'danger'}):'';}
       if(!slot&&g.idx.map(String).includes(String(pickMode.ref)))return '<span class="chip">고른 것</span>';
-      if(slot==='wep'&&pickMode.ref==='wep')return '<span class="chip">고른 것</span>';
+      if(slot&&pickMode.ref===slot)return '<span class="chip">고른 것</span>';
       const refs=slot?[slot]:g.idx.map(String);const p=partners.find(x=>refs.includes(x.ref));
-      return p?B('craftwith',p.ref,`합치기 → ${p.out==='sharpen'?'날 세우기':M.IT[p.out].n}`,{cls:'primary'}):'';
+      return p?B('craftwith',p.ref,`합치기 → ${p.out.startsWith('mod:')?M.MODS[p.out.slice(4)].n:M.IT[p.out].n}`,{cls:'primary'}):'';
     }
     let b='';
     if(!slot){
@@ -2115,7 +2173,7 @@ function renderInv(){
       b+=B('unequip',r,slot==='wep'?'가방에 넣기':'벗기',{slot,dis,title:dis?'가방에 자리가 없어요':''});
     }
     if(M.SPLIT[it.id])b+=B('split',r,'분해',{dis:!splitFits(slot?'wep':r,it)});
-    if((!slot||slot==='wep')&&M.craftPartners(me,r).length)b+=B('craft',r,'조합');
+    if(slot!=='bag'&&M.craftPartners(me,r).length)b+=B('craft',r,slot==='arm'||slot==='gear'?'강화':'조합');
     if(!slot)b+=B('drop',r,g.n>1?'하나 버리기':'버리기');
     return b;
   }
@@ -2129,7 +2187,7 @@ function renderInv(){
   for(const g of groupInv(me))rows.push(row(g,null));
   let banner='';
   if(pickMode&&pickMode.kind==='poison')banner=`<div class="picking" style="margin-bottom:8px">쥐약을 섞을 음식이나 약을 고르세요. 섞은 걸 버려 두면 누군가 주워 먹을지도 몰라요. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;
-  if(pickMode&&pickMode.kind==='craft'){const base=pickMode.ref==='wep'?me.wep:me.inv[+pickMode.ref];
+  if(pickMode&&pickMode.kind==='craft'){const base=['wep','arm','gear'].includes(pickMode.ref)?me[pickMode.ref]:me.inv[+pickMode.ref];
     banner=`<div class="picking craft" style="margin-bottom:8px">${esc(M.JS.wa(M.IT[base.id].n))} 합칠 것을 고르세요. 합칠 수 있는 것에만 버튼이 떠요. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;}
   $('inv').innerHTML=`<h3>가방 <span class="label">${used} / ${cap}칸</span></h3>${banner}
    <div class="inv-list">${rows.join('')||'<p class="empty">가방이 비었다.</p>'}</div>`;
@@ -2145,10 +2203,22 @@ function renderInv(){
   const pc=$('btn-pcancel');if(pc)pc.onclick=()=>{pickMode=null;renderInv();};
 }
 function renderTabs(){
-  ['log','roster','rel'].forEach(k=>{$('tab-'+k).setAttribute('aria-selected',String(tab===k));$('pn-'+k).hidden=tab!==k;});
+  ['log','roster','dead','rel'].forEach(k=>{$('tab-'+k).setAttribute('aria-selected',String(tab===k));$('pn-'+k).hidden=tab!==k;});
   if(tab==='log')renderLog($('pn-log'),G.log.filter(visible));
   if(tab==='roster')renderRoster($('pn-roster'),false);
+  if(tab==='dead')renderDead($('pn-dead'));
   if(tab==='rel')renderRel($('pn-rel'),false);
+}
+/* 탈락자: 쓰러진 순서대로, 가장 최근이 위. 직접 본 죽음이면 남긴 말까지 */
+function renderDead(el){
+  const dead=G.order.map(id=>G.c[id]).filter(c=>c&&!c.alive);
+  const seenEv=c=>G.log.find(e=>e.c==='death'&&e.v==='seen'&&(e.data&&e.data.v!=null?e.data.v===c.id:e.x.startsWith(c.name)));
+  const rows=dead.map((c,i)=>{const se=seenEv(c);
+    const chips=(c.me?' <span class="chip">나</span>':'')+(c.id===G.bestie?' <span class="chip">단짝</span>':'')+(!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':'')+(!c.me&&M.bonded(G.c[0],c)?' <span class="chip bond">끝까지 한편</span>':'')+(c.transfer?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':'');
+    return `<div class="drow"><span class="nth">${String(i+1).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${chips}
+      <div class="sub">${esc(causeText(c,false))} · ${M.AREAS[c.loc].n}${se?' · <span class="seen">직접 봄</span>':''}</div>${se&&se.q?`<div class="hand">“${esc(se.q)}”</div>`:''}</div></div>`;}).reverse();
+  el.innerHTML=`<div class="dhead"><span><b>${dead.length}</b>명 탈락</span><span class="muted">남은 ${G.c.length-dead.length}명</span></div>
+    <div class="dlist">${rows.join('')||'<p class="empty">아직 아무도 쓰러지지 않았어요.</p>'}</div>`;
 }
 function renderLog(el,list){
   const items=list.slice().reverse();let last=-1;const out=[];
@@ -2233,8 +2303,8 @@ function openModal(){
 }
 function cmpLine(it){const me=G.c[0];const d=M.IT[it.id];
   if(d.k==='w'){const w=M.wepInfo(me);return `지금 손에 든 것: ${esc(w.name)} (공격 ${w.atk})`;}
-  if(d.k==='a')return me.arm?`지금 입은 옷: ${esc(M.IT[me.arm.id].n)} (방어 ${M.IT[me.arm.id].def}, 내구 ${me.arm.d})`:'지금 입은 옷이 없다';
-  if(d.k==='g')return me.gear?`지금 찬 보호구: ${esc(M.IT[me.gear.id].n)} (방어 ${M.IT[me.gear.id].def}, 내구 ${me.gear.d})`:'지금 찬 보호구가 없다';
+  if(d.k==='a')return me.arm?`지금 입은 옷: ${esc(M.IT[me.arm.id].n)} (${defTxt(me.arm)}, 내구 ${me.arm.d})`:'지금 입은 옷이 없다';
+  if(d.k==='g')return me.gear?`지금 찬 보호구: ${esc(M.IT[me.gear.id].n)} (${defTxt(me.gear)}, 내구 ${me.gear.d})`:'지금 찬 보호구가 없다';
   if(d.k==='b')return me.bag?`지금 멘 가방: ${esc(M.IT[me.bag.id].n)} (칸 +${M.IT[me.bag.id].cap})`:'지금 멘 가방이 없다 (기본 6칸)';
   return '';}
 const WEAR_LABEL={w:'바로 손에 쥔다',a:'바로 입는다',g:'바로 착용한다',b:'바로 멘다'};
