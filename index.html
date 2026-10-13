@@ -70,6 +70,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 .cover .lede{max-width:34em;font-size:16px;color:var(--ink-2);margin:0}
 .cover .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
 .cover .cta .btn{font-size:16px;padding:.75em 1.3em}
+.cover .build{margin:18px 0 0;font-size:11px;letter-spacing:.12em;color:var(--ink-3)}
 .confirm{margin-top:14px;padding:12px 14px;border:1px dashed var(--red);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .side{display:grid;gap:16px;min-width:0}
 .seats{margin:0;background:var(--sheet);border:1px solid var(--rule);padding:14px 16px 16px}
@@ -444,6 +445,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
       <button class="btn" id="btn-cont" type="button" hidden>이어하기</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
+    <p class="build mono">BUILD 2026.10.13-e</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -652,7 +654,7 @@ const JS={
 
 /* ----- 섬 ----- */
 const AREAS=[
- {n:'북쪽 곶',d:1.3,a:1,f:1,pool:['stone','stone','water','pipe','ironball','shotgun:0.35','windbreaker:0.5','steelplate:0.4']},
+ {n:'북쪽 곶',d:1.3,a:1,f:1,pool:['stone','stone','water','pipe','ironball','shotgun:0.35','windbreaker:0.5','steelplate:0.4','shell:0.3']},
  {n:'등대',d:1,a:1,f:1.2,pool:['water','bread','firstaid:0.5','radio:0.75','padding','molotov:0.4','lifejacket','raincoat:0.6','rope:0.5']},
  {n:'대나무숲',d:.75,a:1,f:1,pool:['bamboo','snare','riceball','stone','choco','armguard:0.4','rope:0.6']},
  {n:'폐광 입구',d:1,a:1,f:.85,pool:['pickaxe','wire','helmet','firecracker','water','nail','powder:0.5','workwear','kneepad:0.5','nipper:0.7','chain','steelplate:0.5']},
@@ -663,11 +665,11 @@ const AREAS=[
  {n:'염전',d:1.3,a:1,f:1,pool:['shovel','water','bottle','bread','workwear:0.6','nipper:0.4','cardboard:0.6','rope:0.5']},
  {n:'구멍가게',d:1,a:1,f:1,pool:['ramen','bread','choco','battery','milk','cutter','poison','kitchen','tape','whetstone:0.4','pouch','ecobag:0.5','cardboard','pot:0.5','magazine:0.5']},
  {n:'보건소',d:1.2,a:1,f:1,pool:['firstaid','bandage','bandage','painkiller','bandaid','bandaid','poison:0.5','battery:0.4','armguard:0.4']},
- {n:'저수지',d:.75,a:1,f:1,pool:['airgun','riceball','water','knuckle','raincoat:0.5']},
+ {n:'저수지',d:.75,a:1,f:1,pool:['airgun','riceball','water','knuckle','raincoat:0.5','pellet:0.5']},
  {n:'방파제',d:1,a:1,f:.85,pool:['wire','ironball','bottle','hook','water','glass:0.5','lifejacket:0.5','nipper:0.3','steelplate:0.4','rope:0.4']},
  {n:'해녀 탈의장',d:.75,a:1,f:1,pool:['diveknife','wetsuit','water','riceball','whetstone:0.5','pouch:0.4','sewkit:0.4','pot:0.5']},
  {n:'성당',d:1,a:1,f:1.2,pool:['candlestick','bread','bandage','beartrap','nail:0.5','backpack:0.4','sewkit:0.5']},
- {n:'전망대',d:1.3,a:1.1,f:1,pool:['bow','choco','vest','dart','machete:0.4','hikingpack:0.5','bathelmet:0.3']},
+ {n:'전망대',d:1.3,a:1.1,f:1,pool:['bow','choco','vest','dart','machete:0.4','hikingpack:0.5','bathelmet:0.3','arrow:0.5']},
 ];
 function areaMods(a){const m=[];if(a.d>1)m.push('눈에 띔');if(a.d<1)m.push('숨기 좋음');if(a.a>1)m.push('공격↑');if(a.a<1)m.push('공격↓');if(a.f>1)m.push('방어↑');if(a.f<1)m.push('방어↓');return m;}
 function neighbors(i){const r=Math.floor(i/4),c=i%4,o=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const rr=r+dr,cc=c+dc;if(rr>=0&&rr<4&&cc>=0&&cc<4)o.push(rr*4+cc);}return o;}
@@ -707,6 +709,7 @@ const IT={
  nipper:{n:'니퍼',k:'p'},
  chain:{n:'쇠사슬',k:'m'}, magazine:{n:'두꺼운 잡지',k:'m'}, cardboard:{n:'골판지',k:'m'}, sewkit:{n:'반짇고리',k:'m'},
  steelplate:{n:'얇은 철판',k:'m'}, rope:{n:'밧줄',k:'m'}, pot:{n:'찌그러진 냄비',k:'m'},
+ pellet:{n:'공기총 탄알',k:'am',n0:15}, shell:{n:'엽총 탄환',k:'am',n0:4}, arrow:{n:'화살',k:'am',n0:8},
  pipespear:{n:'쇠파이프 창',k:'w',t:'cut',atk:25}, flail:{n:'철퇴',k:'w',t:'blunt',atk:24},
  sling:{n:'투석끈',k:'w',t:'throw',atk:12,uses:12}, spikeknuckle:{n:'가시 너클',k:'w',t:'fist',atk:15},
  cardarmor:{n:'골판지 갑옷',k:'a',def:6,dur:16}, pothelm:{n:'냄비 투구',k:'g',def:4,dur:22,prot:'head'},
@@ -740,13 +743,34 @@ const MODS={
 const MODTAG={whetstone:'날 세움',tape:'테이프',chain:'쇠사슬',magazine:'잡지 덧댐',steelplate:'철판 덧댐'};
 function modFor(A,B){for(const[m,t]of[[A,B],[B,A]]){const M=MODS[m.id];if(M&&!MODS[t.id]&&M.ok(t))return {mat:m,target:t};}return null;}
 const SPLIT={bottle:['glass'],firecracker:['powder']};
+/* 총과 활은 분해하면 남은 탄환만 남는다. 탄환은 같은 총에 채워 쓴다 */
+const AMMO_OF={airgun:'pellet',shotgun:'shell',bow:'arrow'};
+const AMMO_UNIT={pellet:'발',shell:'발',arrow:'개'};
+const AMMO_MAX=99;
+function gunCap(id){return IT[id].uses*2;}
+function mkAmmo(id,n){const it=mkItem(id);it.u=n;return it;}
+function gunFor(aid){return Object.keys(AMMO_OF).find(g=>AMMO_OF[g]===aid);}
+function canSplit(it){return !!(SPLIT[it.id]||(AMMO_OF[it.id]&&it.u>0));}
+function splitOuts(it){return AMMO_OF[it.id]?[mkAmmo(AMMO_OF[it.id],it.u)]:(SPLIT[it.id]||[]).map(o=>mkItem(o));}
+/* 바닥이나 시체의 총에서 탄환만 빼낸다: 같은 총을 들고 있으면 거기 먼저 채우고, 남는 건 가방에 */
+function ammoPlan(me,gun){const aid=AMMO_OF[gun.id];if(!aid||!(gun.u>0))return null;let n=gun.u,load=0;
+  if(me.wep&&me.wep.id===gun.id){load=Math.min(n,Math.max(0,gunCap(gun.id)-me.wep.u));n-=load;}
+  const bag=n>0&&bagHasRoom(me,mkAmmo(aid,n))?n:0;return {aid,load,bag,lost:n-bag};}
+function takeAmmo(G,me,gun,src){const P=ammoPlan(me,gun);if(!P||(P.load+P.bag)===0)return false;const u=AMMO_UNIT[P.aid],an=IT[P.aid].n;
+  if(P.load)me.wep.u+=P.load;if(P.bag)addToBag(me,mkAmmo(P.aid,P.bag));if(P.lost)G.pool[me.loc].push(mkAmmo(P.aid,P.lost));
+  const tail=P.load&&P.bag?`들고 있던 ${IT[gun.id].n}에 ${JS.eul(P.load+u)} 채우고, 남은 ${JS.eun(P.bag+u)} 가방에 넣었다`:P.load?`들고 있던 ${IT[gun.id].n}에 ${JS.eul(P.load+u)} 채웠다`:`${an} ${JS.eul(P.bag+u)} 가방에 넣었다`;
+  ev(G,'seen','find',`${src}${JS.eul(IT[gun.id].n)} 분해해 ${JS.eul(an)} 빼냈다. ${tail}.${P.lost?` 남은 ${JS.eun(P.lost+u)} 둘 데가 없어 내려놓았다.`:''}`);return true;}
 const SPLIT_T={bottle:'유리병을 바닥에 내리쳐 깨뜨렸다. 날카로운 유리조각을 챙겼다.',firecracker:'폭죽 묶음을 하나하나 풀어 화약을 모았다.'};
 function recipeFor(a,b){for(const[x,y,o]of RECIPES)if((x===a&&y===b)||(x===b&&y===a))return o;return null;}
 const SLOTREF={wep:1,arm:1,gear:1};
 function refItem(me,r){return SLOTREF[r]?me[r]:me.inv[+r];}
 /* 고른 것(ref)과 합칠 수 있는 짝: 바꿔 만들기(RECIPES)가 먼저, 아니면 강화(MODS) */
-function craftOut(A,ra,B,rb){if(!(ra==='arm'||ra==='gear'||rb==='arm'||rb==='gear')){const o=recipeFor(A.id,B.id);if(o)return o;}
+function reloadPair(A,B){for(const[g,a]of[[A,B],[B,A]])if(AMMO_OF[g.id]&&AMMO_OF[g.id]===a.id&&g.u<gunCap(g.id))return {gun:g,ammo:a};return null;}
+function craftOut(A,ra,B,rb){if(reloadPair(A,B))return 'reload';if(!(ra==='arm'||ra==='gear'||rb==='arm'||rb==='gear')){const o=recipeFor(A.id,B.id);if(o)return o;}
   const m=modFor(A,B);if(!m)return null;if(SLOTREF[m.mat===A?ra:rb])return null;return 'mod:'+m.mat.id;}
+function splitFits(me,ref){const A=refItem(me,ref);if(!A||!canSplit(A))return false;const made=splitOuts(A);
+  if(made.every(x=>mergeTarget(me,x)&&mergeTarget(me,x).u+x.u<=AMMO_MAX))return true;
+  const rest=ref==='wep'?me.inv:me.inv.filter(x=>x!==A);return slotsOf(rest.concat(made))<=capOf(me);}
 function craftPartners(me,ref){ref=String(ref);const A=refItem(me,ref);if(!A)return [];const out=[];
   const cands=me.inv.map((x,i)=>[String(i),x]);for(const s of ['wep','arm','gear'])if(me[s])cands.push([s,me[s]]);
   for(const[r,x]of cands){if(r===ref)continue;const o=craftOut(A,ref,x,r);if(o)out.push({ref:r,out:o});}
@@ -763,9 +787,9 @@ const STACKK={f:1,h:1,m:1,s:1,p:1};
 function skey(it){return STACKK[IT[it.id].k]?it.id+(it.pk?'!':''):null;}
 function slotsOf(list){const m={};let n=0;for(const it of list){const k=skey(it);if(k==null){n++;continue;}m[k]=(m[k]||0)+1;}for(const k in m)n+=Math.ceil(m[k]/STACK_MAX);return n;}
 function capOf(c){return INV_MAX+(c.bag?IT[c.bag.id].cap:0);}
-function mergeTarget(c,it){const d=IT[it.id];if(d.k!=='w'||!d.uses||it.b)return null;return [c.wep,...c.inv].find(x=>x&&x!==it&&x.id===it.id&&!x.b)||null;}
+function mergeTarget(c,it){const d=IT[it.id];if(d.k==='am')return c.inv.find(x=>x!==it&&x.id===it.id&&x.u<AMMO_MAX)||null;if(d.k!=='w'||!d.uses||it.b)return null;return [c.wep,...c.inv].find(x=>x&&x!==it&&x.id===it.id&&!x.b)||null;}
 function bagHasRoom(c,it){if(mergeTarget(c,it))return true;return slotsOf([...c.inv,it])<=capOf(c);}
-function addToBag(c,it){const t=mergeTarget(c,it);if(t){t.u=Math.min(40,t.u+it.u);return;}c.inv.push(it);}
+function addToBag(c,it){const t=mergeTarget(c,it);if(t){const cap=IT[t.id].k==='am'?AMMO_MAX:40;const room=cap-t.u;const k=Math.min(room,it.u);t.u+=k;if(it.u>k&&IT[it.id].k==='am'){it.u-=k;c.inv.push(it);}return;}c.inv.push(it);}
 function stackIdxs(c,i){const k=skey(c.inv[i]);if(k==null)return [i];return c.inv.map((x,j)=>skey(x)===k?j:-1).filter(j=>j>=0);}
 function dropStack(G,c,i){const idx=stackIdxs(c,i).sort((a,b)=>b-a);const out=[];for(const j of idx)out.push(c.inv.splice(j,1)[0]);for(const it of out)G.pool[c.loc].push(it);return out;}
 function canEquipBag(c,it){return slotsOf(c.inv.filter(x=>x!==it).concat(c.bag?[c.bag]:[]))<=INV_MAX+IT[it.id].cap;}
@@ -775,7 +799,7 @@ function wearFrom(G,me,it){const d=IT[it.id];const slot=SLOT[d.k];const old=me[s
   return tail;}
 const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘러멨다'};
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
-function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.uses||0,d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
+function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.k==='am'?d.n0:(d.uses||0),d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
   if(G.trio===undefined)G.trio=[];if(G.c[0].comp2===undefined)G.c[0].comp2=null;
   if(G.btr===undefined)G.btr=null;
@@ -1675,6 +1699,7 @@ function pickUp(G,p,choice){
   const it=pool[pi],d=IT[it.id];
   if(cmd==='take'){if(!bagHasRoom(me,it))return;pool.splice(pi,1);addToBag(me,it);ev(G,'seen','find',`${JS.eul(d.n)} 가방에 넣었다.`);}
   else if(cmd==='eat'&&(d.k==='f'||d.k==='h')){pool.splice(pi,1);eatHere(G,me,it);}
+  else if(cmd==='ammo'){const P=ammoPlan(me,it);if(P&&P.load+P.bag>0){pool.splice(pi,1);takeAmmo(G,me,it,'');}}
   else if(cmd==='equip'&&SLOT[d.k]){
     if(d.k==='b'&&!canEquipBag(me,it))return;
     pool.splice(pi,1);const tail=wearFrom(G,me,it);
@@ -1699,6 +1724,7 @@ function bodyOp(G,cmd,arg){
   if(!b)return false;const it=b.items[i],d=IT[it.id],who=G.c[b.v].name;
   if(cmd==='take'){if(!bagHasRoom(me,it))return false;b.items.splice(i,1);addToBag(me,it);ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} 챙겼다.`);return true;}
   if(cmd==='eat'&&(d.k==='f'||d.k==='h')){b.items.splice(i,1);eatHere(G,me,it);afterEat(G);return true;}
+  if(cmd==='ammo'){const P=ammoPlan(me,it);if(!P||P.load+P.bag===0)return false;b.items.splice(i,1);takeAmmo(G,me,it,`${who}의 `);return true;}
   if(cmd==='equip'&&SLOT[d.k]){if(d.k==='b'&&!canEquipBag(me,it))return false;
     b.items.splice(i,1);const tail=wearFrom(G,me,it);
     ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} ${WEARV[d.k]}.${tail}`);return true;}
@@ -1858,10 +1884,13 @@ function itemOp(G,op,idx,arg){
     const get=r=>refItem(me,r);
     const rm=refs=>{refs.filter(r=>r!=='wep').map(Number).sort((x,y)=>y-x).forEach(i=>me.inv.splice(i,1));if(refs.includes('wep'))me.wep=null;};
     const A=get(idx);if(!A)return false;
-    if(op==='split'){const outs=SPLIT[A.id];if(!outs)return false;const made=outs.map(o=>mkItem(o));
-      if(!fits(idx==='wep'?[]:[A],made))return false;
-      rm([idx]);made.forEach(x=>addToBag(me,x));ev(G,'seen','find',SPLIT_T[A.id]);return true;}
+    if(op==='split'){if(!canSplit(A))return false;const made=splitOuts(A);
+      if(!splitFits(me,String(idx)))return false;
+      rm([idx]);made.forEach(x=>addToBag(me,x));
+      ev(G,'seen','find',AMMO_OF[A.id]?`${JS.eul(IT[A.id].n)} 분해해 ${IT[made[0].id].n} ${made[0].u}${AMMO_UNIT[made[0].id]}만 챙겼다.`:SPLIT_T[A.id]);return true;}
     const B=get(arg);if(!B||A===B)return false;const out=craftOut(A,String(idx),B,String(arg));if(!out)return false;
+    if(out==='reload'){const P=reloadPair(A,B);const ar=P.ammo===A?String(idx):String(arg);const k=Math.min(P.ammo.u,gunCap(P.gun.id)-P.gun.u);
+      P.gun.u+=k;P.ammo.u-=k;if(P.ammo.u<=0)rm([ar]);ev(G,'seen','find',`${IT[P.gun.id].n}에 ${IT[P.ammo.id].n} ${JS.eul(k+AMMO_UNIT[P.ammo.id])} 채웠다. 이제 ${P.gun.u}${AMMO_UNIT[P.ammo.id]}.`);return true;}
     if(out.startsWith('mod:')){const mat=A.id===out.slice(4)&&MODS[A.id]&&!MODS[B.id]?A:B;const tgt=mat===A?B:A;
       const msg=MODS[mat.id].apply(tgt);rm([mat===A?String(idx):String(arg)]);ev(G,'seen','find',msg,{imp:1});return true;}
     const eq=idx==='wep'||arg==='wep';const n=mkItem(out);const toHand=eq&&IT[out].k==='w';
@@ -1890,7 +1919,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=me.comp;if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2140,8 +2169,9 @@ const MAT_DESC={nail:'각목, 야구방망이, 너클에 박으면 더 센 무�
 const modTags=it=>(it.mods&&it.mods.length)?' · '+[...new Set(it.mods)].map(k=>{const n=it.mods.filter(x=>x===k).length;return M.MODTAG[k]+(n>1?' x'+n:'');}).join(', '):'';
 const defTxt=it=>`방어 ${M.IT[it.id].def}${it.b?`+${it.b}`:''}`;
 function itemMeta(it){const d=M.IT[it.id];
-  if(d.k==='w')return `${M.TYPEN[d.t]} · 공격 ${d.atk}${it.b?`+${it.b}`:''}${d.uses?` · 남은 ${it.u}`:''}${modTags(it)}`;
+  if(d.k==='w')return `${M.TYPEN[d.t]} · 공격 ${d.atk}${it.b?`+${it.b}`:''}${d.uses?` · 남은 ${it.u}${M.AMMO_OF[it.id]?' / '+M.gunCap(it.id):''}`:''}${modTags(it)}`;
   if(d.k==='m')return MAT_DESC[it.id]||'무언가와 합칠 수 있다';
+  if(d.k==='am')return `${M.IT[M.gunFor(it.id)].n}에 채워 쓴다 · ${it.u}${M.AMMO_UNIT[it.id]}`;
   if(it.id==='glass')return `숨겨 두면 밟은 사람이 다친다 · ${d.trap} 피해 · 올무나 청테이프와 합칠 수 있다`;
   if(d.k==='a')return `옷 · ${defTxt(it)} · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
   if(d.k==='g')return `보호구 · ${defTxt(it)} · ${M.PROTN[d.prot]} 부상을 막는다 · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
@@ -2161,7 +2191,6 @@ function renderInv(){
   const B=(op,ref,label,o)=>{o=o||{};return `<button class="btn small ${o.cls||''}" data-op="${op}" data-ref="${ref}" ${o.slot?`data-slot="${o.slot}"`:''} type="button" ${o.dis?'disabled':''} ${o.title?`title="${esc(o.title)}"`:''}>${label}</button>`;};
   const partners=pickMode&&pickMode.kind==='craft'?M.craftPartners(me,pickMode.ref):[];
   const cap=M.capOf(me),used=M.slotsOf(me.inv);
-  const splitFits=(ref,it)=>{const outs=M.SPLIT[it.id].map(id=>({id,pk:0}));const rest=ref==='wep'?me.inv:me.inv.filter(x=>x!==it);return M.slotsOf(rest.concat(outs))<=cap;};
   const SLOTCHIP={wep:'들고 있음',arm:'입고 있음',gear:'착용 중',bag:'메고 있음'};
   function btnsFor(g,slot){
     const it=g.it,d=M.IT[it.id];const r=slot?slot:String(g.idx[0]);
@@ -2170,7 +2199,7 @@ function renderInv(){
       if(!slot&&g.idx.map(String).includes(String(pickMode.ref)))return '<span class="chip">고른 것</span>';
       if(slot&&pickMode.ref===slot)return '<span class="chip">고른 것</span>';
       const refs=slot?[slot]:g.idx.map(String);const p=partners.find(x=>refs.includes(x.ref));
-      return p?B('craftwith',p.ref,`합치기 → ${p.out.startsWith('mod:')?M.MODS[p.out.slice(4)].n:M.IT[p.out].n}`,{cls:'primary'}):'';
+      return p?B('craftwith',p.ref,`합치기 → ${p.out==='reload'?'장전하기':p.out.startsWith('mod:')?M.MODS[p.out.slice(4)].n:M.IT[p.out].n}`,{cls:'primary'}):'';
     }
     let b='';
     if(!slot){
@@ -2185,7 +2214,8 @@ function renderInv(){
       const dis=slot==='bag'?M.slotsOf([...me.inv,it])>M.INV_MAX:!M.bagHasRoom(me,it);
       b+=B('unequip',r,slot==='wep'?'가방에 넣기':'벗기',{slot,dis,title:dis?'가방에 자리가 없어요':''});
     }
-    if(M.SPLIT[it.id])b+=B('split',r,'분해',{dis:!splitFits(slot?'wep':r,it)});
+    if(d.k==='am'&&me.wep&&M.AMMO_OF[me.wep.id]===it.id)b+=B('reload',r,'장전',{cls:'primary',dis:me.wep.u>=M.gunCap(me.wep.id),title:me.wep.u>=M.gunCap(me.wep.id)?'이미 가득 찼어요':''});
+    if(M.canSplit(it))b+=B('split',r,M.AMMO_OF[it.id]?'분해해서 탄환만':'분해',{dis:!M.splitFits(me,r),title:!M.splitFits(me,r)?'가방에 자리가 없어요':''});
     if(slot!=='bag'&&M.craftPartners(me,r).length)b+=B('craft',r,slot==='arm'||slot==='gear'?'강화':'조합');
     if(!slot)b+=B('drop',r,g.n>1?'하나 버리기':'버리기');
     return b;
@@ -2193,7 +2223,7 @@ function renderInv(){
   const row=(g,slot)=>{const it=g.it,d=M.IT[it.id];const pz=it.p&&it.pk?'<span class="tag-p">독</span>':'';
     const chip=slot?` <span class="chip">${SLOTCHIP[slot]}</span>`:'';
     const bonus=it.b?` <span class="bonus">+${it.b}</span>`:'';
-    const cnt=g.n>1?` <span class="stackn">x${g.n}</span>`:'';
+    const cnt=d.k==='am'?` <span class="stackn">${it.u}${M.AMMO_UNIT[it.id]}</span>`:g.n>1?` <span class="stackn">x${g.n}</span>`:'';
     const btns=can?btnsFor(g,slot):'';
     return `<div class="item"><div class="grow"><span class="nm">${d.n}</span>${cnt}${bonus}${chip} ${pz}<div class="meta">${itemMeta(it)}</div></div>${btns?`<div class="btns">${btns}</div>`:''}</div>`;};
   const rows=[];for(const s of ['wep','arm','gear','bag'])if(me[s])rows.push(row({it:me[s],idx:[],n:1},s));
@@ -2212,6 +2242,7 @@ function renderInv(){
     if(op==='craftwith'){M.itemOp(G,'craft',pickMode.ref,String(r));pickMode=null;after();return;}
     if(op==='unequip'){M.itemOp(G,'unequip',b.dataset.slot);after();return;}
     if(op==='split'){M.itemOp(G,'split',String(r));after();return;}
+    if(op==='reload'){M.itemOp(G,'craft',String(r),'wep');after();return;}
     M.itemOp(G,op,ref);after();});
   const pc=$('btn-pcancel');if(pc)pc.onclick=()=>{pickMode=null;renderInv();};
 }
@@ -2344,6 +2375,7 @@ function openPickup(p){
       ${room?`<button class="btn primary" type="button" data-c="take">가방에 넣는다</button>`:''}
       ${wear?`<button class="btn ${room?'':'primary'}" type="button" data-c="equip" ${wearDis?'disabled title="이 가방으로는 지금 짐이 다 안 들어가요"':''}>${WEAR_LABEL[d.k]}</button>`:''}
       ${eatable(d)?`<button class="btn" type="button" data-c="eat">그 자리에서 ${d.k==='f'?'먹는다':'쓴다'}</button>`:''}
+      ${ammoBtn(me,it,'find')}
       <button class="btn" type="button" data-c="leave">그냥 둔다</button>
      </div>
      ${room?'':`<div class="swaplist"><p class="muted" style="margin:0;font-size:13px">가방에서 하나를 먹거나 내려놓으면 대신 챙길 수 있어요. 겹쳐 담긴 건 다 먹어야 칸이 비어요.</p>${bagFixRows(me,'find')}</div>`}`;
@@ -2365,6 +2397,11 @@ function openPickup(p){
   const f=dlg.querySelector('button');if(f)f.focus();
 }
 const eatable=d=>d.k==='f'||d.k==='h';
+/* 총·활: 탄환만 빼내기. 들고 있는 같은 총에 먼저 채우고 남는 건 가방에 */
+function ammoBtn(me,it,mode){if(!M.AMMO_OF[it.id]||!(it.u>0))return '';const P=M.ammoPlan(me,it);const ok=P&&(P.load+P.bag)>0;
+  const u=M.AMMO_UNIT[M.AMMO_OF[it.id]];const tip=!ok?'들고 있는 총이 가득 찼고 가방에도 자리가 없어요':P.load?`들고 있는 ${M.IT[it.id].n}에 ${P.load}${u} 채워요`:`${M.IT[M.AMMO_OF[it.id]].n} ${M.JS.eul(P.bag+u)} 가방에 넣어요`;
+  const label=mode==='body'?`탄환만 (${it.u}${u})`:`분해해서 탄환만 챙긴다 (${it.u}${u})`;
+  return mode==='body'?`<button class="btn small" type="button" data-b="ammo:${it.uid}" ${ok?'':'disabled'} title="${esc(tip)}">${label}</button>`:`<button class="btn" type="button" data-c="ammo" ${ok?'':'disabled'} title="${esc(tip)}">${label}</button>`;}
 /* 가방이 꽉 찼을 때 비우는 줄: 먹을 것·약은 먹기/쓰기, 모든 것은 내려놓기 */
 function bagFixRows(me,mode){
   return `<div class="bagfix">${groupInv(me).map(g=>{const d=M.IT[g.it.id];const i=g.idx[0];
@@ -2386,7 +2423,7 @@ function openBody(p,keep){
     const peek=names.slice(0,2).join(', ')+(names.length>2?` 외 ${names.length-2}개`:'');
     const list=`<div class="lootlist">${b.items.map(it=>{const d=M.IT[it.id];const wear=!!M.SLOT[d.k];const room=M.bagHasRoom(me,it);
        return `<div class="row2"><div class="grow"><b>${esc(d.n)}</b>${it.b?` <span class="bonus">+${it.b}</span>`:''}${it.p&&it.pk?' <span class="tag-p">독</span>':''}<div class="meta mono muted" style="font-size:12px">${itemMeta(it)}</div>${wear?`<div class="muted" style="font-size:12px">${cmpLine(it)}</div>`:''}</div>
-        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}${eatable(d)?`<button class="btn small" type="button" data-b="eat:${it.uid}">${d.k==='f'?'먹기':'쓰기'}</button>`:''}</div></div>`;}).join('')}</div>`;
+        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap">${room?`<button class="btn small primary" type="button" data-b="take:${it.uid}">챙긴다</button>`:''}${wear?`<button class="btn small" type="button" data-b="equip:${it.uid}" ${d.k==='b'&&!M.canEquipBag(me,it)?'disabled':''}>${WEAR_SHORT[d.k]}</button>`:''}${eatable(d)?`<button class="btn small" type="button" data-b="eat:${it.uid}">${d.k==='f'?'먹기':'쓰기'}</button>`:''}${ammoBtn(me,it,'body')}</div></div>`;}).join('')}</div>`;
     if(!fold)return `<div class="bodysec" data-v="${b.v}"><div class="bh"><b>${esc(v.name)}</b><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></div>${list}</div>`;
     return `<details class="bodysec fold" data-v="${b.v}" ${bodyOpen.has(b.v)?'open':''}><summary><span class="bh"><b>${esc(v.name)}</b><span class="cnt mono">${names.length}개</span><span class="muted mono" style="font-size:12px">${M.clock(b.t).hm}에 쓰러짐</span></span><span class="peek">${esc(peek)}</span></summary>${list}</details>`;}).join('');
   dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p>
