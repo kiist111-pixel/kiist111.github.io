@@ -518,7 +518,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 
     <fieldset class="fsec">
       <legend>처음부터 얽힌 관계</legend>
-      <p class="fhint">누가 그 상대인지는 랜덤이에요. 몰래 품은 마음은 직접 알아내야 해요.</p>
+      <p class="fhint">누가 그 상대인지는 랜덤이에요. 몰래 품은 마음은 직접 알아내야 하고, 단짝이라고 끝까지 내 편이라는 보장은 없어요.</p>
       <div class="relrow"><span>단짝</span><div class="seg" id="seg-bestie"></div></div>
       <div class="relrow"><span>나를 몰래 좋아하는 애</span><div class="seg" id="seg-admirer"></div></div>
       <div class="relrow"><span>나를 미워하는 애</span><div class="seg" id="seg-hater"></div></div>
@@ -721,6 +721,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.uses||0,d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
+  if(G.btr===undefined)G.btr=null;
   const fix=it=>{if(it&&!it.uid)it.uid=newUid();};
   for(const p of G.pool)p.forEach(fix);
   for(const c of G.c){
@@ -815,6 +816,13 @@ const PROPOSE={
  neunggeul:'에이, 이렇게 만났는데 같이 다녀야지.', seongsil:'같이 가자. 등은 내가 맡을게.', cynic:'…따라가도 되냐. 혼자는 좀 지겨워서.',
 };
 const BETRAY={naengjeong:'미안. 계산이 끝났어.',dahyeol:'더는 못 참겠다.',cynic:'봐, 결국 다 이렇게 된다니까.',eongttung:'어? 나 지금 뭐 하는 거지?',neunggeul:'미안, 이번엔 농담 아니야.'};
+/* 단짝의 속마음: 판마다 몰래 정해진다. 배신형이면 남은 인원이 B.n명 이하가 되거나 내가 크게 다쳤을 때 움직인다 */
+const BTR_FIGHT={dajeong:'미안해. 정말 미안해. 근데 나도 살고 싶어.',dahyeol:'더는 못 참겠다. 원망해도 돼.',sosim:'(눈을 질끈 감은 채 달려든다)',naengjeong:'처음부터 이럴 생각이었어. 계산은 끝났어.',
+  eongttung:'어차피 한 명만 사는 거면, 그게 나여도 되잖아?',neunggeul:'미안, 이번엔 농담 아니야.',seongsil:'약속 못 지켜서 미안. 처음부터 지킬 수 없는 약속이었어.',cynic:'봐, 결국 다 이렇게 된다니까.'};
+const BTR_NOTE={dajeong:'먼저 갈게. 너랑은 끝까지 싸우기 싫었어.',dahyeol:'다음에 만나면 봐주지 마. 나도 안 봐줘.',sosim:'미안해. 무서워서 그랬어.',naengjeong:'둘이 다니는 건 여기까지가 이득이야.',
+  eongttung:'숨바꼭질 시작! …찾지는 마.',neunggeul:'아쉽다, 진짜로. 살아서 보자.',seongsil:'끝까지 같이 못 가서 미안.',cynic:'믿지 말라고 했잖아.'};
+const BTR_HINT=[n=>`${JS.i(n)} 내 가방을 한참 쳐다보다가, 눈이 마주치자 웃었다.`,n=>`${JS.i(n)} 남은 인원을 손가락으로 세고 있었다.`,
+  n=>`자는 척하던 ${JS.i(n)} 내 쪽을 보고 있었다.`,n=>`${JS.i(n)} 무기를 고쳐 쥐었다. 왜냐고 묻지는 않았다.`];
 const PARTING={dajeong:'우리 둘 다 살 수는 없나 봐. …먼저 갈게.',dahyeol:'다음에 만나면, 봐주지 마.',sosim:'미안해. 나 너랑은 못 싸워.',naengjeong:'여기까지야. 각자 가자.',eongttung:'이건 너무 재미없는 결말이다.',neunggeul:'아쉽다. 진짜로.',seongsil:'끝까지 같이 못 가서 미안.',cynic:'거봐. 결국 이렇게 되잖아.'};
 const WILLS={
  dajeong:['다들… 밥은 챙겨 먹어.','아프지 마, 다들.'], dahyeol:['젠장… 이렇게 끝날 줄은.','다음엔 안 진다.'],
@@ -930,6 +938,7 @@ function initRel(G,o){
   const bv=o.bestie||'yes';const hasBestie=!!spB||bv==='yes'||(bv==='random'&&R()<.7);
   const f=spB?spB.id:hasBestie?npcs.find(x=>!G.c[x].special&&!G.c[x].transfer):null;G.bestie=f;
   if(f!=null){S(0,f,ri(68,78),ri(40,55),'bestie');S(f,0,ri(68,80),ri(40,60),'bestie');}
+  G.btr=f!=null?{on:!G.c[f].special&&R()<.1+PERS[G.c[f].pers].betray*.8?1:0,n:ri(4,10),done:null,hint:0}:null;
   for(const c of G.c.filter(c=>c.special==='lover')){S(0,c.id,ri(80,90),ri(80,90),'crush');S(c.id,0,ri(82,92),ri(80,92),'crush');
     know(G,c.id,0);c.confessed=true;G.couples.push([0,c.id]);}
   const others=npcs.filter(x=>x!==f&&!G.c[x].special&&!G.c[x].transfer);
@@ -1245,6 +1254,7 @@ function npcMeet(G,a,b){
   else{const vis=visAt(G,a.loc);if(vis==='seen'){ev(G,'seen','meet',`${JS.wa(a.name)} ${JS.i(b.name)} 서로를 보고는 말없이 멀어졌다.`);}}
 }
 function npcApproach(G,n,me){
+  if(btrDue(G,n)){const b=btrAct(G,n,me,false);if(b==='spared')talk(G,n,me);return;}
   const d=npcDecide(G,n,me);
   if(d==='attack'){
     const t=G.rel[n.id][0][2];if(t==='enemy'||t==='rival')know(G,n.id,0);
@@ -1626,12 +1636,33 @@ function resolve(G,choice){
   }
   proceed(G);
 }
+function btrDue(G,m){const B=G.btr,me=G.c[0];return !!(B&&B.on&&!B.done&&m.id===G.bestie&&me.alive&&(aliveCount(G)<=B.n||me.hp<me.mhp*.25));}
+function btrAct(G,m,me,together){const B=G.btr;const r=rel(G,m,me);
+  if(r.like>=85&&R()<.5){B.done='spared';changeRel(G,m,me,8,10);
+    ev(G,'seen','pair',together?`${JS.i(m.name)} 무기를 쥐었다가, 한참 만에 천천히 내려놓았다.`:`${JS.i(m.name)} 나를 보고 무기를 들었다가, 그대로 내렸다.`,{q:'…못 하겠다. 너한테는.',imp:1});return 'spared';}
+  const rm=G.rel[m.id][0];know(G,m.id,0);
+  if(R()<.35+PERS[m.pers].agg){B.done='fight';if(me.comp===m.id){me.comp=null;m.comp=null;}
+    fight(G,m,me,{ambush:true,head:together?`단짝 ${JS.i(m.name)} 등 뒤에서 나를 노렸다!`:`단짝 ${JS.i(m.name)} 나를 보자마자 덮쳐 왔다!`,q:BTR_FIGHT[m.pers]});
+    G.rel[0][m.id]=[-60,20,'enemy'];G.rel[m.id][0]=[-50,Math.min(30,rm[1]),'enemy'];return 'fight';}
+  B.done='leave';let stolen=null;
+  if(together){me.comp=null;m.comp=null;
+    const cand=me.inv.map((it,i)=>i).filter(i=>'fhw'.includes(IT[me.inv[i].id].k));
+    if(cand.length&&R()<.6){const i=pick(cand);const it=me.inv[i];if(bagHasRoom(m,it)){me.inv.splice(i,1);m.inv.push(it);stolen=IT[it.id].n;}}}
+  G.rel[0][m.id]=[-40,Math.max(62,G.rel[0][m.id][1]),'rival'];G.rel[m.id][0]=[-5,rm[1],''];
+  ev(G,'seen','pair',together?`잠깐 한눈판 사이 ${JS.i(m.name)} 사라지고 없었다.${stolen?` 가방에서 ${JS.i(stolen)} 없어졌다.`:''} 앉아 있던 자리에 쪽지 한 장이 남아 있었다.`:`${JS.i(m.name)} 나와 눈이 마주쳤다. 그리고 아무 말 없이 등을 돌렸다.`,{q:together?BTR_NOTE[m.pers]:null,imp:1});
+  ev(G,'seen','inner',INNER.rival(m.name),{imp:1});
+  const to=fleeTo(G,m);if(to!=null)m.loc=to;return 'leave';}
+function btrTurn(G,m,me,n){const B=G.btr;if(!B||!B.on||B.done||m.id!==G.bestie)return null;
+  if(!btrDue(G,m)){if(!B.hint&&n<=B.n+3&&R()<.3){B.hint=1;ev(G,'seen','heard',pick(BTR_HINT)(m.name),{imp:1});}return null;}
+  return R()<.35?btrAct(G,m,me,true):null;}
 function companionChecks(G){
   const me=G.c[0];const n=aliveCount(G);
   if(me.alive&&me.comp!=null){const m=G.c[me.comp];
     if(!m.alive){me.comp=null;}
-    else{changeRel(G,m,me,1,1);const r=rel(G,m,me);
-      if(n===2&&m.transfer!=='helper'){me.comp=null;m.comp=null;ev(G,'seen','pair',`이제 ${JS.wa(m.name)} 나, 둘만 남았다. ${JS.i(m.name)} 조용히 손을 놓았다.`,{q:PARTING[m.pers],imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}
+    else{changeRel(G,m,me,1,1);const r=rel(G,m,me);const bt=btrTurn(G,m,me,n);
+      if(bt==='fight'){if(G.phase!=='act')return;}
+      else if(bt){}
+      else if(n===2&&m.transfer!=='helper'){me.comp=null;m.comp=null;ev(G,'seen','pair',`이제 ${JS.wa(m.name)} 나, 둘만 남았다. ${JS.i(m.name)} 조용히 손을 놓았다.`,{q:PARTING[m.pers],imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}
       else{let b=PERS[m.pers].betray*(n<=4?2.5:1)*(r.like<40?1.6:r.like>=70?.1:.6)*.07;if(r.tag==='crush')b*=.2;if(m.transfer==='helper')b=0;if(m.transfer==='hunter')b*=4;
         if(R()<b){me.comp=null;m.comp=null;know(G,m.id,0);fight(G,m,me,{ambush:true,head:`${JS.i(m.name)} 등 뒤에서 나를 노렸다!`,q:BETRAY[m.pers]||'…미안해.'});if(G.phase!=='act')return;}
         else if(r.like<15){me.comp=null;m.comp=null;ev(G,'seen','pair',`${JS.i(m.name)} 말없이 떠났다.`,{imp:1});const to=fleeTo(G,m);if(to!=null)m.loc=to;}}}
@@ -2302,6 +2333,10 @@ const PROPOSE_LINE=n=>M.PROPOSE[n.pers];
 function closeModal(){$('modal').hidden=true;}
 
 /* ---------- 끝 ---------- */
+function btrReveal(){const B=G.btr;if(!B||G.bestie==null)return '';const nm=esc(G.c[G.bestie].name);
+  if(!B.on)return `단짝 ${M.JS.eun(nm)} 처음부터 끝까지 내 편이었다.`;
+  const plan=`단짝 ${M.JS.eun(nm)} 남은 인원이 ${B.n}명 이하가 되거나 내가 크게 다치면 <b>등을 돌릴 생각</b>이었다.`;
+  return plan+' '+({fight:'그리고 정말로 칼끝을 내게 돌렸다.',leave:'그리고 정말로 혼자 떠났다.',spared:'하지만 끝내 그러지 못했다.'}[B.done]||'그 순간은 끝내 오지 않았다.');}
 function renderEnd(){
   show('scr-end');const me=G.c[0];const res=G.result||{type:'none'};
   const rank=me.alive?1:G.c.length-G.order.indexOf(0);
@@ -2318,7 +2353,8 @@ function renderEnd(){
   $('scr-end').innerHTML=`
    <div class="tape" aria-hidden="true"></div>
    <div class="head"><p class="label">LAST ROLL CALL · ${M.clock(G.t).s} · 물안개섬</p><p class="kick ${me.alive?'':'dead'}">${kick}</p><h1>${esc(head)}</h1><p class="lede" style="max-width:40em;margin:0">${esc(sub)}</p>
-    ${G.transferId!=null?`<p class="muted" style="margin:10px 0 0;max-width:40em">전입생 ${esc(G.c[G.transferId].name)}의 정체는 <b>${M.TRANSFER[G.c[G.transferId].transfer].n}</b>${M.TRANSFER[G.c[G.transferId].transfer].n==='사냥꾼'?'이었다':'였다'}. ${M.TRANSFER[G.c[G.transferId].transfer].desc}</p>`:''}</div>
+    ${G.transferId!=null?`<p class="muted" style="margin:10px 0 0;max-width:40em">전입생 ${esc(G.c[G.transferId].name)}의 정체는 <b>${M.TRANSFER[G.c[G.transferId].transfer].n}</b>${M.TRANSFER[G.c[G.transferId].transfer].n==='사냥꾼'?'이었다':'였다'}. ${M.TRANSFER[G.c[G.transferId].transfer].desc}</p>`:''}
+    ${btrReveal()?`<p class="muted" style="margin:10px 0 0;max-width:40em">${btrReveal()}</p>`:''}</div>
    <div class="sum">
     <div><span class="label">내 순위</span><b>${rank}등 / ${G.c.length}명</b></div>
     <div><span class="label">버틴 시간</span><b>${Math.floor(lived/2)}시간${lived%2?' 30분':''}</b></div>
