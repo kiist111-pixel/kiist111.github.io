@@ -445,7 +445,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
       <button class="btn" id="btn-cont" type="button" hidden>이어하기</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
-    <p class="build mono">BUILD 2026.10.13-e</p>
+    <p class="build mono">BUILD 2026.10.13-f</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -801,6 +801,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.k==='am'?d.n0:(d.uses||0),d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
+  if(G.couples&&G.couples.length&&G.rel)loyalize(G);
   if(G.trio===undefined)G.trio=[];if(G.c[0].comp2===undefined)G.c[0].comp2=null;
   if(G.btr===undefined)G.btr=null;
   const fix=it=>{if(it&&!it.uid)it.uid=newUid();};
@@ -976,6 +977,11 @@ function unpair(G,a,b){
     if(m.comp===0)m.comp=null;return;}
   if(a.comp===b.id)a.comp=null;if(b.comp===a.id)b.comp=null;}
 function isCouple(G,a,b){return (G.couples||[]).some(([x,y])=>(x===a&&y===b)||(x===b&&y===a));}
+/* 연인이 있으면 다른 사람에게는 '좋아함'까지 가지 않는다 (친구까지만) */
+function partnerOf(G,id){const p=(G.couples||[]).find(([x,y])=>x===id||y===id);return p?(p[0]===id?p[1]:p[0]):null;}
+function loyalTag(G,a,b,t){if(t!=='crush')return t;const pt=partnerOf(G,a);return pt!=null&&pt!==b?(G.rel[a][b][0]>=35?'friend':''):t;}
+function loyalize(G){for(const[x,y]of(G.couples||[]))for(const[m,pt]of[[x,y],[y,x]])for(let b=0;b<G.c.length;b++){if(b===m||b===pt)continue;const r=G.rel[m][b];if(r[2]==='crush')r[2]=loyalTag(G,m,b,'crush');}}
+function pineLine(G,me,suitor){const pt=partnerOf(G,me.id);if(pt==null||pt===suitor.id)return;ev(G,'seen','inner',`마음은 고마웠다. 그래도 ${G.c[pt].name}의 얼굴이 먼저 떠올랐다.`);}
 const CHAT={
  dajeong:['우리 나가면 제일 먼저 뭐 먹을까?','너 손 차갑다. 이거 덮어.','무서우면 무섭다고 해도 돼. 나도 그래.'],
  dahyeol:['야, 졸지 마. 망은 내가 볼게.','나가면 저 방송하는 놈부터 찾아낼 거야.','…너랑 있으니까 좀 낫다.'],
@@ -1097,7 +1103,7 @@ function changeRel(G,a,b,dl,di){
   if(a.id===b.id)return;const r=G.rel[a.id][b.id];
   r[0]=clamp(Math.round(r[0]+dl),-100,100);r[1]=clamp(Math.round(r[1]+di),0,100);
   if(bonded(a,b))r[0]=Math.max(r[0],35);
-  const nt=calcTag(r);
+  const nt=loyalTag(G,a.id,b.id,calcTag(r));
   if(nt!==r[2]&&(nt===''||R()<.6)){const old=r[2];r[2]=nt;
     if(a.me){if(old!=='bestie'||nt!=='')ev(G,'seen','inner',INNER[nt](b.name),{imp:nt!==''?1:0});}
     else if(b.me){if(nt)ev(G,'hidden','heart',`${JS.i(a.name)} 나를 ${nt==='crush'?'좋아하게 됐다':nt==='rival'?'싫어하면서도 신경 쓰게 됐다':nt==='enemy'?'적으로 여기게 됐다':'친구로 여기게 됐다'}.`,{imp:1});}
@@ -1162,7 +1168,7 @@ function chatWith(G,me,m){
   if(revealSecret(G,m,me))return;
   const r=rel(G,m,me);
   if(r.tag==='crush'&&!m.confessed&&r.like>=60&&r.int>=56&&R()<.6){
-    m.confessed=true;know(G,m.id,0);ev(G,'seen','heart',`${JS.i(m.name)} 고백했다.`,{q:CONFESS[m.pers],imp:1});changeRel(G,me,m,8,20);}
+    m.confessed=true;know(G,m.id,0);ev(G,'seen','heart',`${JS.i(m.name)} 고백했다.`,{q:CONFESS[m.pers],imp:1});changeRel(G,me,m,8,20);pineLine(G,me,m);}
   else if((tier==='great'&&R()<.5)||(tier==='good'&&R()<.25))gossip(G,m,me);
 }
 function trapCheck(G,c){
@@ -1383,7 +1389,7 @@ function talk(G,a,b){
     if(revealSecret(G,npc,p)){if(canJoinMe(G,npc)){G.pending={type:'propose',who:npc.id};G.phase='pending';}return;}
     const r=rel(G,npc,p);
     if(r.tag==='crush'&&!npc.confessed&&(tier==='great'||tier==='good')&&r.like>=60&&r.int>=56&&R()<.7){
-      npc.confessed=true;know(G,npc.id,p.id);ev(G,'seen','heart',`${JS.i(npc.name)} 고백했다.`,{q:CONFESS[npc.pers],imp:1});changeRel(G,p,npc,8,20);
+      npc.confessed=true;know(G,npc.id,p.id);ev(G,'seen','heart',`${JS.i(npc.name)} 고백했다.`,{q:CONFESS[npc.pers],imp:1});changeRel(G,p,npc,8,20);pineLine(G,p,npc);
     }else if((tier==='great'&&R()<.55)||(tier==='good'&&R()<.35))gossip(G,npc,p);
     if(tier==='great'&&R()<.3)gift(G,npc,p);
     if(tier==='disaster'&&!bonded(npc,p)&&R()<PERS[npc.pers].agg+.15){fight(G,npc,p,{ambush:false,head:`${JS.i(npc.name)} 참지 못하고 달려들었다!`});return;}
