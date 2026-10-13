@@ -445,7 +445,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
       <button class="btn" id="btn-cont" type="button" hidden>이어하기</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
-    <p class="build mono">BUILD 2026.10.13-g</p>
+    <p class="build mono">BUILD 2026.10.13-h</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -1014,17 +1014,19 @@ function newGame(o){
   const teamNPC=!TEAMN.includes(o.name)&&R()<TEAM_CHANCE;
   const sps=teamNPC?[...sps0,...TEAM_DEFS.map(d=>({...d,rel:'team'}))]:sps0;
   const used=new Set([me.given,...sps.map(s=>s.name.slice(1)),...TEAMN.map(n=>n.slice(1))]);const names=[];
-  while(names.length<CLASS_SIZE-1-sps.length){const g=pick(GIV);if(used.has(g))continue;used.add(g);names.push(pick(SUR)+g);}
+  while(names.length<CLASS_SIZE-1-sps0.filter(x=>!TEAMN.includes(x.name)).length){const g=pick(GIV);if(used.has(g))continue;used.add(g);names.push(pick(SUR)+g);}
   names.forEach((n,i)=>{const c=mkChar(i+1,n,pick(PK),pick(clubs),false);c.line=pick(LINE1[c.pers]);G.c.push(c);});
   for(const s of sps){const c=mkChar(G.c.length,s.name,s.pers,s.club,false);c.line=pick(LINE1[c.pers]);c.sex=s.sex||pick(['남','여']);c.special=s.rel;
     applyBuild(c,pick(Object.keys(BUILDS)));if(s.hpMod){c.mhp+=s.hpMod;c.hp=c.mhp;}c.woundRoll=1;G.c.push(c);}
-  [...G.c].sort((a,b)=>a.name.localeCompare(b.name,'ko')).forEach((c,i)=>c.no=i+1);
+  const isTeamTr=c=>!c.me&&TEAMN.includes(c.name)&&teamNPC;
+  [...G.c].filter(c=>!isTeamTr(c)).sort((a,b)=>a.name.localeCompare(b.name,'ko')).forEach((c,i)=>c.no=i+1);
+  {let k=G.c.filter(c=>!isTeamTr(c)).length;G.c.filter(isTeamTr).forEach(c=>c.no=++k);}
   for(const c of G.c){c.arm=mkItem('uniform');c.wep=mkItem(c.club==='shooting'&&R()<.35?'airgun':wpick(START_W));c.inv.push(mkItem(pick(['water','bread','riceball','choco'])));c.inv.push(mkItem(wpick(START_X)));}
   AREAS.forEach(a=>{const p=[];for(const e of a.pool){const[id,pr]=e.split(':');if(!pr||R()<+pr)p.push(mkItem(id,.06));}const k=ri(1,2);for(let j=0;j<k;j++)p.push(mkItem(pick(FILLER),.06));G.pool.push(shuffle(p));G.traps.push([]);});
   G.transferId=null;
-  if(R()<TRANSFER_CHANCE){const type=R()<.5?'hunter':'helper';const T=TRANSFER[type];
+  if(!teamNPC&&!TEAMN.includes(o.name)&&R()<TRANSFER_CHANCE){const type=R()<.5?'hunter':'helper';const T=TRANSFER[type];
     let g;do{g=pick(GIV);}while(used.has(g));used.add(g);
-    const c=mkChar(G.c.length,pick(SUR)+g,pick(T.pers),pick(clubs),false);c.transfer=type;c.no=G.c.length+1;c.line='작년에도 이 섬에 있었어.';
+    const c=mkChar(G.c.length,pick(SUR)+g,pick(T.pers),pick(clubs),false);c.transfer=type;c.no=Math.max(...G.c.map(x=>x.no))+1;c.line='작년에도 이 섬에 있었어.';
     c.mhp=ri(128,142);c.hp=c.mhp;c.atk+=6;c.def+=4;c.lv=3;
     c.wep=mkItem(pick(T.wep));c.sk[IT[c.wep.id].t]+=30;c.arm=mkItem(T.arm);c.inv=T.inv.map(id=>mkItem(id));
     G.c.push(c);G.transferId=c.id;}
@@ -1038,7 +1040,7 @@ function newGame(o){
     else{b.loc=a.loc;a.comp=b.id;b.comp=a.id;if(!G.pool.some(pl=>pl.some(x=>x.id==='radio')))G.pool[1].push(mkItem('radio'));}}
   G.finalZone=pick([...Array(16).keys()].filter(i=>i!==5));
   G.zones[5]=1;chooseClosures(G,1).forEach(i=>G.zones[i]=1);
-  ev(G,'radio','radio','',{imp:1,data:{first:1,time:clock(0).hm,closed:[],next:G.zones.map((z,i)=>z===1?i:-1).filter(i=>i>=0),dead:[],alive:G.c.length,transfer:G.transferId}});
+  ev(G,'radio','radio','',{imp:1,data:{first:1,time:clock(0).hm,closed:[],next:G.zones.map((z,i)=>z===1?i:-1).filter(i=>i>=0),dead:[],alive:G.c.length,transfer:G.transferId,pair:teamNPC?G.c.filter(c=>TEAMN.includes(c.name)).map(c=>c.id):null}});
   G.turnStart=0;
   return G;
 }
@@ -2091,6 +2093,7 @@ function renderReveal(){
     <dt>단짝</dt><dd>${f?`<b>${esc(f.name)}</b> <span class="muted">· ${M.CLUBS[f.club].n}</span>`:'<span class="muted">없음</span>'}</dd>
     ${G.c.filter(c=>!c.me&&c.special==='friend').map(c=>`<dt>친구</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}${M.bonded(me,c)?' · 무슨 일이 있어도 서로 등을 돌리지 않는 사이':''}</span></dd>`).join('')}
     ${G.c.filter(c=>!c.me&&M.isCouple(G,0,c.id)).map(c=>`<dt>연인</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}</span></dd>`).join('')}
+    ${G.teamNPC&&G.team&&G.team.length?`<dt>전입생</dt><dd><b>${G.team.map(id=>esc(G.c[id].name)).join(', ')}</b> <span class="muted">· 수학여행 직전에 둘이 함께 전학 왔다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
     ${G.transferId!=null?`<dt>전입생</dt><dd><b>${esc(G.c[G.transferId].name)}</b> <span class="muted">· 작년 이 게임의 우승자라는 소문이 있다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
     ${me.team?`<dt>계획</dt><dd>고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 <b>건전지</b>만 구하면 된다. 고친 무전기로 <b>등대</b>에서 구조를 부르면, 배가 올 때까지 살아 있는 모두가 섬을 떠난다.${f?` ${esc(M.JS.wa(f.name))}는 처음부터 함께 다닌다.`:''}</dd>`:''}
     ${hints.length?`<dt>예감</dt><dd>${hints.map(esc).join('<br>')}</dd>`:''}
@@ -2199,6 +2202,7 @@ function radioHTML(e){
   if(d.first)return `<div class="radio"><div class="rh"><span class="stamp">방송</span><span class="mono">${d.time}</span></div>
    <p style="margin:6px 0 0">"안녕하신가, 2학년 3반. 규칙은 하나다. 마지막 한 명만 섬을 떠난다. 네 시간마다 방송으로 닫히는 구역을 알려 주지. 닫힌 구역에 남은 사람의 밴드는 울린다."</p>
    ${d.transfer!=null&&G.c[d.transfer]?`<p style="margin:6px 0 0">"그리고 이번 판에는 전입생이 하나 있다. ${esc(G.c[d.transfer].name)}. 작년 이 섬을 기억하는 녀석이지."</p>`:''}
+   ${d.pair&&d.pair.length?`<p style="margin:6px 0 0">"그리고 이번 판에는 전입생이 둘 있다. ${d.pair.map(id=>esc(G.c[id].name)).join(', ')}. 하필 수학여행 직전에 같이 전학을 왔더군."</p>`:''}
    <dl><dt>다음 방송에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd></dl></div>`;
   return `<div class="radio"><div class="rh"><span class="stamp">방송</span><span class="mono">${d.time}</span><span class="muted" style="font-family:var(--f-body);font-weight:400;font-size:13px">남은 인원 ${d.alive}명</span></div>
    <dl>${d.closed.length?`<dt>지금부터 금지</dt><dd class="r-red">${names(d.closed)}</dd>`:''}
@@ -2316,7 +2320,7 @@ function renderDead(el){
   const dead=G.order.map(id=>G.c[id]).filter(c=>c&&!c.alive);
   const seenEv=c=>G.log.find(e=>e.c==='death'&&e.v==='seen'&&(e.data&&e.data.v!=null?e.data.v===c.id:e.x.startsWith(c.name)));
   const rows=dead.map((c,i)=>{const se=seenEv(c);
-    const chips=(c.me?' <span class="chip">나</span>':'')+(c.id===G.bestie?' <span class="chip">단짝</span>':'')+(!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':'')+(!c.me&&M.bonded(G.c[0],c)?' <span class="chip bond">끝까지 한편</span>':'')+(c.transfer?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':'');
+    const chips=(c.me?' <span class="chip">나</span>':'')+(c.id===G.bestie?' <span class="chip">단짝</span>':'')+(!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':'')+(!c.me&&M.bonded(G.c[0],c)?' <span class="chip bond">끝까지 한편</span>':'')+((c.transfer||(c.team&&G.teamNPC))?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':'');
     return `<div class="drow"><span class="nth">${String(i+1).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${chips}
       <div class="sub">${esc(causeText(c,false))} · ${M.AREAS[c.loc].n}${se?' · <span class="seen">직접 봄</span>':''}</div>${se&&se.q?`<div class="hand">“${esc(se.q)}”</div>`:''}</div></div>`;}).reverse();
   el.innerHTML=`<div class="dhead"><span><b>${dead.length}</b>명 탈락</span><span class="muted">남은 ${G.c.length-dead.length}명</span></div>
@@ -2345,7 +2349,7 @@ function renderRoster(el,reveal){
     const feel=c.me?'':`<div class="feel"><span>내 마음 ${tagChip(r0[2])} <span class="mini">호감 ${bar(r0[0]+100,200,'var(--heart)')} 관심 ${bar(r0[1],100,'var(--violet)')}</span></span><span>그 애 마음 ${theirs}</span></div>`;
     const will=!c.alive&&c.willText&&(reveal||G.log.some(e=>e.c==='death'&&e.v==='seen'&&e.q===c.willText))?`<div class="hand" style="font-size:1.2em">“${esc(c.willText)}”</div>`:
       (c.alive&&!c.me&&c.talked&&c.line?`<div class="hand muted" style="font-size:1.15em">“${esc(c.line)}”</div>`:'');
-    return `<div class="row ${c.alive?'':'dead'}"><span class="n">${String(c.no).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${c.id===G.bestie?' <span class="chip">단짝</span>':''}${!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':''}${c.sex?` <span class="chip">${c.sex}</span>`:''}${c.transfer?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal?' · '+M.TRANSFER[c.transfer].n:''}</span>`:''}<div class="sub">${sub}${c.alive?'':` · <span style="color:var(--red)">${esc(causeText(c,reveal))}</span>`}</div>${c.me&&c.bio?`<div class="sub">${esc(c.bio)}</div>`:''}${feel}${will}</div><span class="stampmark ${c.alive?'al':'dd'}" aria-label="${c.alive?'생존':'탈락'}">${c.alive?'출':'결'}</span></div>`;}).join('');
+    return `<div class="row ${c.alive?'':'dead'}"><span class="n">${String(c.no).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${c.id===G.bestie?' <span class="chip">단짝</span>':''}${!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':''}${c.sex?` <span class="chip">${c.sex}</span>`:''}${c.transfer?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal?' · '+M.TRANSFER[c.transfer].n:''}</span>`:(c.team&&G.teamNPC)?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal||G.teamKnown?' · 무전기 계획':''}</span>`:''}<div class="sub">${sub}${c.alive?'':` · <span style="color:var(--red)">${esc(causeText(c,reveal))}</span>`}</div>${c.me&&c.bio?`<div class="sub">${esc(c.bio)}</div>`:''}${feel}${will}</div><span class="stampmark ${c.alive?'al':'dd'}" aria-label="${c.alive?'생존':'탈락'}">${c.alive?'출':'결'}</span></div>`;}).join('');
   el.innerHTML=`<div class="roster">${rows}</div>`;
 }
 function renderRel(el,reveal){
@@ -2385,7 +2389,7 @@ function openModal(){
   if(p.type==='combat'){openCombat();return;}
   const n=G.c[p.who];const w=M.wepInfo(n);const r0=G.rel[0][n.id];
   const theirs=M.isKnown(G,n.id,0)?tagChip(G.rel[n.id][0][2]):'<span class="tg tg-none">?</span>';
-  const card=`<div class="who-card"><div><b>${esc(n.name)}</b> <span class="muted mono">${n.no}번</span>${n.id===G.bestie?' <span class="chip">단짝</span>':''}${M.isCouple(G,0,n.id)?' <span class="chip">연인</span>':''}${n.sex?` <span class="chip">${n.sex}</span>`:''}${n.transfer?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':''}</div>
+  const card=`<div class="who-card"><div><b>${esc(n.name)}</b> <span class="muted mono">${n.no}번</span>${n.id===G.bestie?' <span class="chip">단짝</span>':''}${M.isCouple(G,0,n.id)?' <span class="chip">연인</span>':''}${n.sex?` <span class="chip">${n.sex}</span>`:''}${(n.transfer||(n.team&&G.teamNPC))?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':''}</div>
     <div class="muted">${M.CLUBS[n.club].n} · ${n.talked?M.PERS[n.pers].n:'성격 ?'} · 상태 ${hpWord(n)} · 손에 든 것: ${esc(w.name)}</div>
     <div>내 마음 ${tagChip(r0[2])} · 그 애 마음 ${theirs}</div></div>`;
   if(p.type==='meet'){
