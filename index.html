@@ -316,6 +316,45 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 .statbtn{appearance:none;background:none;border:1px solid var(--rule);border-radius:var(--r);padding:3px 8px;cursor:pointer;display:inline-flex;gap:6px;align-items:baseline}
 .statbtn:hover{border-color:var(--red)}
 .statbtn .go{font-size:12px;color:var(--ink-2)}
+.records{display:grid;gap:18px;max-width:1000px;margin:0 auto}
+.rechead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.rechead h2{font-size:34px}
+.rechead .label{color:var(--accent)}
+.recsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.recsum div{display:grid;gap:2px;background:var(--sheet);padding:12px 14px}
+.recsum b{font-family:var(--f-mono);font-weight:400;font-size:24px}
+.dex{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.ec{border:1px dashed var(--rule);border-radius:var(--r);padding:10px 12px;display:grid;gap:3px;color:var(--ink-3);min-width:0}
+.ec b{font-family:var(--f-display);font-weight:400;font-size:16px}
+.ec span{font-size:12.5px}
+.ec.on{border-style:solid;border-color:var(--accent);color:var(--ink);background:var(--accent-wash)}
+.ec.on.dead{border-color:var(--red);background:var(--red-wash)}
+.ec.on span{color:var(--ink-2)}
+.ec small{font-size:11px;color:var(--ink-2)}
+.recgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.runs{list-style:none;margin:0;padding:0;display:grid}
+.runs li{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid var(--rule-2);font-size:14px}
+.runs li:first-child{border-top:0}
+.runs .mono{font-size:12px;color:var(--ink-3);padding-top:2px}
+.runs .sub{font-size:12.5px;color:var(--ink-2)}
+.rcp{list-style:none;margin:0;padding:0;display:grid;gap:0;font-size:13.5px}
+.rcp li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;padding:6px 0;border-top:1px solid var(--rule-2);color:var(--ink-3)}
+.rcp li:first-child{border-top:0}
+.rcp li.on{color:var(--ink)}
+.rcp li.on b{color:var(--accent);font-weight:500}
+.rcp li b{font-weight:400}
+.dlg .rcp{max-height:55vh;overflow:auto}
+.rcpleft{margin:8px 0 0;font-size:13px}
+.invh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+@media (max-width: 860px){.recgrid{grid-template-columns:minmax(0,1fr)}.recsum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.alerts{display:grid;gap:6px;margin:-4px 0 14px}
+.alerts:empty{display:none}
+.al{border:1px solid var(--rule);border-left:3px solid var(--cyan);border-radius:var(--r);background:var(--sheet);padding:8px 12px;font-size:14px}
+.al.red{border-color:var(--red);background:var(--red-wash)}
+.al.amber{border-color:var(--amber);background:var(--amber-wash)}
+.al b{color:var(--ink)}
+.impt{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);margin-bottom:8px;cursor:pointer}
+.impt input{accent-color:var(--accent)}
 .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--f-mono);font-size:13px;margin-bottom:8px}
 .dhead b{font-size:20px;font-weight:400;color:var(--red)}
 .dlist{display:grid}
@@ -443,9 +482,10 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
     <div class="cta">
       <button class="btn primary" id="btn-new" type="button">출석부에 이름 쓰기</button>
       <button class="btn" id="btn-cont" type="button" hidden>이어하기</button>
+      <button class="btn" id="btn-records" type="button">기록실</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
-    <p class="build mono">BUILD 2026.10.13-i</p>
+    <p class="build mono">BUILD 2026.10.13-j</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -581,6 +621,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
     <span class="spacer"></span>
     <button class="btn small" type="button" id="btn-home">처음 화면</button>
   </div>
+  <div class="alerts" id="alerts" aria-live="polite"></div>
   <div class="gamegrid">
     <div class="col">
       <section class="card" id="status" aria-label="내 상태"></section>
@@ -621,6 +662,16 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
 </section>
 
 <section id="scr-end" class="end" hidden></section>
+
+<section id="scr-records" class="records" hidden aria-labelledby="rec-h">
+  <div class="rechead"><div><p class="label">RECORDS · 2학년 3반</p><h2 id="rec-h">기록실</h2></div><button class="btn" type="button" id="btn-rec-back">돌아가기</button></div>
+  <div class="recsum" id="rec-sum"></div>
+  <section class="card"><h3>엔딩 도감 <span class="label" id="rec-end-n"></span></h3><div class="dex" id="rec-endings"></div></section>
+  <div class="recgrid">
+    <section class="card"><h3>지난 판</h3><div id="rec-runs"></div></section>
+    <section class="card"><h3>조합 도감 <span class="label" id="rec-rcp-n"></span></h3><div id="rec-recipes"></div></section>
+  </div>
+</section>
 
 <div class="modal" id="modal" hidden>
   <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-h" id="dlg"></div>
@@ -801,6 +852,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.k==='am'?d.n0:(d.uses||0),d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
+  if(!G.ev)G.ev={plan:[],drop:null,fog:0,bounty:null};
   if(G.team===undefined){G.team=[];G.teamNPC=false;G.rescueBy=null;}
   if(G.couples&&G.couples.length&&G.rel)loyalize(G);
   if(G.trio===undefined)G.trio=[];if(G.c[0].comp2===undefined)G.c[0].comp2=null;
@@ -968,6 +1020,15 @@ const SPECIALS=[
 const TEAM_DEFS=[{name:'한성백',sex:'남',club:'home',pers:'neunggeul'},{name:'신수아',sex:'여',club:'home',pers:'dajeong'}];
 const TEAMN=TEAM_DEFS.map(d=>d.name);
 const TEAM_CHANCE=.12;
+/* 판마다 다른 사건: 방송 때 하나씩 터진다 */
+const DROP_POOL=[['firstaid',3],['vest',2],['shotgun',1],['shell',2],['ramen',3],['bandage',3],['helmet',2],['hikingpack',2],['radar',1],['machete',1],['airgun',1],['pellet',2],['steelplate',2]];
+const BOUNTY_PRIZE=['firstaid','vest'];
+const INVITE_YES={dajeong:'응, 같이 가자. 혼자는 무서웠어.',dahyeol:'좋아. 대신 내 뒤는 네가 봐.',sosim:'정말? 나 데리고 가 줄 거야?',naengjeong:'둘이 낫겠지. 좋아.',
+  eongttung:'오, 탐험대 결성이다!',neunggeul:'드디어 나한테 반했구나? 농담이야, 가자.',seongsil:'그래. 끝까지 같이 가자.',cynic:'…뭐, 혼자보단 낫겠지.'};
+const INVITE_NO={dajeong:'미안, 아직은 혼자 있고 싶어.',dahyeol:'됐어. 귀찮게 하지 마.',sosim:'미, 미안… 아직 무서워.',naengjeong:'지금은 득이 없어.',
+  eongttung:'음… 오늘은 혼자 다니는 날이야.',neunggeul:'에이, 그렇게 쉽게 넘어갈 줄 알았어?',seongsil:'마음은 고마운데, 아직은 아니야.',cynic:'너를 어떻게 믿어.'};
+const THANKS={dajeong:'고마워. 꼭 갚을게.',dahyeol:'…고맙다. 이번엔.',sosim:'이, 이거 나 줘도 돼?',naengjeong:'합리적인 선택이야. 고마워.',
+  eongttung:'선물이다! 오늘 좋은 날이네.',neunggeul:'역시 나 좋아하는구나?',seongsil:'고마워. 잘 쓸게.',cynic:'…이런 거 안 줘도 되는데.'};
 const TEAM_SECRET='우리, 등대 무전기로 구조를 부르려고. 고장난 무전기, 건전지, 구리선만 모이면 돼. 한 명이라도 더 데리고 나갈 거야. 너도 끝까지 살아 있어.';
 function specialsFor(name){return SPECIALS.filter(s=>s.when.includes(name)).map(s=>s.add);}
 /* 절대 서로를 배신하지 않는 사이: 공격하지 않고, 등을 돌리지 않고, 마음이 친구 아래로 식지 않는다 */
@@ -1032,11 +1093,12 @@ function newGame(o){
     G.c.push(c);G.transferId=c.id;}
   me.loc=5;for(const c of G.c)if(!c.me)c.loc=R()<.15?5:ri(0,15);
   initRel(G,o);
+  {const slots=shuffle([2,3,4,5,6]).slice(0,ri(1,2)).sort((a,b)=>a-b);const kinds=shuffle(['drop','fog','bounty']);G.ev={plan:slots.map((b,i)=>({at:b*BCAST,kind:kinds[i]})),drop:null,fog:0,bounty:null};}
   if(G.transferId!=null){const tc=G.c[G.transferId];if(tc.transfer==='helper'){G.rel[tc.id][0]=[ri(20,32),ri(25,40),''];}}
   for(const c of G.c)if(!c.me&&(c.id===G.bestie||c.special||c.transfer)&&dist(c.loc,5)<2)c.loc=pick([...Array(16).keys()].filter(i=>dist(i,5)>=2));
   const tm=G.c.filter(c=>TEAMN.includes(c.name));tm.forEach(c=>c.team=1);G.team=tm.map(c=>c.id);G.teamNPC=teamNPC;G.rescueBy=null;
   if(tm.length===2){const[a,b]=tm;G.rel[a.id][b.id]=[ri(74,84),ri(45,60),'bestie'];G.rel[b.id][a.id]=[ri(74,84),ri(45,60),'bestie'];
-    if(me.team){const m=tm.find(c=>!c.me);m.loc=me.loc;me.comp=m.id;m.comp=0;m.woundRoll=0;me.radioKnow=1;me.inv.push(mkItem('radio'));know(G,m.id,0);}
+    if(me.team){const m=tm.find(c=>!c.me);m.loc=me.loc;addMyComp(G,m);m.woundRoll=0;me.radioKnow=1;me.inv.push(mkItem('radio'));know(G,m.id,0);}
     else{b.loc=a.loc;a.comp=b.id;b.comp=a.id;if(!G.pool.some(pl=>pl.some(x=>x.id==='radio')))G.pool[1].push(mkItem('radio'));}}
   G.finalZone=pick([...Array(16).keys()].filter(i=>i!==5));
   G.zones[5]=1;chooseClosures(G,1).forEach(i=>G.zones[i]=1);
@@ -1203,6 +1265,10 @@ function searchArea(G,c){
   trapCheck(G,c);if(!c.alive)return;
   const pool=G.pool[c.loc];
   if(c.me){
+    const crate=pool.filter(x=>x.drop);
+    if(crate.length&&R()<.85){const it=pick(crate);
+      ev(G,'seen','find',`${AREAS[c.loc].n}에 떨어진 보급 상자를 열었다. 안에 ${JS.i(IT[it.id].n)} 들어 있다.`);
+      G.pending={type:'find',uid:it.uid,loc:c.loc};G.phase='pending';return;}
     if(pool.length&&R()<.62){
       const it=pick(pool);
       if(c.club==='cooking'&&it.p)it.pk=1;
@@ -1260,6 +1326,7 @@ function npcDecide(G,a,b){
   if(a.revenge===b.id)h+=1;
   if(n<=6)h+=.15;if(n<=4)h+=.2;if(n<=2)h+=.35;
   h+=Math.min(.3,G.t/100)+Math.min(.25,Math.max(0,G.t-G.lastDeathT-8)/40);
+  {const B=bountyOn(G);if(B&&B.id===b.id)h+=.45;}
   if(G.t<4)h-=.15;
   h+=clamp((power(a)-power(b))/60,-.3,.3)*(a.pers==='naengjeong'?1.6:1);
   if(b.hp<b.mhp*.35&&a.pers==='naengjeong')h+=.2;
@@ -1337,6 +1404,11 @@ function teamAct(G,c){
 function npcAct(G,c){
   emergencyUse(G,c);if(!c.alive)return;autoEquip(G,c);
   if(c.team&&!G.c[0].team&&teamAct(G,c))return;
+  {const B=bountyOn(G);if(B&&B.id!==c.id&&c.st>=22&&!c.team){const tg=G.c[B.id];const t=G.rel[c.id][tg.id][2];
+    if(!bonded(c,tg)&&t!=='bestie'&&t!=='crush'&&t!=='friend'&&tg.loc!==c.loc&&dist(c.loc,tg.loc)<=2&&R()<.25+PERS[c.pers].agg*.5&&!(G.zones[c.loc]===1&&turnsToBcast(G)<=3)){
+      const to=stepToward(G,c.loc,tg.loc);if(to!=null){moveChar(G,c,to);return;}}}}
+  {const dl=dropLeft(G);if(dl!=null&&c.st>=22&&dist(c.loc,dl)<=2&&R()<.5&&!(G.zones[c.loc]===1&&turnsToBcast(G)<=3)){
+    if(c.loc===dl){searchArea(G,c);return;}const to=stepToward(G,c.loc,dl);if(to!=null){moveChar(G,c,to);return;}}}
   const P=PERS[c.pers];
   const closing=G.zones[c.loc]===1&&turnsToBcast(G)<=3;
   if(c.transfer==='hunter'&&!closing&&c.st>=22&&G.t>=3){
@@ -1374,11 +1446,11 @@ function encounterPhase(G){
   const me=G.c[0];const used=new Set();let pe=null,pFirst=false;
   if(me.alive){
     const here=shuffle(G.c.filter(c=>c.alive&&!c.me&&c.loc===me.loc&&!isMyComp(G,c.id)));
-    const base=me.searched?.6:me.rested?.32:.5;const ar=AREAS[me.loc];
+    const bt=bountyOn(G);const base=(me.searched?.6:me.rested?.32:.5)*(fogOn(G)?.55:1)*(bt&&bt.id===0?1.5:1);const ar=AREAS[me.loc];
     for(const n of here){if(R()<base*ar.d*(n.rested?.6:1)){pe=n;break;}}
     if(pe){used.add(0);myComps(G).forEach(id=>used.add(id));used.add(pe.id);if(pe.comp!=null)used.add(pe.comp);
-      const ps=R()+(me.club==='photo'?.3:0)+(me.rested?.15:0);
-      const ns=R()+(pe.club==='photo'?.3:0)+(pe.rested?.15:0)+(pe.pers==='sosim'?.1:0);
+      const ps=R()+.12+(me.club==='photo'?.3:0)+(me.rested?.15:0);
+      const ns=R()+(pe.club==='photo'?.3:0)+(pe.rested?.15:0)+(pe.pers==='sosim'?.1:0)+(bt&&bt.id===0?.15:0);
       pFirst=ps>=ns;}
   }
   if(me.alive)myComps(G).forEach(id=>used.add(id));
@@ -1388,7 +1460,7 @@ function encounterPhase(G){
     const L=shuffle(byLoc[loc]);const ar=AREAS[loc];
     for(let i=0;i<L.length;i++){const a=L[i];if(used.has(a.id)||!a.alive)continue;
       for(let j=i+1;j<L.length;j++){const b=L[j];if(used.has(b.id)||!b.alive||a.comp===b.id)continue;
-        if(R()<.42*ar.d*(a.rested?.6:1)*(b.rested?.6:1)){
+        if(R()<.42*ar.d*(a.rested?.6:1)*(b.rested?.6:1)*(fogOn(G)?.6:1)){
           [a,b].forEach(x=>{used.add(x.id);if(x.comp!=null)used.add(x.comp);});
           npcMeet(G,a,b);break;}
       }
@@ -1488,7 +1560,7 @@ const COMBAT_MAX=8;
 function live(G,ids){const C=G.combat;return ids.map(id=>G.c[id]).filter(c=>c.alive&&c.loc===C.loc&&!C.out.includes(c.id));}
 function syncHead(G){const C=G.combat;if(!C)return;const e=G.log.find(x=>x.n===C.headN);if(e)e.lines=C.lines.slice();}
 function pickTarget(cands){const me=cands.find(c=>c.me);if(me&&R()<.65)return me;return cands.length?pick(cands):null;}
-function fleeChance(G){const me=G.c[0],C=G.combat;if(!C)return 0;let p=.6;if(me.club==='track')p+=.2;if(me.inj.leg)p-=.25;
+function fleeChance(G){const me=G.c[0],C=G.combat;if(!C)return 0;let p=.6+(fogOn(G)?.15:0);if(me.club==='track')p+=.2;if(me.inj.leg)p-=.25;
   p-=(live(G,C.foes).length-1)*.12;if(me.st<10)p-=.15;return clamp(p,.1,.92);}
 function spareChance(G,f){const me=G.c[0],C=G.combat;const r=rel(G,f,me);let p=.12+r.like/110;
   if(r.tag==='friend'||r.tag==='bestie')p+=.25;if(r.tag==='crush')p+=.35;if(r.tag==='enemy')p-=.2;
@@ -1514,7 +1586,8 @@ function startCombat(G,A,B,o){
   for(const id of [...mine,...foes])G.c[id].guard=false;
   G.pending={type:'combat'};G.phase='pending';
   if(!A.me&&o.ambush){
-    for(const f of live(G,foes)){const tg=pickTarget(live(G,mine));if(!tg)break;hit(G,f,tg,lines);if(!me.alive)break;}
+    if(B.me&&R()<.35)lines.push('인기척을 느끼고 가까스로 몸을 틀었다.');
+    else for(const f of live(G,foes)){const tg=pickTarget(live(G,mine));if(!tg)break;hit(G,f,tg,lines);if(!me.alive)break;}
   }
   syncHead(G);
   if(!me.alive){G.combat=null;}
@@ -1670,9 +1743,13 @@ function npcWill(G,v,k){
   return pick(WILLS[v.pers]);
 }
 function kill(G,v,k,cause){
-  if(!v.alive)return;
+  if(!v.alive)return;const B0=bountyOn(G);
   v.alive=false;v.hp=0;v.deathT=G.t;v.killer=k?k.id:null;v.cause=cause;G.deathsSince.push(v.id);G.lastDeathT=G.t;G.order.push(v.id);
   if(k){k.kills++;if(cause==='fight'){k.exp+=4;levelCheck(G,k,null);}}
+  {const B=B0;if(B&&B.id===v.id){B.done=1;if(k&&k.alive){const prize=BOUNTY_PRIZE.map(id=>mkItem(id));
+      if(k.me){const kept=[];for(const it of prize){if(bagHasRoom(k,it)){addToBag(k,it);kept.push(IT[it.id].n);}else G.pool[k.loc].push(it);}
+        ev(G,'seen','heart',`스피커가 짧게 울렸다. "현상금 지급." 발밑에 작은 상자가 떨어졌다. ${prize.map(it=>IT[it.id].n).join(', ')}.${kept.length<prize.length?' 가방에 다 안 들어가 일부는 바닥에 두었다.':''}`,{imp:1});}
+      else{k.inv.push(...prize);ev(G,G.c[0].alive?'heard':'hidden','heard',`어딘가에서 스피커가 짧게 울렸다. "현상금 지급."`,{imp:1});autoEquip(G,k);}}}}
   if(v.me){for(const id of myComps(G)){const m=G.c[id];if(m&&m.comp===0)m.comp=null;}v.comp=null;v.comp2=null;}
   else if(v.comp===0)unpair(G,G.c[0],v);
   else if(v.comp!=null){const m=G.c[v.comp];if(m&&m.comp===v.id)m.comp=null;v.comp=null;}
@@ -1766,6 +1843,15 @@ function pickUp(G,p,choice){
     ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓고 ${JS.eul(d.n)} 챙겼다.`);}
 }
 /* 줍기·시체 뒤지기 창이 떠 있는 동안 가방의 먹을 것이나 약을 쓴다. 창은 그대로 남는다 */
+function inviteChance(G,n){const me=G.c[0];if(bonded(n,me))return 1;if(n.transfer==='hunter')return 0;const r=rel(G,n,me);
+  if(r.tag==="rival"||r.tag==="enemy")return 0;let p=(r.like-5)/70;if(r.tag==='bestie')p+=.5;else if(r.tag==='crush')p+=.35;else if(r.tag==='friend')p+=.2;if(n.transfer==='helper')p+=.2;
+  return clamp(p,0,.95);}
+function inviteNpc(G,n){const me=G.c[0];n.talked=true;
+  if(!canJoinMe(G,n)){ev(G,'seen','meet',n.comp!=null&&G.c[n.comp]?`${JS.i(n.name)} 이미 ${JS.wa(G.c[n.comp].name)} 다니고 있다.`:'지금은 더 데리고 다닐 수 없다.');return;}
+  if(!bonded(n,me)&&npcDecide(G,n,me)==='attack'&&R()<.6){fight(G,n,me,{ambush:false,head:`다가가자마자 ${JS.i(n.name)} 달려들었다!`});return;}
+  if(R()<inviteChance(G,n)){addMyComp(G,n);changeRel(G,n,me,5,5);changeRel(G,me,n,5,5);
+    ev(G,'seen','pair',`같이 다니자고 하자 ${JS.i(n.name)} 고개를 끄덕였다.`,{q:INVITE_YES[n.pers],imp:1});}
+  else{changeRel(G,n,me,-2,3);ev(G,'seen','meet',`같이 다니자고 했지만 ${JS.i(n.name)} 고개를 저었다.`,{q:INVITE_NO[n.pers]});}}
 function pendingEat(G,idx){const p=G.pending;if(!p||G.phase!=='pending'||!['find','loot','body'].includes(p.type))return false;
   const me=G.c[0];const it=me.inv[idx];if(!it)return false;const k=IT[it.id].k;if(k!=='f'&&k!=='h')return false;
   consume(G,me,idx);afterEat(G);return true;}
@@ -1799,13 +1885,14 @@ function resolve(G,choice){
   const n=G.c[p.who];
   if(p.type==='meet'){
     if(choice==='attack'&&bonded(n,me))choice='talk';
+    if(choice==='invite'){inviteNpc(G,n);proceed(G);return;}
     if(choice==='attack'){fight(G,me,n,{ambush:true,head:`${JS.eul(n.name)} 기습했다.`});}
     else if(choice==='talk'){
       if(npcDecide(G,n,me)==='attack'&&R()<.6){fight(G,n,me,{ambush:false,head:`말을 꺼내기도 전에 ${JS.i(n.name)} 달려들었다!`});}
       else talk(G,me,n);
     }else{ev(G,'seen','meet',`숨을 죽이고 ${n.name}에게서 멀어졌다.`);}
   }else if(p.type==='propose'){
-    if(choice==='yes'&&canJoinMe(G,n)){const two=me.comp!=null;addMyComp(G,n);ev(G,'seen','pair',two?`${JS.wa(n.name)}도 함께 다니기로 했다. 이제 셋이다.`:`${JS.wa(n.name)} 함께 다니기로 했다.`,{imp:1});changeRel(G,n,me,5,5);changeRel(G,me,n,5,5);}
+    if(choice==='yes'&&canJoinMe(G,n)){const two=myComps(G).length>0;addMyComp(G,n);ev(G,'seen','pair',two?`${JS.wa(n.name)}도 함께 다니기로 했다. 이제 셋이다.`:`${JS.wa(n.name)} 함께 다니기로 했다.`,{imp:1});changeRel(G,n,me,5,5);changeRel(G,me,n,5,5);}
     else{changeRel(G,n,me,-6,4);ev(G,'seen','meet',`${JS.i(n.name)} 조금 서운한 얼굴로 돌아섰다.`);}
   }
   proceed(G);
@@ -1882,6 +1969,19 @@ function chooseClosures(G,k){
     if(compCount(rest)<=base)chosen.push(i);}
   return chosen;
 }
+function evState(G){return G.ev||(G.ev={plan:[],drop:null,fog:0,bounty:null});}
+function dropLeft(G){const E=evState(G);return E.drop&&G.zones[E.drop.loc]!==2&&G.pool[E.drop.loc].some(x=>x.drop)?E.drop.loc:null;}
+function fogOn(G){return evState(G).fog>G.t;}
+function bountyOn(G){const b=evState(G).bounty;return b&&!b.done&&G.t<b.until&&G.c[b.id].alive?b:null;}
+function runEvents(G,next){const E=evState(G),out={};
+  if(E.bounty&&!E.bounty.done){out.bountyEnd=E.bounty.id;E.bounty.done=1;}
+  for(const pl of E.plan.filter(x=>x.at===G.t)){
+    if(pl.kind==='drop'){const cand=[...Array(16).keys()].filter(i=>G.zones[i]===0&&!next.includes(i));if(!cand.length)continue;const loc=pick(cand);
+      const items=[];for(let k=0;k<3;k++){const it=mkItem(wpick(DROP_POOL));it.drop=1;items.push(it);}G.pool[loc].push(...items);E.drop={loc,t:G.t};out.drop=loc;}
+    if(pl.kind==='fog'){E.fog=G.t+BCAST;out.fog=1;}
+    if(pl.kind==='bounty'){const alive=G.c.filter(c=>c.alive);if(alive.length<4)continue;const me=G.c[0];
+      const tg=me.alive&&R()<.25?me:pick(alive.filter(c=>!c.me));E.bounty={id:tg.id,until:G.t+BCAST,done:0};out.bounty=tg.id;}}
+  return out;}
 function broadcast(G){
   const closed=[];
   G.zones.forEach((z,i)=>{if(z===1){G.zones[i]=2;closed.push(i);}});
@@ -1897,7 +1997,9 @@ function broadcast(G){
   const dead=G.deathsSince.slice();G.deathsSince=[];
   const openN=G.zones.filter(z=>z===0).length;
   const next=chooseClosures(G,openN>3?2:1);next.forEach(i=>G.zones[i]=1);
-  ev(G,'radio','radio','',{imp:1,data:{time:clock(G.t).hm,closed,next,dead,alive:aliveCount(G),warn,wipe}});
+  const evd=runEvents(G,next);
+  {const me=G.c[0];if(me.alive){me.exp+=3;levelCheck(G,me,null);}}
+  ev(G,'radio','radio','',{imp:1,data:{time:clock(G.t).hm,closed,next,dead,alive:aliveCount(G),warn,wipe,...evd}});
   const me=G.c[0];
   if(me.alive)for(const id of dead){const v=G.c[id];if(G.rel[0][id][0]>=40||G.rel[0][id][2]==='crush'||G.rel[0][id][2]==='bestie')ev(G,'seen','inner',`${v.name}의 이름이 불렸다. 숨이 잘 쉬어지지 않는다.`,{imp:1});}
 }
@@ -1957,6 +2059,8 @@ function itemOp(G,op,idx,arg){
     ev(G,'seen','find',`${JS.wa(IT[A.id].n)} ${JS.eul(IT[B.id].n)} 합쳐 ${JS.eul(IT[out].n)} 만들었다.`,{imp:1});return true;
   }
   const it=me.inv[idx];if(!it)return false;const d=IT[it.id];
+  if(op==='give'){const m=G.c[arg];if(!m||!m.alive||!isMyComp(G,m.id)||m.loc!==me.loc)return false;me.inv.splice(idx,1);m.inv.push(it);
+    changeRel(G,m,me,5,3);ev(G,'seen','talk',`${m.name}에게 ${JS.eul(d.n)} 건넸다.`,{q:THANKS[m.pers]});emergencyUse(G,m);autoEquip(G,m);return true;}
   if(op==='drop'){me.inv.splice(idx,1);G.pool[me.loc].push(it);ev(G,'seen','find',`${JS.eul(d.n)} ${AREAS[me.loc].n}에 내려놓았다.`);return true;}
   if(op==='equip'){
     const slot=SLOT[d.k];if(!slot)return false;
@@ -1975,9 +2079,9 @@ function itemOp(G,op,idx,arg){
 }
 function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!has('battery'))return false;return me.club==='broadcast'||me.radioKnow||has('wire');}
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
-function dismiss(G,id){const me=G.c[0];if(id==null)id=me.comp;if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
+function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2014,13 +2118,75 @@ async function flushSave(){
   const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
   if(!db||!user)return;const id=await user.id();if(!id)return;
   dbRef=db.doc('data/users/'+id+'/save');
+  try{recRef=db.doc('data/users/'+id+'/records');const rs=await recRef.get();recLoad();if(rs.exists){REC=recMerge(REC,rs.data()||{});}recSave();}catch(e){}
   const snap=await dbRef.get();
   if(snap.exists){const d=snap.data();if(d&&d.json&&(!localSave||d.savedAt>localSave.savedAt)){cloudSave={savedAt:d.savedAt,json:d.json};if(!G)renderTitle();}}
 }catch(e){}})();
 function bestSave(){const a=localSave,b=cloudSave;if(a&&b)return a.savedAt>=b.savedAt?a:b;return a||b;}
 
+/* ---------- 기록실: 엔딩 도감 · 지난 판 · 조합 도감 (판이 바뀌어도 남는다) ---------- */
+const REC_KEY='last-roll-call/records-v1';
+let REC=null,recRef=null;
+function recBlank(){return {v:1,runs:[],endings:{},recipes:{}};}
+function recLoad(){if(REC)return REC;try{REC=JSON.parse(localStorage.getItem(REC_KEY))||recBlank();}catch(e){REC=recBlank();}REC.runs=REC.runs||[];REC.endings=REC.endings||{};REC.recipes=REC.recipes||{};return REC;}
+function recMerge(a,b){const out=recBlank();const ids=new Set();for(const r of [...(a.runs||[]),...(b.runs||[])]){if(ids.has(r.id))continue;ids.add(r.id);out.runs.push(r);}
+  out.runs.sort((x,y)=>y.at-x.at);out.runs=out.runs.slice(0,60);
+  for(const src of [a.endings||{},b.endings||{}])for(const k in src){const e=out.endings[k],x=src[k];out.endings[k]=e?{n:Math.max(e.n,x.n),first:Math.min(e.first,x.first),last:Math.max(e.last,x.last)}:{...x};}
+  for(const src of [a.recipes||{},b.recipes||{}])for(const k in src)out.recipes[k]=Math.min(out.recipes[k]||Infinity,src[k]);return out;}
+function recSave(){try{localStorage.setItem(REC_KEY,JSON.stringify(REC));}catch(e){}if(recRef){try{recRef.set(REC);}catch(e){}}}
+const ENDINGS=[
+ ['win','최후의 1인','마지막까지 혼자 살아남는다'],['rescue','안개 너머의 배','직접 무전기를 고쳐 구조를 부른다'],['rescue_team','누군가 부른 배','다른 누군가가 부른 배에 오른다'],
+ ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['pact','끝까지 손을 들지 않았다','마지막 둘이 서로를 해치지 않는다'],
+ ['d_bestie','등 뒤의 칼끝','가장 믿었던 사람에게…'],['d_hunter','작년의 우승자','사냥꾼 전입생에게 쓰러진다'],['d_poison','이상한 맛','독이 든 것을 먹는다'],
+ ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다']];
+function endingKey(){const me=G.c[0],r=G.result||{};
+  if(r.pact&&r.pact.includes(0))return 'pact';
+  if(me.alive){if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';return 'win';}
+  const k=me.killer!=null?G.c[me.killer]:null;
+  if(k&&k.id===G.bestie&&G.btr&&G.btr.done==='fight')return 'd_bestie';
+  if(me.cause==='band')return 'd_band';if(me.cause==='poison')return 'd_poison';if(me.cause==='trap')return 'd_trap';
+  if(k&&k.transfer==='hunter')return 'd_hunter';return 'd_fight';}
+function recordRun(){if(!G||G.recorded||G.phase!=='end')return;G.recorded=1;saveSoon();recLoad();const me=G.c[0];const key=endingKey();const now=Date.now();
+  const rank=me.alive?1:G.c.length-G.order.indexOf(0);const k=me.killer!=null?G.c[me.killer]:null;
+  REC.runs.unshift({id:now.toString(36)+Math.random().toString(36).slice(2,6),at:now,name:me.name,ending:key,rank,total:G.c.length,kills:me.kills,lived:me.alive?G.t:me.deathT,killer:k?k.name:null});
+  REC.runs=REC.runs.slice(0,60);const e=REC.endings[key];REC.endings[key]=e?{n:e.n+1,first:e.first,last:now}:{n:1,first:now,last:now};recSave();}
+function discover(key){recLoad();if(REC.recipes[key])return;REC.recipes[key]=Date.now();recSave();}
+const inm=id=>M.IT[id].n;
+function recipeCatalog(){const out=[],seen=new Set();
+  for(const[a,b,o]of M.RECIPES){const key='r:'+[a,b].sort().join('+');if(seen.has(key))continue;seen.add(key);out.push([key,`${inm(a)} + ${inm(b)}`,inm(o)]);}
+  out.push(['m:whetstone','숫돌 + 베는 무기','날 세우기 (공격 +5, 두 번까지)'],['m:tape:w','청테이프 + 근접 무기','손잡이 감기 (공격 +2)'],['m:tape:a','청테이프 + 옷·보호구','테이프 보강 (내구 +10)'],
+    ['m:chain','쇠사슬 + 둔기','쇠사슬 감기 (공격 +4)'],['m:magazine','두꺼운 잡지 + 옷','잡지 덧대기 (방어 +2, 두 번까지)'],['m:steelplate','얇은 철판 + 옷·보호구','철판 덧대기 (방어 +4 / +3)'],
+    ['m:sewkit','반짇고리 + 옷·보호구','수선 (내구 가득)'],['s:bottle','유리병 분해','유리조각'],['s:firecracker','폭죽 묶음 분해','화약'],['s:gun','총·활 분해','탄환만 남기기'],
+    ['reload','탄환 + 맞는 총','장전'],['fix','고장난 무전기 + 건전지 + 구리선','고친 무전기']);
+  return out;}
+function recipeCount(){recLoad();const cat=recipeCatalog();return `${cat.filter(c=>REC.recipes[c[0]]).length}/${cat.length}`;}
+function craftKey(ra,rb){const me=G.c[0];const get=r=>['wep','arm','gear'].includes(r)?me[r]:me.inv[+r];const A=get(ra),B=get(rb);if(!A||!B)return null;
+  const p=M.craftPartners(me,ra).find(x=>x.ref===rb);if(!p)return null;
+  if(p.out==='reload')return 'reload';
+  if(p.out.startsWith('mod:')){const mat=p.out.slice(4);if(mat!=='tape')return 'm:'+mat;const t=A.id==='tape'?B:A;return 'm:tape:'+(M.IT[t.id].k==='w'?'w':'a');}
+  return 'r:'+[A.id,B.id].sort().join('+');}
+function recipeListHTML(){recLoad();const cat=recipeCatalog(),known=cat.filter(c=>REC.recipes[c[0]]),left=cat.length-known.length;
+  return `${known.length?`<ul class="rcp">${known.map(([k,a,o])=>`<li class="on"><span>${esc(a)}</span><b>→ ${esc(o)}</b></li>`).join('')}</ul>`:'<p class="empty" style="margin:0">아직 알아낸 조합이 없어요.</p>'}
+   ${left?`<p class="muted rcpleft">아직 모르는 조합이 <b>${left}개</b> 더 있어요. 재료 설명에 힌트가 적혀 있어요.</p>`:'<p class="muted rcpleft">모든 조합을 알아냈어요!</p>'}`;}
+function openRecipeBook(){const dlg=$('dlg');dlg.classList.remove('fightdlg','deathdlg');
+  dlg.innerHTML=`<p class="label">조합 도감 · ${recipeCount()}</p><h2 id="dlg-h">지금까지 알아낸 조합</h2><p class="muted" style="margin:0;font-size:13px">한 번 만들어 보면 여기에 적혀요. 판이 바뀌어도 남아요.</p>${recipeListHTML()}
+   <div class="acts"><button class="btn primary" type="button" id="rcp-close">닫기</button></div>`;
+  $('modal').hidden=false;$('rcp-close').onclick=()=>{closeModal();if(G&&(G.phase==='pending'||G.phase==='dead'))openModal();};$('rcp-close').focus();}
+let recBack='scr-title';
+function openRecords(from){recBack=from||'scr-title';recLoad();show('scr-records');
+  const R=REC,runs=R.runs;const fmt=t=>{const d=new Date(t);return `${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+  const alive=runs.filter(r=>!r.ending.startsWith('d_')).length,best=runs.length?Math.min(...runs.map(r=>r.rank)):null,kills=runs.reduce((a,r)=>a+(r.kills||0),0);
+  $('rec-sum').innerHTML=[['판',runs.length],['살아 나감',alive],['최고 순위',best?best+'등':'—'],['쓰러뜨린 사람',kills+'명']].map(([k,v])=>`<div><span class="label">${k}</span><b>${v}</b></div>`).join('');
+  const got=ENDINGS.filter(e=>R.endings[e[0]]).length;$('rec-end-n').textContent=`${got} / ${ENDINGS.length}`;
+  $('rec-endings').innerHTML=ENDINGS.map(([k,t,h])=>{const e=R.endings[k];return e?`<div class="ec on ${k.startsWith('d_')?'dead':''}"><b>${esc(t)}</b><span>${esc(h)}</span><small class="mono">${e.n}번 · 처음 ${fmt(e.first)}</small></div>`:`<div class="ec"><b>???</b><span>${esc(h)}</span></div>`;}).join('');
+  const title=k=>(ENDINGS.find(e=>e[0]===k)||[k,k])[1];
+  $('rec-runs').innerHTML=runs.length?`<ol class="runs">${runs.slice(0,30).map(r=>`<li><span class="mono">${fmt(r.at)}</span><div><b>${esc(r.name)}</b> · ${esc(title(r.ending))}<div class="sub">${r.rank}등 / ${r.total}명 · ${Math.floor(r.lived/2)}시간${r.lived%2?' 30분':''} 버팀 · ${r.kills}명 쓰러뜨림${r.killer?` · ${esc(r.killer)}에게 쓰러짐`:''}</div></div></li>`).join('')}</ol>`:'<p class="empty">아직 끝난 판이 없어요. 한 판 끝내면 여기에 남아요.</p>';
+  $('rec-rcp-n').textContent=recipeCount();$('rec-recipes').innerHTML=recipeListHTML();}
+$('btn-records').onclick=()=>openRecords('scr-title');
+$('btn-rec-back').onclick=()=>{if(recBack==='scr-end'&&G&&G.phase==='end'){renderEnd();}else{show('scr-title');renderTitle();}};
+
 /* ---------- 화면 전환 ---------- */
-const SCR=['scr-title','scr-make','scr-reveal','scr-game','scr-end'];
+const SCR=['scr-title','scr-make','scr-reveal','scr-game','scr-end','scr-records'];
 function show(id){SCR.forEach(s=>$(s).hidden=s!==id);window.scrollTo({top:0});}
 
 function renderTitle(){
@@ -2130,7 +2296,7 @@ function renderGame(){
   $('h-clock').textContent=ck.s;$('h-alive').textContent=G.c.filter(c=>c.alive).length+'명';
   $('h-next').textContent=M.turnsToBcast(G)+'턴';
   const hr=$('h-rescue');if(G.rescueT!=null&&!G.result){hr.hidden=false;hr.textContent=`구조선까지 ${Math.max(0,G.rescueT+4-G.t)}턴`;}else hr.hidden=true;
-  renderStatus();renderMap();renderLatest();renderInv();renderTabs();renderDock();
+  renderAlerts();renderStatus();renderMap();renderLatest();renderInv();renderTabs();renderDock();
   const can=G.phase==='act'&&me.alive;$('act-search').disabled=!can;$('act-rest').disabled=!can;
   const bs=M.bodiesAt(G,me.loc);const lb=$('act-loot');lb.hidden=!(me.alive&&bs.length);lb.disabled=!can;
   lb.title=bs.map(b=>G.c[b.v].name).join(', ');
@@ -2138,6 +2304,28 @@ function renderGame(){
   const eb=$('act-escape');eb.hidden=!M.canEscape(G);eb.disabled=!can;
   if(here.length){const nms=here.map(c=>c.name);cb.title=`${nms.slice(0,-1).map(x=>x+', ').join('')}${M.JS.wa(nms[nms.length-1])} 쉬면서 이야기해요. 쉬기만큼 회복하고 서로 가까워져요.`;}
 }
+/* 판을 가르는 순간만 골라 화면 위에 띄운다 */
+function alertList(){const me=G.c[0],A=M.AREAS,out=[];if(!me.alive||G.phase==='end')return out;
+  const left=M.turnsToBcast(G),has=id=>me.inv.some(x=>x.id===id),firstOf=k=>me.inv.find(x=>M.IT[x.id].k===k);
+  if(G.zones[me.loc]===1)out.push(['red',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫혀요. <b>${left}턴</b> 안에 옮기지 않으면 밴드가 울려요.`]);
+  if(has('fixedradio')&&G.rescueT==null){
+    if(G.zones[1]===2)out.push(['red','등대가 닫혀서 고친 무전기를 쓸 곳이 없어요.']);
+    else if(G.zones[1]===1)out.push(['red',`등대가 다음 방송 때 닫혀요! <b>${left}턴</b> 안에 등대에 가서 구조를 불러야 해요.`]);
+    else out.push(['info',me.loc===1?'등대에 왔어요. 가방에서 고친 무전기로 구조를 부를 수 있어요.':'고친 무전기가 있어요. 등대에 가면 구조를 부를 수 있어요.']);}
+  else if((has('radio')||has('battery')||has('wire'))&&G.rescueT==null&&G.zones[1]===1)out.push(['amber',`등대가 다음 방송 때 닫혀요. 무전기를 고쳐도 <b>${left}턴</b> 뒤엔 쓸 곳이 사라져요.`]);
+  if(G.escapeKnown&&G.transferId!=null&&G.c[G.transferId].alive){const zs=M.ESCAPE_SPOTS.map(i=>G.zones[i]);
+    if(zs.every(z=>z===2))out.push(['red','선착장과 방파제가 모두 닫혀서 탈출할 길이 사라졌어요.']);
+    else if(zs.some(z=>z===1))out.push(['amber',`${M.JS.i(M.ESCAPE_SPOTS.filter(i=>G.zones[i]===1).map(i=>A[i].n).join(', '))} 다음 방송 때 닫혀요. 탈출하려면 서둘러야 해요.`]);}
+  if(G.rescueT!=null)out.push(['info',`구조선이 오고 있어요. <b>${Math.max(0,G.rescueT+4-G.t)}턴</b>만 더 살아 있으면 돼요.`]);
+  const B=M.bountyOn(G);if(B){if(B.id===0)out.push(['red',`현상금이 <b>나</b>에게 걸렸어요. 다음 방송까지 <b>${left}턴</b>, 다들 나를 노릴 거예요.`]);
+    else out.push(['amber',`현상금이 ${esc(G.c[B.id].name)}에게 걸려 있어요. 다음 방송 전에 쓰러뜨리면 보급이 떨어져요.`]);}
+  const dl=M.dropLeft(G);if(dl!=null)out.push(['info',`보급 상자가 <b>${A[dl].n}</b>에 떨어져 있어요. ${me.loc===dl?'둘러보면 상자를 열 수 있어요.':'다른 애들도 노리고 있어요.'}`]);
+  if(M.fogOn(G))out.push(['info',`짙은 안개가 꼈어요. 다음 방송까지 서로 잘 안 보이고, 싸움에서 도망치기 쉬워요.`]);
+  if(me.hp<me.mhp*.3){const h=firstOf('h');out.push(['red',`체력이 위험해요.${h?` 가방에 ${M.JS.i(M.IT[h.id].n)} 있어요.`:' 쉬면서 버텨야 해요.'}`]);}
+  if(me.st<20){const f=firstOf('f');out.push(['amber',`스태미나가 바닥이에요.${f?` 가방에 ${M.JS.i(M.IT[f.id].n)} 있어요.`:' 쉬면 회복돼요.'}`]);}
+  for(const id of M.myComps(G)){const m=G.c[id];if(m.alive&&m.hp<m.mhp*.3)out.push(['amber',`${esc(m.name)} 상태가 위험해요. 약이 있으면 건네줄 수 있어요.`]);}
+  return out;}
+function renderAlerts(){const list=alertList();$('alerts').innerHTML=list.map(([lv,h])=>`<div class="al ${lv}">${h}</div>`).join('');}
 function renderDock(){
   const me=G.c[0];const hp=Math.max(0,me.hp),st=Math.max(0,me.st);
   const hpP=hp/me.mhp*100,stP=st/me.mst*100;const z=G.zones[me.loc];
@@ -2152,7 +2340,7 @@ function renderStatus(){
   const hpP=Math.max(0,me.hp/me.mhp*100),stP=Math.max(0,me.st/me.mst*100);
   const z=G.zones[me.loc],left=M.turnsToBcast(G);
   let warn='';
-  if(z===1)warn=`<div class="alert">${M.JS.eun(M.AREAS[me.loc].n)} 다음 방송 때 닫혀요. <b>${left}턴</b> 안에 다른 칸으로 옮겨야 해요.</div>`;
+  /* 지금 칸이 닫히는 경고는 화면 위 경고 줄에서 보여 준다 */
   const comps=M.myComps(G).map(id=>G.c[id]);
   const wd=me.wep?M.IT[me.wep.id]:null;
   $('status').innerHTML=`
@@ -2209,7 +2397,11 @@ function radioHTML(e){
    <dt>떠난 친구들</dt><dd>${dead?esc(dead):'없음'}</dd>
    ${d.next.length?`<dt>다음에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd>`:'<dt>다음에 닫힘</dt><dd class="muted">더 닫을 곳이 없다</dd>'}</dl>
    ${d.warn?'<p style="margin:6px 0 0" class="r-red">"너무 조용하군. 다음 방송 전까지 아무도 떠나지 않으면, 남은 모두의 밴드가 울린다."</p>':''}
-   ${d.wipe?'<p style="margin:6px 0 0" class="r-red">"약속은 지켰다."</p>':''}</div>`;
+   ${d.wipe?'<p style="margin:6px 0 0" class="r-red">"약속은 지켰다."</p>':''}
+   ${d.bountyEnd!=null&&G.c[d.bountyEnd]&&G.c[d.bountyEnd].alive?`<p style="margin:6px 0 0">"${esc(G.c[d.bountyEnd].name)}, 운이 좋군. 현상금은 거둬들인다."</p>`:''}
+   ${d.drop!=null?`<p style="margin:6px 0 0" class="r-amb">"선물이다. 방금 드론이 <b>${A[d.drop].n}</b>에 보급 상자를 떨어뜨렸다. 먼저 줍는 사람이 임자지."</p>`:''}
+   ${d.fog?'<p style="margin:6px 0 0">"안개가 짙어진다. 다음 방송까지는 서로 얼굴도 잘 안 보일 거다. 숨기 좋은 밤이군."</p>':''}
+   ${d.bounty!=null&&G.c[d.bounty]?`<p style="margin:6px 0 0" class="r-red">"특별 규칙이다. 다음 방송 전까지 <b>${esc(G.c[d.bounty].name)}</b>${G.c[d.bounty].me?'(나)':''}${M.JS.eul(G.c[d.bounty].name).slice(G.c[d.bounty].name.length)} 쓰러뜨리는 사람에게 보급을 주지."</p>`:''}</div>`;
 }
 function evHTML(e,showTime){
   if(e.c==='radio')return radioHTML(e);
@@ -2272,6 +2464,7 @@ function renderInv(){
       if(it.id==='poison')b+=B('poison',r,'섞기');
       if(d.k==='p'&&it.id!=='nipper')b+=B('use',r,'고치기',{dis:!M.canFix(me),title:(me.club==='broadcast'||me.radioKnow)?'고장난 무전기와 건전지가 필요해요':'고장난 무전기, 건전지, 구리선이 필요해요'});
       if(it.id==='fixedradio')b+=B('use',r,me.loc===1?'구조 요청':'등대에서 쓸 수 있어요',{cls:'primary',dis:!(me.loc===1&&G.rescueT==null)});
+      for(const id of M.myComps(G)){const m=G.c[id];if(m.alive&&m.loc===me.loc)b+=`<button class="btn small" data-op="give" data-ref="${r}" data-to="${m.id}" type="button">${esc(m.name)}에게 주기</button>`;}
     }else{
       const dis=slot==='bag'?M.slotsOf([...me.inv,it])>M.INV_MAX:!M.bagHasRoom(me,it);
       b+=B('unequip',r,slot==='wep'?'가방에 넣기':'벗기',{slot,dis,title:dis?'가방에 자리가 없어요':''});
@@ -2294,23 +2487,30 @@ function renderInv(){
   if(pickMode&&pickMode.kind==='poison')banner=`<div class="picking" style="margin-bottom:8px">쥐약을 섞을 음식이나 약을 고르세요. 섞은 걸 버려 두면 누군가 주워 먹을지도 몰라요. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;
   if(pickMode&&pickMode.kind==='craft'){const base=['wep','arm','gear'].includes(pickMode.ref)?me[pickMode.ref]:me.inv[+pickMode.ref];
     banner=`<div class="picking craft" style="margin-bottom:8px">${esc(M.JS.wa(M.IT[base.id].n))} 합칠 것을 고르세요. 합칠 수 있는 것에만 버튼이 떠요. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;}
-  $('inv').innerHTML=`<h3>가방 <span class="label">${used} / ${cap}칸</span></h3>${banner}
+  $('inv').innerHTML=`<h3 class="invh"><span>가방 <span class="label">${used} / ${cap}칸</span></span><button class="btn small" type="button" id="btn-rcp">조합 도감 ${recipeCount()}</button></h3>${banner}
    <div class="inv-list">${rows.join('')||'<p class="empty">가방이 비었다.</p>'}</div>`;
   $('inv').querySelectorAll('button[data-op]').forEach(b=>b.onclick=()=>{
     const op=b.dataset.op,r=b.dataset.ref,ref=isNaN(+r)?r:+r;
     if(op==='poison'){pickMode={kind:'poison',ref};renderInv();return;}
     if(op==='craft'){pickMode={kind:'craft',ref:String(r)};renderInv();return;}
     if(op==='mix'){M.itemOp(G,'use',pickMode.ref,ref);pickMode=null;after();return;}
-    if(op==='craftwith'){M.itemOp(G,'craft',pickMode.ref,String(r));pickMode=null;after();return;}
+    if(op==='craftwith'){const key=craftKey(pickMode.ref,String(r));if(M.itemOp(G,'craft',pickMode.ref,String(r))&&key)discover(key);pickMode=null;after();return;}
     if(op==='unequip'){M.itemOp(G,'unequip',b.dataset.slot);after();return;}
-    if(op==='split'){M.itemOp(G,'split',String(r));after();return;}
-    if(op==='reload'){M.itemOp(G,'craft',String(r),'wep');after();return;}
-    M.itemOp(G,op,ref);after();});
+    if(op==='split'){const it=me.inv[+r]||me[r];const key=it?'s:'+(M.AMMO_OF[it.id]?'gun':it.id):null;if(M.itemOp(G,'split',String(r))&&key)discover(key);after();return;}
+    if(op==='reload'){if(M.itemOp(G,'craft',String(r),'wep'))discover('reload');after();return;}
+    if(op==='give'){M.itemOp(G,'give',ref,+b.dataset.to);after();return;}
+    const fixing=op==='use'&&me.inv[ref]&&M.IT[me.inv[ref].id].k==='p'&&me.inv[ref].id!=='nipper';
+    if(M.itemOp(G,op,ref)&&fixing)discover('fix');after();});
   const pc=$('btn-pcancel');if(pc)pc.onclick=()=>{pickMode=null;renderInv();};
+  $('btn-rcp').onclick=()=>openRecipeBook();
 }
+const IMP_KEY='last-roll-call/imp-only';
+function impOnly(){try{return localStorage.getItem(IMP_KEY)==='1';}catch(e){return false;}}
 function renderTabs(){
   ['log','roster','dead','rel'].forEach(k=>{$('tab-'+k).setAttribute('aria-selected',String(tab===k));$('pn-'+k).hidden=tab!==k;});
-  if(tab==='log')renderLog($('pn-log'),G.log.filter(visible));
+  if(tab==='log'){const on=impOnly();$('pn-log').innerHTML=`<label class="impt"><input type="checkbox" id="imp-only" ${on?'checked':''}> 중요한 일만 보기</label><div id="loglist-wrap"></div>`;
+    renderLog($('loglist-wrap'),G.log.filter(visible).filter(e=>!on||e.imp||e.c==='radio'||e.c==='death'));
+    $('imp-only').onchange=ev=>{try{localStorage.setItem(IMP_KEY,ev.target.checked?'1':'');}catch(e){}renderTabs();};}
   if(tab==='roster')renderRoster($('pn-roster'),false);
   if(tab==='dead')renderDead($('pn-dead'));
   if(tab==='rel')renderRel($('pn-rel'),false);
@@ -2396,11 +2596,11 @@ function openModal(){
     dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">${esc(n.name)}</h2>
      <p style="margin:0">${M.AREAS[me.loc].n} 저편에 ${esc(n.name)}의 모습이 보인다. 아직 나를 못 본 것 같다.</p>${card}
      ${M.bonded(me,n)?`<p class="muted" style="margin:0;font-size:13px">${esc(M.JS.wa(me.name))} ${esc(n.name)}, 둘은 무슨 일이 있어도 서로에게 손을 들지 않는다.</p>`:''}
-     <div class="acts"><button class="btn primary" type="button" data-c="talk">말을 건다</button>${M.bonded(me,n)?'':'<button class="btn danger" type="button" data-c="attack">공격한다</button>'}<button class="btn" type="button" data-c="pass">모른 척 지나간다</button></div>`;
+     <div class="acts"><button class="btn primary" type="button" data-c="talk">말을 건다</button>${M.canJoinMe(G,n)?'<button class="btn" type="button" data-c="invite">같이 다니자고 한다</button>':''}${M.bonded(me,n)?'':'<button class="btn danger" type="button" data-c="attack">공격한다</button>'}<button class="btn" type="button" data-c="pass">모른 척 지나간다</button></div>`;
   }else if(p.type==='propose'){
     dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">같이 다니자는 말</h2>
      <p class="hand" style="margin:0">“${esc(PROPOSE_LINE(n))}”</p>${card}
-     <p class="muted" style="margin:0;font-size:13px">${me.comp!=null?`${esc(G.c[me.comp].name)}까지 셋이 함께 움직이고 함께 싸워요. `:'함께 다니면 같이 움직이고 같이 싸워요. '}${M.bonded(me,n)?`${esc(M.JS.eun(n.name))} 무슨 일이 있어도 등을 돌리지 않아요.`:'다만 마음이 식으면 떠나거나, 등을 돌릴 수도 있어요.'}</p>
+     <p class="muted" style="margin:0;font-size:13px">${M.myComps(G).length?`${esc(G.c[M.myComps(G)[0]].name)}까지 셋이 함께 움직이고 함께 싸워요. `:'함께 다니면 같이 움직이고 같이 싸워요. '}${M.bonded(me,n)?`${esc(M.JS.eun(n.name))} 무슨 일이 있어도 등을 돌리지 않아요.`:'다만 마음이 식으면 떠나거나, 등을 돌릴 수도 있어요.'}</p>
      <div class="acts"><button class="btn primary" type="button" data-c="yes">같이 간다</button><button class="btn" type="button" data-c="no">혼자가 낫다</button></div>`;
   }
   $('modal').hidden=false;
@@ -2569,7 +2769,7 @@ function btrReveal(){const B=G.btr;if(!B||G.bestie==null)return '';const nm=esc(
   const plan=`단짝 ${M.JS.eun(nm)} 남은 인원이 ${B.n}명 이하가 되거나 내가 크게 다치면 <b>등을 돌릴 생각</b>이었다.`;
   return plan+' '+({fight:'그리고 정말로 칼끝을 내게 돌렸다.',leave:'그리고 정말로 혼자 떠났다.',spared:'하지만 끝내 그러지 못했다.'}[B.done]||'그 순간은 끝내 오지 않았다.');}
 function renderEnd(){
-  show('scr-end');const me=G.c[0];const res=G.result||{type:'none'};
+  recordRun();show('scr-end');const me=G.c[0];const res=G.result||{type:'none'};
   const rank=me.alive?1:G.c.length-G.order.indexOf(0);
   let head='',sub='';
   if(res.type==='win'){head='마지막 한 명';sub='섬에 남은 건 나 하나뿐이었다. 손목의 밴드가 풀렸다.';}
@@ -2594,7 +2794,7 @@ function renderEnd(){
     <div><span class="label">쓰러뜨린 사람</span><b>${me.kills}명</b></div>
     <div><span class="label">레벨</span><b>Lv ${me.lv}</b></div>
    </div>
-   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" type="button" id="btn-again">다시 출석부에 이름 쓰기</button><button class="btn" type="button" id="btn-end-home">처음 화면</button></div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" type="button" id="btn-again">다시 출석부에 이름 쓰기</button><button class="btn" type="button" id="btn-end-rec">기록실</button><button class="btn" type="button" id="btn-end-home">처음 화면</button></div>
    <div class="endgrid">
     <section class="card"><h3>최종 출석부</h3><div id="end-roster"></div></section>
     <section class="col">
@@ -2605,6 +2805,7 @@ function renderEnd(){
   renderRoster($('end-roster'),true);renderRel($('end-rel'),true);renderLog($('end-chron'),chron);
   $('btn-again').onclick=()=>openMake();
   $('btn-end-home').onclick=()=>{G=null;show('scr-title');renderTitle();};
+  $('btn-end-rec').onclick=()=>openRecords('scr-end');
 }
 
 /* ---------- 시작 ---------- */
