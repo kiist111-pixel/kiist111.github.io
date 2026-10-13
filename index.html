@@ -445,7 +445,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
       <button class="btn" id="btn-cont" type="button" hidden>이어하기</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
-    <p class="build mono">BUILD 2026.10.13-h</p>
+    <p class="build mono">BUILD 2026.10.13-i</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -1024,7 +1024,7 @@ function newGame(o){
   for(const c of G.c){c.arm=mkItem('uniform');c.wep=mkItem(c.club==='shooting'&&R()<.35?'airgun':wpick(START_W));c.inv.push(mkItem(pick(['water','bread','riceball','choco'])));c.inv.push(mkItem(wpick(START_X)));}
   AREAS.forEach(a=>{const p=[];for(const e of a.pool){const[id,pr]=e.split(':');if(!pr||R()<+pr)p.push(mkItem(id,.06));}const k=ri(1,2);for(let j=0;j<k;j++)p.push(mkItem(pick(FILLER),.06));G.pool.push(shuffle(p));G.traps.push([]);});
   G.transferId=null;
-  if(!teamNPC&&!TEAMN.includes(o.name)&&R()<TRANSFER_CHANCE){const type=R()<.5?'hunter':'helper';const T=TRANSFER[type];
+  if(R()<TRANSFER_CHANCE){const type=R()<.5?'hunter':'helper';const T=TRANSFER[type];
     let g;do{g=pick(GIV);}while(used.has(g));used.add(g);
     const c=mkChar(G.c.length,pick(SUR)+g,pick(T.pers),pick(clubs),false);c.transfer=type;c.no=Math.max(...G.c.map(x=>x.no))+1;c.line='작년에도 이 섬에 있었어.';
     c.mhp=ri(128,142);c.hp=c.mhp;c.atk+=6;c.def+=4;c.lv=3;
@@ -2202,7 +2202,7 @@ function radioHTML(e){
   if(d.first)return `<div class="radio"><div class="rh"><span class="stamp">방송</span><span class="mono">${d.time}</span></div>
    <p style="margin:6px 0 0">"안녕하신가, 2학년 3반. 규칙은 하나다. 마지막 한 명만 섬을 떠난다. 네 시간마다 방송으로 닫히는 구역을 알려 주지. 닫힌 구역에 남은 사람의 밴드는 울린다."</p>
    ${d.transfer!=null&&G.c[d.transfer]?`<p style="margin:6px 0 0">"그리고 이번 판에는 전입생이 하나 있다. ${esc(G.c[d.transfer].name)}. 작년 이 섬을 기억하는 녀석이지."</p>`:''}
-   ${d.pair&&d.pair.length?`<p style="margin:6px 0 0">"그리고 이번 판에는 전입생이 둘 있다. ${d.pair.map(id=>esc(G.c[id].name)).join(', ')}. 하필 수학여행 직전에 같이 전학을 왔더군."</p>`:''}
+   ${d.pair&&d.pair.length?`<p style="margin:6px 0 0">"${d.transfer!=null&&G.c[d.transfer]?'그게 다가 아니다. 전입생이 둘 더 있다.':'그리고 이번 판에는 전입생이 둘 있다.'} ${d.pair.map(id=>esc(G.c[id].name)).join(', ')}. 하필 수학여행 직전에 같이 전학을 왔더군."</p>`:''}
    <dl><dt>다음 방송에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd></dl></div>`;
   return `<div class="radio"><div class="rh"><span class="stamp">방송</span><span class="mono">${d.time}</span><span class="muted" style="font-family:var(--f-body);font-weight:400;font-size:13px">남은 인원 ${d.alive}명</span></div>
    <dl>${d.closed.length?`<dt>지금부터 금지</dt><dd class="r-red">${names(d.closed)}</dd>`:''}
