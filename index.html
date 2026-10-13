@@ -485,7 +485,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
       <button class="btn" id="btn-records" type="button">기록실</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
-    <p class="build mono">BUILD 2026.10.13-j</p>
+    <p class="build mono">BUILD 2026.10.13-k</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -852,6 +852,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.k==='am'?d.n0:(d.uses||0),d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
+  if(G.police===undefined)G.police=null;
   if(!G.ev)G.ev={plan:[],drop:null,fog:0,bounty:null};
   if(G.team===undefined){G.team=[];G.teamNPC=false;G.rescueBy=null;}
   if(G.couples&&G.couples.length&&G.rel)loyalize(G);
@@ -1029,6 +1030,8 @@ const INVITE_NO={dajeong:'미안, 아직은 혼자 있고 싶어.',dahyeol:'됐�
   eongttung:'음… 오늘은 혼자 다니는 날이야.',neunggeul:'에이, 그렇게 쉽게 넘어갈 줄 알았어?',seongsil:'마음은 고마운데, 아직은 아니야.',cynic:'너를 어떻게 믿어.'};
 const THANKS={dajeong:'고마워. 꼭 갚을게.',dahyeol:'…고맙다. 이번엔.',sosim:'이, 이거 나 줘도 돼?',naengjeong:'합리적인 선택이야. 고마워.',
   eongttung:'선물이다! 오늘 좋은 날이네.',neunggeul:'역시 나 좋아하는구나?',seongsil:'고마워. 잘 쓸게.',cynic:'…이런 거 안 줘도 되는데.'};
+/* 재윤아로 시작한 판에만, 아주 드물게: 경찰 오윤수가 재윤아를 구하러 섬에 들어온다. 그 순간 게임이 끝난다 */
+const POLICE={for:'재윤아',name:'오윤수',chance:.05,from:20,to:52};
 const TEAM_SECRET='우리, 등대 무전기로 구조를 부르려고. 고장난 무전기, 건전지, 구리선만 모이면 돼. 한 명이라도 더 데리고 나갈 거야. 너도 끝까지 살아 있어.';
 function specialsFor(name){return SPECIALS.filter(s=>s.when.includes(name)).map(s=>s.add);}
 /* 절대 서로를 배신하지 않는 사이: 공격하지 않고, 등을 돌리지 않고, 마음이 친구 아래로 식지 않는다 */
@@ -1093,6 +1096,7 @@ function newGame(o){
     G.c.push(c);G.transferId=c.id;}
   me.loc=5;for(const c of G.c)if(!c.me)c.loc=R()<.15?5:ri(0,15);
   initRel(G,o);
+  G.police=o.name===POLICE.for&&R()<POLICE.chance?{at:ri(POLICE.from,POLICE.to)}:null;
   {const slots=shuffle([2,3,4,5,6]).slice(0,ri(1,2)).sort((a,b)=>a-b);const kinds=shuffle(['drop','fog','bounty']);G.ev={plan:slots.map((b,i)=>({at:b*BCAST,kind:kinds[i]})),drop:null,fog:0,bounty:null};}
   if(G.transferId!=null){const tc=G.c[G.transferId];if(tc.transfer==='helper'){G.rel[tc.id][0]=[ri(20,32),ri(25,40),''];}}
   for(const c of G.c)if(!c.me&&(c.id===G.bestie||c.special||c.transfer)&&dist(c.loc,5)<2)c.loc=pick([...Array(16).keys()].filter(i=>dist(i,5)>=2));
@@ -1946,9 +1950,18 @@ function finishTurn(G){
   if(checkEnd(G))return;
   finishTurnRest(G);
 }
+function policeCheck(G){const P=G.police;if(!P||G.result)return false;const me=G.c[0];
+  if(G.t===P.at-2)ev(G,me.alive?'heard':'hidden','heard','먼 바다 쪽에서 낮은 엔진 소리가 들렸다가, 안개 속으로 사라졌다.',{imp:1});
+  if(G.t===P.at-1)ev(G,me.alive?'heard':'hidden','heard','안개 너머로 빨갛고 파란 불빛이 잠깐 깜빡였다. 잘못 본 걸까.',{imp:1});
+  if(G.t<P.at)return false;
+  const alive=G.c.filter(c=>c.alive);if(!alive.length)return false;
+  G.result={type:'police',survivors:alive.map(c=>c.id),meAlive:me.alive};G.phase='end';G.pending=null;G.combat=null;
+  ev(G,me.alive?'seen':'hidden','heart',`사이렌 소리가 섬을 갈랐다. 확성기 너머로 낯익은 목소리가 들렸다. "해양경찰 ${POLICE.name}입니다! ${POLICE.for}, 구하러 왔어!"`,{imp:1});
+  return true;}
 function finishTurnRest(G){
   G.stage=null;
   const me=G.c[0];
+  if(policeCheck(G))return;
   if(G.rescueT!=null&&me.alive&&G.t>=G.rescueT+4){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
     ev(G,'seen','heart','안개를 가르고 배 한 척이 다가왔다. 아직 숨이 붙어 있던 모두가 그 배에 올랐다.',{imp:1});return;}
   if(G.t%BCAST===0)broadcast(G);
@@ -2023,6 +2036,7 @@ function runToEnd(G){
     encounterPhase(G);
     if(aliveCount(G)<=1){checkEnd(G);break;}
     G.t++;companionChecks(G);
+    if(policeCheck(G))break;
     if(G.rescueT!=null&&G.t>=G.rescueT+4&&aliveCount(G)>0){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
       ev(G,'hidden','heart','안개를 가르고 배 한 척이 다가왔다. 아직 숨이 붙어 있던 모두가 그 배에 올랐다.',{imp:1});break;}
     if(G.t%BCAST===0)broadcast(G);
@@ -2138,10 +2152,10 @@ const ENDINGS=[
  ['win','최후의 1인','마지막까지 혼자 살아남는다'],['rescue','안개 너머의 배','직접 무전기를 고쳐 구조를 부른다'],['rescue_team','누군가 부른 배','다른 누군가가 부른 배에 오른다'],
  ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['pact','끝까지 손을 들지 않았다','마지막 둘이 서로를 해치지 않는다'],
  ['d_bestie','등 뒤의 칼끝','가장 믿었던 사람에게…'],['d_hunter','작년의 우승자','사냥꾼 전입생에게 쓰러진다'],['d_poison','이상한 맛','독이 든 것을 먹는다'],
- ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다']];
+ ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','사이렌','아주 드물게, 섬 밖에서 누군가 온다']];
 function endingKey(){const me=G.c[0],r=G.result||{};
   if(r.pact&&r.pact.includes(0))return 'pact';
-  if(me.alive){if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';return 'win';}
+  if(me.alive){if(r.type==='police')return 'police';if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';return 'win';}
   const k=me.killer!=null?G.c[me.killer]:null;
   if(k&&k.id===G.bestie&&G.btr&&G.btr.done==='fight')return 'd_bestie';
   if(me.cause==='band')return 'd_band';if(me.cause==='poison')return 'd_poison';if(me.cause==='trap')return 'd_trap';
@@ -2775,11 +2789,14 @@ function renderEnd(){
   if(res.type==='win'){head='마지막 한 명';sub='섬에 남은 건 나 하나뿐이었다. 손목의 밴드가 풀렸다.';}
   else if(res.type==='rescue'){const s=res.survivors.map(id=>G.c[id]);head='안개 너머의 배';const by=G.rescueBy&&!G.rescueBy.includes(0)?G.rescueBy.map(id=>G.c[id].name):null;
     sub=`${by?`${M.JS.i(by.length===2?M.JS.wa(by[0])+' '+by[1]:by[0])} 등대에서 부른`:'무전을 듣고 온'} 배가 ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
+  else if(res.type==='police'){const s=res.survivors.map(id=>G.c[id]);const list=s.map(c=>c.me?'나':c.name).join(', ');
+    if(me.alive){head='사이렌';sub=`안개를 뚫고 경찰선이 들어왔다. 갑판에서 뛰어내린 사람은 ${M.JS.ida('오윤수')}. "윤아야, 구하러 왔어." 살아 있던 ${s.length}명이 함께 섬을 떠났다: ${list}.`;}
+    else{head='한발 늦은 사이렌';sub=`경찰 오윤수가 섬에 닿았다. "재윤아, 어디 있어!" 그 목소리는 끝내 대답을 듣지 못했다. 살아 있던 ${s.length}명이 그 배에 올랐다: ${list}.`;}}
   else if(res.type==='escape'){const h=G.c[res.with[1]];head='안개 속으로';sub=`${M.JS.wa(h.name)} 함께 밴드를 끊고 작은 배로 섬을 빠져나왔다.`;}
   else if(res.type==='npc'){const w=G.c[res.winner];head=`${w.name}만 섬을 떠났다`;sub=`마지막까지 남은 건 ${M.JS.ida(w.name)}.`;}
   else if(res.pact){const[a,b]=res.pact.map(id=>G.c[id]);head='끝까지 손을 들지 않았다';sub=`마지막에 남은 ${M.JS.wa(a.me?'나':a.name)} ${b.me?'나':b.name}. 둘은 서로를 해치지 않았고, 마지막 방송과 함께 섬은 조용해졌다.`;}
   else{head='아무도 남지 않았다';sub='마지막 방송이 끝나고, 섬은 다시 조용해졌다.';}
-  const kick=me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED'}[res.type]||'SURVIVED'):'ELIMINATED';
+  const kick=me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED',police:'RESCUED'}[res.type]||'SURVIVED'):'ELIMINATED';
   const lived=me.alive?G.t:me.deathT;
   const chron=G.log.filter(e=>e.imp);
   $('scr-end').innerHTML=`
