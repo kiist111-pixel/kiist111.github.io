@@ -481,7 +481,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--rule);border-radius
       <button class="btn" id="btn-records" type="button">기록실</button>
     </div>
     <p class="muted" id="cont-info" hidden></p>
-    <p class="build mono">BUILD 2026.10.14-a</p>
+    <p class="build mono">BUILD 2026.10.14-b</p>
     <div class="confirm" id="confirm-new" hidden>
       <span>진행 중인 판이 있어요. 새로 시작하면 지금 판은 지워져요.</span>
       <button class="btn danger small" id="btn-new-yes" type="button">새로 시작</button>
@@ -2456,26 +2456,27 @@ function renderGame(){
 /* 판을 가르는 순간만 골라 화면 위에 띄운다 */
 function alertList(){const me=G.c[0],A=M.AREAS,out=[];if(!me.alive||G.phase==='end')return out;
   const left=M.turnsToBcast(G),has=id=>me.inv.some(x=>x.id===id),firstOf=k=>me.inv.find(x=>M.IT[x.id].k===k);
-  if(G.zones[me.loc]===1&&!me.freed)out.push(['red',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫혀요. <b>${left}턴</b> 안에 옮기지 않으면 밴드가 울려요.`]);
-  if(G.zones[me.loc]===1&&me.freed)out.push(['amber',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫혀요. 밴드가 풀려서 남아도 괜찮지만, 한번 나가면 다시 들어올 수 없어요.`]);
-  if(me.freed&&!G.result){const sp=M.ESCAPE_SPOTS.includes(me.loc);out.push(['info',sp?'선착장·방파제에 왔어요. <b>탈출</b>을 누르면 밴드가 풀린 사람들과 함께 섬을 빠져나가요.':`밴드가 풀렸어요. <b>선착장이나 방파제</b>에 가면 섬을 빠져나갈 수 있어요.${me.tb?' 그 전에 다른 애들 밴드를 더 풀어 줄 수도 있어요.':''}`]);}
-  else if(me.tb&&me.bandKnow&&has('nipper'))out.push(['info','니퍼가 있어요. 가방에서 <b>내 밴드 풀기</b>를 누를 수 있어요.']);
+  /* 경고 줄: 누군가 잊지 않으려고 적어 둔 메모처럼, ~다 말투로 */
+  if(G.zones[me.loc]===1&&!me.freed)out.push(['red',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫힌다. <b>${left}턴</b> 안에 옮기지 않으면 밴드가 울린다.`]);
+  if(G.zones[me.loc]===1&&me.freed)out.push(['amber',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫힌다. 밴드가 풀렸으니 남아도 괜찮다. 하지만 한번 나가면 다시 들어올 수 없다.`]);
+  if(me.freed&&!G.result){const sp=M.ESCAPE_SPOTS.includes(me.loc);out.push(['info',sp?'선착장·방파제다. 여기서 <b>탈출</b>할 수 있다. 밴드가 풀린 사람들도 같은 배에 오른다.':`밴드가 풀렸다. <b>선착장이나 방파제</b>에 가면 섬을 나갈 수 있다.${me.tb?' 그 전에 다른 애들 밴드를 더 풀어 줄 수도 있다.':''}`]);}
+  else if(me.tb&&me.bandKnow&&has('nipper'))out.push(['info','니퍼가 있다. 이제 <b>내 밴드</b>를 풀 수 있다.']);
   if(has('fixedradio')&&G.rescueT==null){
-    if(G.zones[1]===2)out.push(['red','등대가 닫혀서 고친 무전기를 쓸 곳이 없어요.']);
-    else if(G.zones[1]===1)out.push(['red',`등대가 다음 방송 때 닫혀요! <b>${left}턴</b> 안에 등대에 가서 구조를 불러야 해요.`]);
-    else out.push(['info',me.loc===1?'등대에 왔어요. 가방에서 고친 무전기로 구조를 부를 수 있어요.':'고친 무전기가 있어요. 등대에 가면 구조를 부를 수 있어요.']);}
-  else if((has('radio')||has('battery')||has('wire'))&&G.rescueT==null&&G.zones[1]===1)out.push(['amber',`등대가 다음 방송 때 닫혀요. 무전기를 고쳐도 <b>${left}턴</b> 뒤엔 쓸 곳이 사라져요.`]);
+    if(G.zones[1]===2)out.push(['red','등대가 닫혔다. 고친 무전기를 쓸 곳이 없다.']);
+    else if(G.zones[1]===1)out.push(['red',`등대가 다음 방송 때 닫힌다. <b>${left}턴</b> 안에 등대에 가서 구조를 불러야 한다.`]);
+    else out.push(['info',me.loc===1?'등대에 왔다. 고친 무전기로 구조를 부를 수 있다.':'고친 무전기가 있다. 등대에 가면 구조를 부를 수 있다.']);}
+  else if((has('radio')||has('battery')||has('wire'))&&G.rescueT==null&&G.zones[1]===1)out.push(['amber',`등대가 다음 방송 때 닫힌다. 무전기를 고쳐도 <b>${left}턴</b> 뒤엔 쓸 곳이 없다.`]);
   if(G.escapeKnown&&G.transferId!=null&&G.c[G.transferId].alive){const zs=M.ESCAPE_SPOTS.map(i=>G.zones[i]);
-    if(zs.every(z=>z===2))out.push(['red','선착장과 방파제가 모두 닫혀서 탈출할 길이 사라졌어요.']);
-    else if(zs.some(z=>z===1))out.push(['amber',`${M.JS.i(M.ESCAPE_SPOTS.filter(i=>G.zones[i]===1).map(i=>A[i].n).join(', '))} 다음 방송 때 닫혀요. 탈출하려면 서둘러야 해요.`]);}
-  if(G.rescueT!=null)out.push(['info',`구조선이 오고 있어요. <b>${Math.max(0,G.rescueT+4-G.t)}턴</b>만 더 살아 있으면 돼요.`]);
-  const B=M.bountyOn(G);if(B){if(B.id===0)out.push(['red',`현상금이 <b>나</b>에게 걸렸어요. 다음 방송까지 <b>${left}턴</b>, 다들 나를 노릴 거예요.`]);
-    else out.push(['amber',`현상금이 ${esc(G.c[B.id].name)}에게 걸려 있어요. 다음 방송 전에 쓰러뜨리면 보급이 떨어져요.`]);}
-  const dl=M.dropLeft(G);if(dl!=null)out.push(['info',`보급 상자가 <b>${A[dl].n}</b>에 떨어져 있어요. ${me.loc===dl?'둘러보면 상자를 열 수 있어요.':'다른 애들도 노리고 있어요.'}`]);
-  if(M.fogOn(G))out.push(['info',`짙은 안개가 꼈어요. 다음 방송까지 서로 잘 안 보이고, 싸움에서 도망치기 쉬워요.`]);
-  if(me.hp<me.mhp*.3){const h=firstOf('h');out.push(['red',`체력이 위험해요.${h?` 가방에 ${M.JS.i(M.IT[h.id].n)} 있어요.`:' 쉬면서 버텨야 해요.'}`]);}
-  if(me.st<20){const f=firstOf('f');out.push(['amber',`스태미나가 바닥이에요.${f?` 가방에 ${M.JS.i(M.IT[f.id].n)} 있어요.`:' 쉬면 회복돼요.'}`]);}
-  for(const id of M.myComps(G)){const m=G.c[id];if(m.alive&&m.hp<m.mhp*.3)out.push(['amber',`${esc(m.name)} 상태가 위험해요. 약이 있으면 건네줄 수 있어요.`]);}
+    if(zs.every(z=>z===2))out.push(['red','선착장과 방파제가 모두 닫혔다. 탈출할 길이 사라졌다.']);
+    else if(zs.some(z=>z===1))out.push(['amber',`${M.JS.i(M.ESCAPE_SPOTS.filter(i=>G.zones[i]===1).map(i=>A[i].n).join(', '))} 다음 방송 때 닫힌다. 탈출하려면 서둘러야 한다.`]);}
+  if(G.rescueT!=null)out.push(['info',`구조선이 오고 있다. <b>${Math.max(0,G.rescueT+4-G.t)}턴</b>만 더 버티면 된다.`]);
+  const B=M.bountyOn(G);if(B){if(B.id===0)out.push(['red',`현상금이 <b>나</b>에게 걸렸다. 다음 방송까지 <b>${left}턴</b>. 다들 나를 노릴 것이다.`]);
+    else out.push(['amber',`현상금이 ${esc(G.c[B.id].name)}에게 걸려 있다. 다음 방송 전에 쓰러뜨리면 보급이 떨어진다.`]);}
+  const dl=M.dropLeft(G);if(dl!=null)out.push(['info',`보급 상자가 <b>${A[dl].n}</b>에 떨어져 있다. ${me.loc===dl?'둘러보면 상자를 열 수 있다.':'다른 애들도 노리고 있을 것이다.'}`]);
+  if(M.fogOn(G))out.push(['info','짙은 안개가 꼈다. 다음 방송까지는 서로 잘 안 보이고, 싸움에서 도망치기도 쉽다.']);
+  if(me.hp<me.mhp*.3){const h=firstOf('h');out.push(['red',`체력이 바닥이다.${h?` 가방에 ${M.JS.i(M.IT[h.id].n)} 있다.`:' 쉬면서 버텨야 한다.'}`]);}
+  if(me.st<20){const f=firstOf('f');out.push(['amber',`스태미나가 바닥이다.${f?` 가방에 ${M.JS.i(M.IT[f.id].n)} 있다.`:' 쉬면 돌아온다.'}`]);}
+  for(const id of M.myComps(G)){const m=G.c[id];if(m.alive&&m.hp<m.mhp*.3)out.push(['amber',`${esc(m.name)} 상태가 위험하다. 약이 있으면 건네줄 수 있다.`]);}
   return out;}
 function renderAlerts(){const list=alertList();$('alerts').innerHTML=list.map(([lv,h])=>`<div class="al ${lv}">${h}</div>`).join('');}
 function renderDock(){
