@@ -551,6 +551,23 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
   .tile .you{width:26px;height:22px;font-size:12px;top:3px;right:3px}
   .map{gap:6px;padding:7px}
 }
+
+.escbox .note.warn{color:var(--red)}
+.escbox small{font-size:12px;color:var(--ink-2);font-weight:500}
+.plan{margin-top:14px;background:var(--paper-3);border:1px solid #b3b6a8;box-shadow:0 8px 14px -12px rgba(0,0,0,.7);padding:0 14px}
+.plan summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;min-height:40px;font-weight:800;letter-spacing:.2em}
+.plan summary::-webkit-details-marker{display:none}
+.plan summary::after{content:'';width:7px;height:7px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg);margin-left:auto;margin-bottom:3px;transition:transform .15s}
+.plan[open] summary::after{transform:rotate(-135deg);margin-bottom:-3px}
+.plan p{margin:0 0 12px;font-size:14px;line-height:1.75;color:var(--ink)}
+@media (max-width: 640px){
+  .bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5px;background:var(--ink);overflow:hidden}
+  .bar>*{background:var(--paper);border:0!important;padding:9px 12px;min-width:0}
+  .bar .spacer{display:none}
+  .bar .rescue{grid-column:1/-1;order:9}
+  .bar>.btn{border:0;justify-content:center}
+  .statbtn{flex-wrap:wrap;row-gap:0}
+}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
 
 #status::before{content:'학생 기록';display:block;font-size:12px;font-weight:800;letter-spacing:.3em;color:var(--ink-3);margin-bottom:6px}
@@ -634,7 +651,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.14-c</p>
+      <p class="build">BUILD 2026.10.15-a</p>
     </section>
   </div>
 </section>
@@ -1170,8 +1187,17 @@ const TB_FREE_YES={dajeong:'…진짜? 고마워. 정말 고마워.',dahyeol:'�
 const TB_FREE_NO={dajeong:'미안, 무서워… 잘못되면 어떡해.',dahyeol:'내 손목에 손대지 마.',sosim:'시, 싫어… 터지면 어떡해.',naengjeong:'검증 안 된 방법에 손목은 못 맡겨.',
   eongttung:'음… 오늘은 손목이 낯을 가려.',neunggeul:'에이, 그 말을 어떻게 믿어?',seongsil:'고맙지만… 아직은 못 믿겠어.',cynic:'그걸 믿으라고?'};
 const STUDY_T=['손목 밴드를 이리저리 돌려 보았다. 이음새가 하나 있다. 무섭기보다 궁금한 게 먼저였다.',
-  '손톱으로 이음새를 살짝 벌려 보았다. 안쪽에 아주 작은 수신부가 있다. 금지구역 신호는 여기로 들어온다.',
-  '알았다. 어느 선을 끊어야 울리지 않는지. …문제는, 이걸 아는 사람이 이 섬에 나 하나라는 거다.'];
+  '얇은 날 끝으로 이음새를 살짝 벌렸다. 안쪽에 아주 작은 수신부가 있다. 금지구역 신호는 여기로 들어온다.',
+  '구리선을 대 가며 회로를 하나씩 짚었다. 알았다. 어느 선을 끊어야 울리지 않는지. …문제는, 이걸 아는 사람이 이 섬에 나 하나라는 거다.'];
+/* 뜯어보기 단계마다: 필요한 것, 실패 확률, 실패했을 때 */
+const BAND_TOOLS=['cutter','nail','dart','diveknife'];
+const STUDY_FAIL=[.2,.35,.45];
+const STUDY_FAIL_T=['밴드를 이리저리 비틀다가 손목이 따끔했다. 짧은 경고음이 울렸다. 체력 -{d}.',
+  '이음새를 벌리다 날이 미끄러졌다. 밴드가 날카롭게 울었다. 체력 -{d}. 소리가 멀리 퍼졌을 것이다.',
+  '선을 잘못 짚었다. 손목을 타고 찌르르 전기가 올라왔다. 체력 -{d}. 구리선은 아직 쓸 수 있다.'];
+const hasAny=(c,ids)=>c.inv.some(x=>ids.includes(x.id))||!!(c.wep&&ids.includes(c.wep.id));
+function studyNeed(me){const s=me.bandProg||0;if(me.bandKnow)return null;if(s===1&&!hasAny(me,BAND_TOOLS))return '커터칼이나 못처럼 얇고 단단한 것';if(s===2&&!me.inv.some(x=>x.id==='wire'))return '구리선';return null;}
+function studyFailP(me){const s=me.bandProg||0;return Math.min(.8,STUDY_FAIL[s]+(me.st<40?.1:0)+(me.inj.arm?.1:0));}
 const sayL=(T,k,c)=>isTB(c)&&TBL[k]!=null?TBL[k]:T[c.pers];
 const persN=c=>isTB(c)?TB.pn:PERS[c.pers].n;
 const persD=c=>isTB(c)?TB.pd:PERS[c.pers].d;
@@ -1400,9 +1426,13 @@ function revealSecret(G,h,me){
 function canEscape(G){const me=G.c[0];if(!me.alive||!G.escapeKnown||G.transferId==null)return false;const h=G.c[G.transferId];
   return h.alive&&isMyComp(G,h.id)&&h.loc===me.loc&&me.inv.some(x=>x.id==='nipper')&&ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2;}
 /* 이태백으로 플레이: 밴드 뜯어보기 → 니퍼로 내 밴드 풀기 → 말을 걸어 다른 애들 밴드 풀어 주기 → 선착장·방파제에서 탈출 */
-function studyBand(G,me){me.st-=5;if(me.st<0)stOver(G,me);me.bandProg=Math.min(BAND_STEPS,(me.bandProg||0)+1);
+function studyBand(G,me){me.st-=5;if(me.st<0)stOver(G,me);const s=me.bandProg||0;
+  if(R()<studyFailP(me)){const dmg=ri(5,9);me.hp-=dmg;G.noise=G.t;ev(G,'seen','warn',STUDY_FAIL_T[s].replace('{d}',dmg),{imp:1});if(me.hp<=0)kill(G,me,null,'band');return;}
+  if(s===2){const i=me.inv.findIndex(x=>x.id==='wire');if(i>=0)me.inv.splice(i,1);}
+  me.bandProg=Math.min(BAND_STEPS,s+1);
   const done=me.bandProg>=BAND_STEPS;if(done)me.bandKnow=1;
   ev(G,'seen',done?'heart':'find',STUDY_T[me.bandProg-1],{imp:done?1:0});
+  if(!done){const need=studyNeed(me);if(need)ev(G,'seen','inner',me.bandProg===1?'이음새를 벌리려면 커터칼이나 못 같은 게 있어야겠다.':'회로를 짚어 보려면 구리선이 필요하다. 폐광 입구나 방파제에 있을지도 모른다.',{imp:1});}
   if(done)ev(G,'seen','inner',me.inv.some(x=>x.id==='nipper')?'니퍼가 있다. 내 밴드부터 풀 수 있다.':'이제 니퍼만 있으면 된다. 폐광 입구나 마을회관 같은 데라면 하나쯤 굴러다닐 거다.',{imp:1});}
 function canUnband(G,n){const me=G.c[0];return !!n&&n.alive&&!n.me&&!n.freed&&me.alive&&!!me.freed&&canCut(me);}
 function tryUnband(G,n){const me=G.c[0];if(!canUnband(G,n))return;n.talked=true;
@@ -1606,7 +1636,7 @@ function teamAct(G,c){
 /* 이태백(NPC): 밴드를 뜯어보고 → 니퍼를 찾아 → 자기 밴드를 푼다. 그다음부터는 만나는 애들 밴드를 풀어 준다(talk) */
 function tbAct(G,c){
   if((G.zones[c.loc]===1&&turnsToBcast(G)<=3)||c.st<22)return false;
-  if(!c.bandKnow){if(G.t<2||R()>=.45)return false;c.bandProg=(c.bandProg||0)+1;c.rested=true;
+  if(!c.bandKnow){if(G.t<2||R()>=.45)return false;c.rested=true;if(R()<.4){c.hp-=ri(4,8);if(c.hp<=0)kill(G,c,null,'band');return true;}c.bandProg=(c.bandProg||0)+1;
     if(c.bandProg>=BAND_STEPS){c.bandKnow=1;ev(G,'hidden','find',`${JS.i(c.name)} 손목 밴드를 끊는 법을 알아냈다.`,{imp:1});}
     else ev(G,visAt(G,c.loc,[c]),'meet',`${JS.i(c.name)} 바위에 걸터앉아 자기 손목 밴드를 이리저리 돌려 보고 있다.`);
     return true;}
@@ -1667,7 +1697,7 @@ function encounterPhase(G){
   const me=G.c[0];const used=new Set();let pe=null,pFirst=false;
   if(me.alive){
     const here=shuffle(G.c.filter(c=>c.alive&&!c.me&&c.loc===me.loc&&!isMyComp(G,c.id)));
-    const bt=bountyOn(G);const base=(me.searched?.6:me.rested?.32:.5)*(fogOn(G)?.55:1)*(bt&&bt.id===0?1.5:1);const ar=AREAS[me.loc];
+    const bt=bountyOn(G);const base=(me.searched?.6:me.rested?.32:.5)*(fogOn(G)?.55:1)*(bt&&bt.id===0?1.5:1)*(G.noise===G.t?1.4:1);const ar=AREAS[me.loc];
     for(const n of here){if(R()<base*ar.d*(n.rested?.6:1)){pe=n;break;}}
     if(pe){used.add(0);myComps(G).forEach(id=>used.add(id));used.add(pe.id);if(pe.comp!=null)used.add(pe.comp);
       const ps=R()+.12+(me.club==='photo'?.3:0)+(me.tb?.3:0)+(me.rested?.15:0);
@@ -2011,7 +2041,7 @@ function act(G,a){
   if(a.type==='move'&&(!neighbors(me.loc).includes(a.to)||G.zones[a.to]===2))return false;
   if(a.type==='loot'&&!bodiesAt(G,me.loc).length)return false;
   if(a.type==='chat'&&!myComps(G).some(id=>G.c[id].alive&&G.c[id].loc===me.loc))return false;
-  if(a.type==='study'&&!(me.tb&&!me.bandKnow))return false;
+  if(a.type==='study'&&!(me.tb&&!me.bandKnow&&!studyNeed(me)))return false;
   if(a.type==='escape'&&!canEscape(G)&&canFreeEscape(G)){G.turnStart=G.seq;freeEscape(G);return true;}
   if(a.type==='escape'){if(!canEscape(G))return false;const h=G.c[G.transferId];G.turnStart=G.seq;
     ev(G,'seen','heart',`${JS.wa(h.name)} 니퍼로 서로의 밴드를 끊었다. 밴드는 아무 소리 없이 바닥에 떨어졌다. 둘은 낡은 배를 밀어 안개 속으로 나아갔다.`,{imp:1});
@@ -2330,7 +2360,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2507,7 +2537,7 @@ function renderReveal(){
     <dt>시작 소지품</dt><dd>${esc(items)}, 교복</dd>
     ${me.tb?`<dt>정체</dt><dd><b>경찰</b> <span class="muted">· 전입생으로 위장해 수학여행 반에 잠입했다. 학교는 늘 남들보다 몇 년 일찍 들어갔다가 금방 졸업해 버려서, '우리 반'이 생긴 건 처음이다.</span></dd>`:''}
     <dt>단짝</dt><dd>${f?`<b>${esc(f.name)}</b> <span class="muted">· ${M.CLUBS[f.club].n}</span>`:`<span class="muted">없음${me.tb?' · 전학 온 첫날이라 아는 얼굴이 하나도 없다':''}</span>`}</dd>
-    ${me.tb?`<dt>계획</dt><dd>손목 밴드를 <b>${M.BAND_STEPS}번</b> 뜯어보면 끊는 법을 알아낼 수 있다. <b>니퍼</b>가 있으면 내 밴드를 풀고, 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀리면 금지구역에 남아도 울리지 않고, <b>선착장이나 방파제</b>에서 섬을 빠져나갈 수 있다. 그때 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 알아서, <b>건전지</b>만 있으면 등대에서 구조를 부를 수도 있다.</dd>`:''}
+    ${me.tb?`<dt>계획</dt><dd>${esc(planText())}</dd>`:''}
     ${G.c.filter(c=>!c.me&&c.special==='friend').map(c=>`<dt>친구</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}${M.bonded(me,c)?' · 무슨 일이 있어도 서로 등을 돌리지 않는 사이':''}</span></dd>`).join('')}
     ${G.c.filter(c=>!c.me&&M.isCouple(G,0,c.id)).map(c=>`<dt>연인</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}</span></dd>`).join('')}
     ${G.teamNPC&&G.team&&G.team.length?`<dt>전입생</dt><dd><b>${G.team.map(id=>esc(G.c[id].name)).join(', ')}</b> <span class="muted">· 수학여행 직전에 둘이 함께 전학 왔다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
@@ -2556,7 +2586,7 @@ function renderGame(){
   const here=M.myComps(G).map(id=>G.c[id]).filter(c=>c.alive&&c.loc===me.loc);const cb=$('act-chat');cb.hidden=!(me.alive&&here.length);cb.disabled=!can;
   const eb=$('act-escape'),esc1=M.canEscape(G),esc2=M.canFreeEscape(G);eb.hidden=!(esc1||esc2);eb.disabled=!can;
   eb.innerHTML=esc1?'<span class="lg">함께 </span>탈출':'<span class="lg">배로 </span>탈출';eb.title=esc1?'':'밴드가 풀린 사람들과 함께 섬을 빠져나간다. 게임이 끝난다.';
-  const sb=$('act-study');sb.hidden=!(me.alive&&me.tb&&!me.bandKnow);sb.disabled=!can;sb.innerHTML=`<span class="lg">밴드 </span>뜯어보기 <span class="mono">${me.bandProg||0}/${M.BAND_STEPS}</span>`;
+  const sb=$('act-study'),sneed=M.studyNeed(me);sb.hidden=!(me.alive&&me.tb&&!me.bandKnow);sb.disabled=!can||!!sneed;sb.title=sneed?`${sneed}이 있어야 한다.`:`손목 밴드를 들여다본다. 실패할 확률 ${Math.round(M.studyFailP(me)*100)}%.`;sb.innerHTML=`<span class="lg">밴드 </span>뜯어보기 <span class="mono">${me.bandProg||0}/${M.BAND_STEPS}</span>`;
   if(here.length){const nms=here.map(c=>c.name);cb.title=`${nms.slice(0,-1).map(x=>x+', ').join('')}${M.JS.wa(nms[nms.length-1])} 쉬면서 이야기한다. 쉬기만큼 회복하고 서로 가까워진다.`;}
 }
 /* 판을 가르는 순간만 골라 화면 위에 띄운다 */
@@ -2616,9 +2646,10 @@ function renderStatus(){
     <div><span class="k">기본</span><span class="mono">공격 ${me.atk} · 방어 ${me.def}</span> <span class="muted">· 지금 ${M.AREAS[me.loc].n}</span></div>
    </div>
    ${warn?`<div style="margin-top:10px">${warn}</div>`:''}
-   ${escBox()}${bandBox()}
+   ${escBox()}${bandBox()}${planBox()}
    ${comps.map((comp,k)=>`<div class="comp${k?' more':''}"><span>동행</span><b>${esc(comp.name)}</b>${tagChip(G.rel[0][comp.id][2])}${M.bonded(me,comp)?'<span class="chip bond">끝까지 한편</span>':''}${comp.freed?'<span class="chip freed">밴드 풀림</span>':''}<span class="muted mono">${hpWord(comp)}</span><span style="flex:1"></span>${M.canUnband(G,comp)&&comp.loc===me.loc?`<button class="btn small" type="button" data-unband="${comp.id}" ${G.phase!=='act'?'disabled':''}>밴드 풀어 주기</button>`:''}<button class="btn small" type="button" data-dismiss="${comp.id}" ${G.phase!=='act'?'disabled':''}>따로 움직이기</button></div>`).join('')}`;
   $('status').querySelectorAll('button[data-dismiss]').forEach(bd=>bd.onclick=()=>{M.dismiss(G,+bd.dataset.dismiss);after();});
+  {const pb=$('planbox');if(pb)pb.addEventListener('toggle',()=>{planOpen=pb.open;});}
   $('status').querySelectorAll('button[data-unband]').forEach(bd=>bd.onclick=()=>{M.unbandComp(G,+bd.dataset.unband);after();});
 }
 function escBox(){
@@ -2628,11 +2659,22 @@ function escBox(){
   return `<div class="escbox"><b>${esc(M.JS.wa(h.name))} 함께 탈출</b>
     ${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(M.isMyComp(G,h.id),`${esc(h.name)} 동행`)}${ck(M.ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2,'선착장이나 방파제에 있기')}</div>`;
 }
+/* 출석부에 적어 둔 계획: 시작 카드에서 본 내용을 플레이 중에도 펼쳐 볼 수 있게 */
+let planOpen=true;
+function planText(){const me=G.c[0];
+  if(me.tb)return '손목 밴드를 세 번 뜯어본다. 처음엔 맨손으로 살펴보고, 이음새를 벌릴 땐 커터칼이나 못, 회로를 짚을 땐 구리선이 있어야 한다. 손이 미끄러지면 밴드가 따끔하게 울리고 소리가 퍼진다. 끊는 법을 알아내고 니퍼를 구하면 내 밴드부터 푼다. 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀린 채로 선착장이나 방파제에 가면 탈출할 수 있고, 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 안다. 건전지만 있으면 등대에서 구조를 부를 수 있다.';
+  if(me.team)return '고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 건전지만 구하면 된다. 고친 무전기로 등대에서 구조를 부르면, 배가 올 때까지 살아 있는 모두가 섬을 떠난다.';
+  return '';}
+function planBox(){const t=planText();if(!t)return '';return `<details class="plan" id="planbox" ${planOpen?'open':''}><summary>계획</summary><p>${esc(t)}</p></details>`;}
 /* 이태백: 밴드 풀기 진행 / 누군가 내 밴드를 풀어 줬을 때 */
 function bandBox(){const me=G.c[0];if(!me.alive)return '';
   const ck=(ok,t)=>`<span class="${ok?'ok':'no'}"><span class="sr">${ok?'됨':'아직'}: </span>${t}</span>`;
   if(me.tb){const n=G.c.filter(c=>!c.me&&c.freedBy===0).length,alive=G.c.filter(c=>!c.me&&c.freedBy===0&&c.alive).length;
-    return `<div class="escbox"><b>밴드 풀기</b>${ck(me.bandKnow,`밴드 뜯어보기 ${me.bandProg||0}/${M.BAND_STEPS}`)}${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(me.freed,'내 밴드')}${me.freed?`<span class="note">풀어 준 사람 ${n}명${n>alive?` (살아 있는 ${alive}명)`:''} · 만나서 말을 걸면 더 풀어 줄 수 있다</span>`:''}</div>`;}
+    const pg=me.bandProg||0,need=M.studyNeed(me);
+    const steps=[['살펴보기',''],['이음새 벌리기','커터칼이나 못'],['회로 짚기','구리선']];
+    return `<div class="escbox"><b>밴드 풀기</b>${steps.map((st,i)=>ck(pg>i,`${i+1}. ${st[0]}${st[1]?` <small>· ${st[1]}</small>`:''}`)).join('')}${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(me.freed,'내 밴드')}
+      ${!me.bandKnow?(need?`<span class="note warn">다음 단계에는 ${need}이 필요하다.</span>`:`<span class="note">다음 단계 실패 확률 ${Math.round(M.studyFailP(me)*100)}%. 실패하면 밴드가 따끔하게 울리고 소리가 퍼진다.</span>`):''}
+      ${me.freed?`<span class="note">풀어 준 사람 ${n}명${n>alive?` (살아 있는 ${alive}명)`:''} · 만나서 말을 걸면 더 풀어 줄 수 있다</span>`:''}</div>`;}
   if(me.freed){const t=me.freedBy!=null&&me.freedBy!==0?G.c[me.freedBy]:null;
     return `<div class="escbox"><b>밴드가 풀렸다</b><span class="note">${t?`${esc(M.JS.i(t.name))} 풀어 줬다 · `:''}금지구역에 남아도 울리지 않는다 · 선착장이나 방파제에서 탈출</span></div>`;}
   return '';}
