@@ -651,7 +651,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-a</p>
+      <p class="build">BUILD 2026.10.15-b</p>
     </section>
   </div>
 </section>
@@ -1488,6 +1488,9 @@ function trapCheck(G,c){
     if(c.hp<=0){kill(G,c,owner&&owner.alive?owner:null,'trap');return;}
   }
 }
+const DIGT=[(a,i)=>`${a} 구석구석을 다시 뒤지다 ${JS.eul(i)} 찾아냈다.`,(a,i)=>`아까는 못 본 ${JS.i(i)} 눈에 띄었다.`,(a,i)=>`잔해 밑에서 ${JS.eul(i)} 끄집어냈다.`];
+/* 그 장소에서 나올 법한 물건 하나를 새로 만든다 (처음 섬에 깔린 확률을 그대로 무게로 쓴다) */
+function freshItem(G,loc){const list=[];for(const e of AREAS[loc].pool){const[id,pr]=e.split(':');list.push([id,pr?+pr:1]);}for(const id of FILLER)list.push([id,.6]);return mkItem(wpick(list),.06);}
 function searchArea(G,c){
   c.searched=true;c.st-=8;if(c.st<0)stOver(G,c);
   trapCheck(G,c);if(!c.alive)return;
@@ -1497,14 +1500,15 @@ function searchArea(G,c){
     if(crate.length&&R()<.85){const it=pick(crate);
       ev(G,'seen','find',`${AREAS[c.loc].n}에 떨어진 보급 상자를 열었다. 안에 ${JS.i(IT[it.id].n)} 들어 있다.`);
       G.pending={type:'find',uid:it.uid,loc:c.loc};G.phase='pending';return;}
-    if(pool.length&&R()<(isTB(c)?.75:.62)){
-      const it=pick(pool);
-      if(c.club==='cooking'&&it.p)it.pk=1;
-      ev(G,'seen','find',pick(FINDT)(AREAS[c.loc].n,IT[it.id].n)+(it.pk?' 냄새가 이상하다. 독이 든 것 같다.':''));
-      G.pending={type:'find',uid:it.uid,loc:c.loc};G.phase='pending';return;
-    }
+    const fresh=pool.filter(x=>!x.left);
+    const offer=(it,tx)=>{if(c.club==='cooking'&&it.p)it.pk=1;ev(G,'seen','find',tx+(it.pk?' 냄새가 이상하다. 독이 든 것 같다.':''));G.pending={type:'find',uid:it.uid,loc:c.loc};G.phase='pending';};
+    if(fresh.length&&R()<(isTB(c)?.75:.62)){const it=pick(fresh);offer(it,pick(FINDT)(AREAS[c.loc].n,IT[it.id].n));return;}
+    /* 다 뒤진 것 같아도 구석구석 다시 보면 뭔가 더 나온다. 같은 곳을 자꾸 뒤질수록 조금씩 덜 나온다 */
+    if(!fresh.length||pool.length<=2){const D=G.dig||(G.dig={});const dg=D[c.loc]||0;
+      if(R()<Math.max(.25,.55-dg*.05)){D[c.loc]=dg+1;const it=freshItem(G,c.loc);pool.push(it);offer(it,pick(DIGT)(AREAS[c.loc].n,IT[it.id].n));return;}
+      const lf=pool.filter(x=>x.left);if(lf.length&&R()<.5){const it=pick(lf);offer(it,`아까 두고 간 ${JS.i(IT[it.id].n)} 그대로 있다.`);return;}}
     const hasBody=bodiesAt(G,c.loc).length>0;
-    ev(G,'seen','find',(pool.length?'아무것도 찾지 못했다.':'이곳엔 더 나올 게 없는 것 같다.')+(hasBody?' 쓰러진 사람의 소지품은 따로 뒤질 수 있다.':''));
+    ev(G,'seen','find','아무것도 찾지 못했다.'+(hasBody?' 쓰러진 사람의 소지품은 따로 뒤질 수 있다.':''));
     return;
   }
   const ok=it=>{const k=IT[it.id].k;return (k!=='p'&&k!=='m'&&k!=='b')||(isTB(c)&&it.id==='nipper'&&!c.inv.some(x=>x.id==='nipper'));};
@@ -2085,7 +2089,7 @@ function pickUp(G,p,choice){
   const uid=p.type==='find'?p.uid:a1;
   const pi=pool.findIndex(x=>x.uid===uid);
   if(cmd==='leave'||pi<0||me.loc!==p.loc){
-    if(p.type==='find'&&pi>=0)ev(G,'seen','find',`${JS.eul(IT[pool[pi].id].n)} 그대로 두었다.`);
+    if(p.type==='find'&&pi>=0){pool[pi].left=1;ev(G,'seen','find',`${JS.eul(IT[pool[pi].id].n)} 그대로 두었다.`);}
     else if(p.type==='loot')ev(G,'seen','find','아무것도 챙기지 않았다.');
     return;}
   const it=pool[pi],d=IT[it.id];
