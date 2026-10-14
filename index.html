@@ -651,7 +651,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-b</p>
+      <p class="build">BUILD 2026.10.15-c</p>
     </section>
   </div>
 </section>
@@ -1503,7 +1503,7 @@ function searchArea(G,c){
     const fresh=pool.filter(x=>!x.left);
     const offer=(it,tx)=>{if(c.club==='cooking'&&it.p)it.pk=1;ev(G,'seen','find',tx+(it.pk?' 냄새가 이상하다. 독이 든 것 같다.':''));G.pending={type:'find',uid:it.uid,loc:c.loc};G.phase='pending';};
     if(fresh.length&&R()<(isTB(c)?.75:.62)){const it=pick(fresh);offer(it,pick(FINDT)(AREAS[c.loc].n,IT[it.id].n));return;}
-    /* 다 뒤진 것 같아도 구석구석 다시 보면 뭔가 더 나온다. 같은 곳을 자꾸 뒤질수록 조금씩 덜 나온다 */
+    /* 다 뒤진 것 같아도 구석구석 다시 보면 뭔가 더 나온다. 같은 곳을 자꾸 뒤질수록 조금씩 덜 나온다 (반 애들도 똑같다) */
     if(!fresh.length||pool.length<=2){const D=G.dig||(G.dig={});const dg=D[c.loc]||0;
       if(R()<Math.max(.25,.55-dg*.05)){D[c.loc]=dg+1;const it=freshItem(G,c.loc);pool.push(it);offer(it,pick(DIGT)(AREAS[c.loc].n,IT[it.id].n));return;}
       const lf=pool.filter(x=>x.left);if(lf.length&&R()<.5){const it=pick(lf);offer(it,`아까 두고 간 ${JS.i(IT[it.id].n)} 그대로 있다.`);return;}}
@@ -1514,6 +1514,9 @@ function searchArea(G,c){
   const ok=it=>{const k=IT[it.id].k;return (k!=='p'&&k!=='m'&&k!=='b')||(isTB(c)&&it.id==='nipper'&&!c.inv.some(x=>x.id==='nipper'));};
   const cands=pool.filter(ok).map(it=>[it,pool,null]);
   for(const b of (G.bodies?G.bodies[c.loc]:[]))for(const it of b.items)if(ok(it))cands.push([it,b.items,b]);
+  /* 반 애들도 똑같이: 다 뒤진 곳에서도 새 물건이 나온다. 같은 곳일수록 덜 나온다 (나와 같은 기록을 나눠 쓴다) */
+  if(!cands.length||pool.length<=2){const D=G.dig||(G.dig={});const dg=D[c.loc]||0;
+    if(R()<Math.max(.25,.55-dg*.05)){D[c.loc]=dg+1;const it=freshItem(G,c.loc);pool.push(it);if(ok(it))cands.push([it,pool,null]);}}
   if(!cands.length||R()>=.62)return;
   const[it,src,b]=pick(cands);
   if(c.inv.length>=INV_MAX){const i=c.inv.findIndex(x=>IT[x.id].k==='s'&&x.id!=='radar');if(i<0)return;pool.push(c.inv.splice(i,1)[0]);}
