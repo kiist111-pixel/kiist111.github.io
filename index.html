@@ -687,7 +687,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-f</p>
+      <p class="build">BUILD 2026.10.15-g</p>
     </section>
   </div>
 </section>
@@ -1304,7 +1304,7 @@ function newGame0(o){
   if(meSW){me.sw=1;me.sex=SW.sex;me.mhp+=SW.hpMod;me.hp=me.mhp;}
   G.c.push(me);
   const sps0=specialsFor(o.name);
-  const teamNPC=!TEAMN.includes(o.name)&&R()<(meSW?SW.teamChance:TEAM_CHANCE);
+  const teamNPC=!TEAMN.includes(o.name)&&(meSW?(R(),true):R()<TEAM_CHANCE);
   const tbNPC=!meTB&&R()<TB.chance;
   const sps=teamNPC?[...sps0,...TEAM_DEFS.map(d=>({...d,rel:'team'}))]:sps0;
   const used=new Set([me.given,...sps.map(s=>s.name.slice(1)),...TEAMN.map(n=>n.slice(1)),...(meSW?[KIM.given]:[])]);const names=[];
@@ -1344,7 +1344,7 @@ function newGame0(o){
   const tm=G.c.filter(c=>TEAMN.includes(c.name));tm.forEach(c=>c.team=1);G.team=tm.map(c=>c.id);G.teamNPC=teamNPC;G.rescueBy=null;
   if(tm.length===2){const[a,b]=tm;G.rel[a.id][b.id]=[ri(74,84),ri(45,60),'bestie'];G.rel[b.id][a.id]=[ri(74,84),ri(45,60),'bestie'];
     if(me.team){const m=tm.find(c=>!c.me);m.loc=me.loc;addMyComp(G,m);m.woundRoll=0;me.radioKnow=1;me.inv.push(mkItem('radio'));know(G,m.id,0);}
-    else{b.loc=a.loc;a.comp=b.id;b.comp=a.id;if(!G.pool.some(pl=>pl.some(x=>x.id==='radio')))G.pool[1].push(mkItem('radio'));}}
+    else{b.loc=a.loc;a.comp=b.id;b.comp=a.id;if(!G.pool.some(pl=>pl.some(x=>x.id==='radio'))){const r=mkItem('radio');r.teamR=1;G.pool[1].push(r);}}}
   G.finalZone=pick([...Array(16).keys()].filter(i=>i!==5));
   G.zones[5]=1;chooseClosures(G,1).forEach(i=>G.zones[i]=1);
   ev(G,'radio','radio','',{imp:1,data:{first:1,time:clock(0).hm,closed:[],next:G.zones.map((z,i)=>z===1?i:-1).filter(i=>i>=0),dead:[],alive:G.c.length,transfer:G.transferId,pair:teamNPC?G.c.filter(c=>TEAMN.includes(c.name)).map(c=>c.id):null}});
@@ -1364,15 +1364,25 @@ function newGame(o){
 /* 같은 씨앗으로 다시 만들면 반 애들, 시작 위치, 섬에 놓인 물건, 처음 소지품이 그대로 나온다 */
 function nextLoop(G){const L=G.loop;if(!L)return G;const G2=withSeed(L.seed,()=>newGame0(L.o));G2.loop=L;L.n++;L.final=null;startLoop(G2);return G2;}
 function startLoop(G){const L=G.loop,me=G.c[0];
-  const k=G.c.findIndex(c=>c.kim);
-  if(k>=0){if(R()<KIM.chance){if(L.broken){G.c[k].name=KIM.glitch;G.c[k].glitch=1;}}else dropKim(G,k);}
+  /* 회차마다 따로 굴린다: 한성백·신수아, 김백윤. 나머지 반 애들은 그대로 */
+  if(G.teamNPC&&G.team&&G.team.length&&R()>=SW.teamChance){for(const id of G.team.slice().sort((a,b)=>b-a))dropChar(G,id);G.team=[];G.teamNPC=false;
+    G.pool.forEach((p,i)=>{G.pool[i]=p.filter(x=>!x.teamR);});const e=G.log.find(x=>x.data&&x.data.first);if(e)e.data.pair=null;}
+  {const k=G.c.findIndex(c=>c.kim);
+  if(k>=0){if(R()<KIM.chance){if(L.broken){G.c[k].name=KIM.glitch;G.c[k].glitch=1;}}else dropChar(G,k);}}
   if(L.radioKnow)me.radioKnow=1;
   G.friends=R()<friendsP(L.n)?{at:ri(20,52)}:null;
   G.fore=!G.friends&&L.n>=2&&R()<.55?{at:ri(12,44)}:null;
   if(L.n>=2)ev(G,'seen','inner',pick(LOOP_WAKE)(L.n),{imp:1});}
-function dropKim(G,k){if(k!==G.c.length-1)return;G.c.pop();G.rel.pop();for(const r of G.rel)r.pop();G.transferId=null;
-  for(const key of Object.keys(G.known)){const p=key.split(',');if(+p[0]===k||+p[1]===k)delete G.known[key];}
-  const e=G.log.find(x=>x.data&&x.data.first);if(e){e.data.transfer=null;e.data.alive=G.c.length;}}
+/* 판을 막 만든 직후에만 쓴다: 한 명을 빼고 번호와 id를 당겨 맞춘다 */
+function dropChar(G,i){const gone=G.c[i];if(!gone||gone.me)return;
+  G.c.splice(i,1);G.rel.splice(i,1);for(const r of G.rel)r.splice(i,1);
+  const mp=id=>id==null?id:id===i?null:id>i?id-1:id;
+  G.c.forEach((c,k)=>{c.id=k;c.comp=mp(c.comp);c.revenge=mp(c.revenge);if(c.comp2!==undefined)c.comp2=mp(c.comp2);if(c.freedBy!=null)c.freedBy=mp(c.freedBy);if(c.no>gone.no)c.no--;});
+  G.transferId=mp(G.transferId);G.bestie=mp(G.bestie);
+  G.team=(G.team||[]).map(mp).filter(x=>x!=null);G.trio=(G.trio||[]).map(mp).filter(x=>x!=null);
+  G.couples=(G.couples||[]).map(p=>p.map(mp)).filter(p=>p.every(x=>x!=null));
+  const kn={};for(const key of Object.keys(G.known)){const p=key.split(',');const a=mp(+p[0]),b=mp(+p[1]);if(a!=null&&b!=null)kn[a+','+b]=1;}G.known=kn;
+  const e=G.log.find(x=>x.data&&x.data.first);if(e){e.data.transfer=G.transferId;e.data.alive=G.c.length;if(e.data.pair){e.data.pair=e.data.pair.map(mp).filter(x=>x!=null);if(e.data.pair.length<2)e.data.pair=null;}}}
 function kimOf(G){return G.loop?G.c.find(c=>c.kim&&c.alive)||null:null;}
 function maskFor(G,k){const c=G.c.filter(x=>x.alive&&!x.me&&x!==k&&!isMyComp(G,x.id));return c.length?pick(c):null;}
 /* 시우와 마주칠 사람을 정할 때: 깨진 김백윤은 늘 누군가의 얼굴로 나타나고, 반 애를 만날 때도 가끔은 그게 김백윤이다 */
@@ -1383,8 +1393,9 @@ function kimEncounter(G,pe){const k=kimOf(G),me=G.c[0];if(!k)return {pe};
 function kimBreak(G,k){if(k.glitch)return;k.glitch=1;k.name=KIM.glitch;if(G.loop)G.loop.broken=1;}
 function noiseLine(was){return was?`눈앞에 마주한, ${was}${jong(was)?'이었던':'였던'} 사람의 몸이 노이즈처럼 까맣게 튀기 시작했다.`:'눈앞의 몸이 노이즈처럼 까맣게 튀기 시작했다.';}
 function trioOK(G){const me=G.c[0];return !!(G.loop&&G.team&&G.team.length===2&&G.team.every(id=>G.c[id].alive&&isMyComp(G,id)&&G.c[id].loc===me.loc));}
-function canJoinTeam(G,n){const me=G.c[0];return !!(G.loop&&n&&n.team&&G.teamNPC&&G.teamKnown&&n.alive&&me.alive&&!isMyComp(G,n.id)&&myComps(G).every(id=>G.c[id].team));}
+function canJoinTeam(G,n){const me=G.c[0];return !!(G.loop&&n&&n.team&&G.teamNPC&&n.alive&&me.alive&&!isMyComp(G,n.id)&&myComps(G).every(id=>G.c[id].team));}
 function joinTeam(G,n){const me=G.c[0];const tm=G.team.map(id=>G.c[id]);G.trio=G.team.slice();
+  if(!G.teamKnown){G.teamKnown=1;know(G,n.id,0);ev(G,'seen','heart',`${JS.i(n.name)} 목소리를 낮췄다.`,{q:TEAM_SECRET,imp:1});}
   for(const c of tm){if(!c.alive||isMyComp(G,c.id)||c.loc!==me.loc)continue;
     if(c.comp!=null){const o=G.c[c.comp];if(o&&o.comp===c.id)o.comp=null;c.comp=null;}
     addMyComp(G,c);changeRel(G,c,me,8,6);changeRel(G,me,c,8,6);know(G,c.id,0);}
@@ -1935,7 +1946,9 @@ function talk(G,a,b){
   if(npc){const p=npc===a?b:a;
     if(revealSecret(G,npc,p)){if(canJoinMe(G,npc)){G.pending={type:'propose',who:npc.id};G.phase='pending';}return;}
     if(npc.team&&G.teamNPC&&!G.teamKnown&&(tier==='great'||tier==='good'||tier==='awkward')){G.teamKnown=1;know(G,npc.id,0);ev(G,'seen','heart',`${JS.i(npc.name)} 목소리를 낮췄다.`,{q:TEAM_SECRET,imp:1});
-      if(canJoinTeam(G,npc)&&npc.alive&&p.alive){G.pending={type:'propose',who:npc.id,team:1};G.phase='pending';return;}}
+}
+    if(G.loop&&npc.team&&G.teamNPC&&!G.teamKnown&&tier==='bad'){G.teamKnown=1;know(G,npc.id,0);ev(G,'seen','heart',`${JS.i(npc.name)} 잠깐 망설이다가 목소리를 낮췄다.`,{q:TEAM_SECRET,imp:1});}
+    if(G.loop&&npc.team&&tier!=='disaster'&&canJoinTeam(G,npc)&&npc.alive&&p.alive){G.pending={type:'propose',who:npc.id,team:1};G.phase='pending';return;}
     const r=rel(G,npc,p);
     if(r.tag==='crush'&&!npc.confessed&&(tier==='great'||tier==='good')&&r.like>=60&&r.int>=56&&R()<.7){
       npc.confessed=true;know(G,npc.id,p.id);ev(G,'seen','heart',`${JS.i(npc.name)} 고백했다.`,{q:CONFESS[npc.pers],imp:1});changeRel(G,p,npc,8,20);pineLine(G,p,npc);
