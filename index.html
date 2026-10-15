@@ -586,6 +586,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
 .item.k-x .kd{color:#a3122a}
 .tile .rt{position:absolute;top:6px;right:6px;font-size:10.5px;font-weight:800;color:var(--pen);border:1px solid var(--pen);padding:0 4px;background:rgba(230,226,210,.85)}
 /* 포기한다 · 되풀이 메모 · 깨진 이름 */
+.make-msg{margin:10px 0 0;padding:8px 12px;border:1.5px solid var(--red);color:var(--red);background:var(--paper-2);font-size:14px;line-height:1.6}
 .giveup{margin-top:14px;display:flex;justify-content:flex-end}
 .field{display:flex;flex-direction:column;gap:6px;font-size:13px}
 .field textarea{font:inherit;font-size:15px;line-height:1.6;padding:8px 10px;border:1.5px solid var(--ink);background:var(--paper-2);color:var(--ink);border-radius:2px;resize:vertical;min-height:60px}
@@ -687,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-g</p>
+      <p class="build">BUILD 2026.10.15-h</p>
     </section>
   </div>
 </section>
@@ -697,7 +698,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
     <p class="label">ENTRY · 2학년 3반 출석부</p>
     <h2 id="m-h">출석부에 이름 쓰기</h2>
   </div>
-  <form id="make-form" class="make" autocomplete="off">
+  <form id="make-form" class="make" autocomplete="off" novalidate>
     <div class="quick">
       <span>정하기 어려운 칸은 <b>랜덤</b>으로 둔다. 출석하는 순간 정해진다.</span>
       <button class="btn" type="button" id="btn-allrand">전부 랜덤으로</button>
@@ -755,9 +756,10 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
 
     <p class="fhint">시작 소지품은 고를 수 없다. 출석하면 가방 하나씩 무작위로 지급된다.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn primary" type="submit" id="btn-make">출석</button>
+      <button class="btn primary" type="button" id="btn-make">출석</button>
       <button class="btn" type="button" id="btn-make-back">돌아가기</button>
     </div>
+    <p class="make-msg" id="make-msg" role="alert" hidden></p>
   </form>
 </section>
 
@@ -2726,15 +2728,24 @@ $('btn-allrand').onclick=()=>{
   ['pers','club','build','bestie','admirer','hater'].forEach(n=>{const r=document.querySelector(`input[name=${n}][value=random]`);if(r)r.checked=true;});
   if(!$('in-name').value.trim())$('in-name').value=M.randomName();
 };
-$('make-form').addEventListener('submit',e=>{
-  e.preventDefault();const name=$('in-name').value.trim().replace(/\s+/g,'');if(!name){$('in-name').focus();return;}
-  const val=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value||'random';
-  const o={name,bio:$('in-bio').value.trim(),pers:val('pers'),club:val('club'),build:val('build'),
-    bestie:val('bestie'),admirer:val('admirer'),hater:val('hater'),line:$('in-line').value.trim(),will:$('in-will').value.trim()};
-  savePref(o);
-  G=M.newGame(o);
-  saveSoon();renderReveal();
-});
+/* 브라우저 기본 검사는 끄고 직접 확인한다: 한글 입력기로 글자 수를 넘겨도 조용히 막히지 않게, 넘친 만큼만 자른다 */
+function makeMsg(t){const m=$('make-msg');if(!m)return;m.textContent=t||'';m.hidden=!t;}
+/* 폼 제출에 기대지 않는다: 일부 보기 환경(샌드박스 iframe 등)은 폼 제출 자체를 막아 버린다 */
+function doMake(){makeMsg('');
+  try{
+    const cut=(id,n)=>$(id).value.trim().slice(0,n);
+    const name=$('in-name').value.trim().replace(/\s+/g,'').slice(0,8);if(!name){$('in-name').focus();makeMsg('이름을 적어야 출석부에 올릴 수 있다.');return;}
+    const val=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value||'random';
+    const o={name,bio:cut('in-bio',40),pers:val('pers'),club:val('club'),build:val('build'),
+      bestie:val('bestie'),admirer:val('admirer'),hater:val('hater'),line:cut('in-line',40),will:cut('in-will',40)};
+    savePref(o);
+    G=M.newGame(o);
+    saveSoon();renderReveal();
+  }catch(err){try{console.error(err);}catch(x){}makeMsg('출석부에 이름을 올리다가 문제가 생겼다. 이 문장을 그대로 알려 주면 고칠 수 있다: '+((err&&err.message)||String(err)));}
+}
+$('btn-make').addEventListener('click',doMake);
+$('make-form').addEventListener('submit',e=>{e.preventDefault();doMake();});
+$('make-form').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.target&&e.target.tagName==='INPUT'&&e.target.type==='text'){e.preventDefault();doMake();}});
 function renderReveal(){
   const me=G.c[0],f=G.bestie!=null?G.c[G.bestie]:null;
   const items=[me.wep?M.IT[me.wep.id].n:'맨손',...me.inv.map(it=>M.IT[it.id].n)].join(', ');
