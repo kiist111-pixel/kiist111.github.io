@@ -688,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-i</p>
+      <p class="build">BUILD 2026.10.15-j</p>
     </section>
   </div>
 </section>
@@ -1926,7 +1926,7 @@ function npcApproach(G,n,me){
   if(d==='attack'){
     const t=G.rel[n.id][0][2];if(t==='enemy'||t==='rival')know(G,n.id,0);
     fight(G,n,me,{ambush:true,head:`${JS.i(n.name)} 갑자기 덮쳐 왔다!`});
-  }else if(d==='talk'){talk(G,n,me);}
+  }else if(d==='talk'){G.pending={type:'meet',who:n.id,hail:1};G.phase='pending';}
   else{ev(G,'seen','meet',`${JS.i(n.name)} 나를 보더니 말없이 멀어졌다.`);}
 }
 function talk(G,a,b){
@@ -2343,6 +2343,14 @@ function resolve(G,choice){
     else{if(X)ev(G,'seen','heart',noiseLine(X.name),{imp:1});
       if(choice==='attack')fight(G,me,n,{ambush:true,head:`${JS.eul(n.name)} 기습했다.`});
       else fight(G,n,me,{ambush:true,head:`${JS.i(n.name)} 덮쳐 왔다!`});}
+    proceed(G);return;}
+  if(p.type==='meet'&&p.hail){
+    if(choice==='attack'&&bonded(n,me))choice='talk';
+    if(choice==='talk')talk(G,n,me);
+    else if(choice==='invite')inviteNpc(G,n);
+    else if(choice==='unband')tryUnband(G,n);
+    else if(choice==='attack')fight(G,me,n,{ambush:false,head:`말을 거는 ${JS.eul(n.name)} 그대로 덮쳤다.`});
+    else{changeRel(G,n,me,-3,3);ev(G,'seen','meet',`${n.name}의 말에 대꾸하지 않고 지나쳤다.`,{q:pick(['…뭐야, 대답도 안 하고.','어, 어? 못 들었나.','…그래, 알았어.'])});}
     proceed(G);return;}
   if(p.type==='meet'){
     if(choice==='attack'&&bonded(n,me))choice='talk';
@@ -3176,11 +3184,11 @@ function openModal(){
     <div class="muted">${M.CLUBS[n.club].n} · ${n.talked?M.persN(n):'성격 ?'} · 상태 ${hpWord(n)} · 손에 든 것: ${esc(w.name)}</div>
     <div>내 마음 ${tagChip(r0[2])} · 그 애 마음 ${theirs}</div></div>`;
   if(p.type==='meet'){
-    const desc=kimFace?esc(M.noiseLine(p.was||null)):`${M.AREAS[me.loc].n} 저편에 ${esc(n.name)}의 모습이 보인다. 아직 나를 못 본 것 같다.${p.mask!=null&&p.tell>=0?' '+esc(M.KIM_TELLS[p.tell](n.name)):''}`;
+    const desc=kimFace?esc(M.noiseLine(p.was||null)):p.hail?`${esc(M.JS.i(n.name))} 나를 먼저 알아보고 다가와 말을 걸었다.`:`${M.AREAS[me.loc].n} 저편에 ${esc(n.name)}의 모습이 보인다. 아직 나를 못 본 것 같다.${p.mask!=null&&p.tell>=0?' '+esc(M.KIM_TELLS[p.tell](n.name)):''}`;
     dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h"${p.mask!=null&&p.tell>=0?' class="tell"':''}>${esc(n.name)}</h2>
      <p style="margin:0">${desc}</p>${card}
      ${M.bonded(me,n)?`<p class="muted" style="margin:0;font-size:13px">${esc(M.JS.wa(me.name))} ${esc(n.name)}, 둘은 무슨 일이 있어도 서로에게 손을 들지 않는다.</p>`:''}
-     <div class="acts choices"><button class="btn primary" type="button" data-c="talk">말을 건다</button>${!kimFace&&(M.canJoinMe(G,n)||M.canJoinTeam(G,n))?'<button class="btn" type="button" data-c="invite">같이 다니자고 한다</button>':''}${!kimFace&&M.canUnband(G,n)?'<button class="btn free" type="button" data-c="unband">밴드를 풀어 주겠다고 한다</button>':''}${M.bonded(me,n)?'':'<button class="btn danger" type="button" data-c="attack">공격한다</button>'}<button class="btn" type="button" data-c="pass">모른 척 지나간다</button></div>`;
+     <div class="acts choices"><button class="btn primary" type="button" data-c="talk">${p.hail?'대답한다':'말을 건다'}</button>${!kimFace&&(M.canJoinMe(G,n)||M.canJoinTeam(G,n))?'<button class="btn" type="button" data-c="invite">같이 다니자고 한다</button>':''}${!kimFace&&M.canUnband(G,n)?'<button class="btn free" type="button" data-c="unband">밴드를 풀어 주겠다고 한다</button>':''}${M.bonded(me,n)?'':'<button class="btn danger" type="button" data-c="attack">공격한다</button>'}<button class="btn" type="button" data-c="pass">${p.hail?'못 들은 척 지나간다':'모른 척 지나간다'}</button></div>`;
   }else if(p.type==='propose'){
     dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · ${M.AREAS[me.loc].n}</p><h2 id="dlg-h">같이 다니자는 말</h2>
      <p class="hand" style="margin:0">“${esc(p.team?'우리랑 같이 갈래? 셋이면 무전기, 금방 고칠 수 있어.':PROPOSE_LINE(n))}”</p>${card}
