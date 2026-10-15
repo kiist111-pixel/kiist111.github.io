@@ -568,6 +568,23 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
   .bar>.btn{border:0;justify-content:center}
   .statbtn{flex-wrap:wrap;row-gap:0}
 }
+
+/* 소지품: 착용 중인 것은 형광펜 띠, 갈래마다 작은 색 표 */
+.invsub{margin:12px 0 2px;font-size:12px;font-weight:800;letter-spacing:.2em;color:var(--ink-2);display:flex;gap:8px;align-items:baseline}
+.invsub span{letter-spacing:0;font-weight:600}
+.invsub:first-child{margin-top:4px}
+.item.eq{background:linear-gradient(transparent 8%,rgba(122,170,96,.28) 8%,rgba(122,170,96,.28) 92%,transparent 92%);padding-inline:8px;margin-inline:-8px}
+.item .kd{display:inline-block;margin-right:7px;padding:0 5px;font-size:11px;font-weight:800;border:1px solid currentColor;vertical-align:1px;letter-spacing:.02em}
+.item.k-w .kd{color:#7a1f1f}
+.item.k-a .kd{color:#1d4f7a}
+.item.k-b .kd{color:#5b4a2a}
+.item.k-f .kd{color:#3d6b2a}
+.item.k-h .kd{color:#a3155e}
+.item.k-m .kd{color:#6a5200}
+.item.k-p .kd{color:#4a3b8c}
+.item.k-s .kd{color:#3c4252}
+.item.k-x .kd{color:#a3122a}
+.tile .rt{position:absolute;top:6px;right:6px;font-size:10.5px;font-weight:800;color:var(--pen);border:1px solid var(--pen);padding:0 4px;background:rgba(230,226,210,.85)}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
 
 #status::before{content:'학생 기록';display:block;font-size:12px;font-weight:800;letter-spacing:.3em;color:var(--ink-3);margin-bottom:6px}
@@ -651,7 +668,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-c</p>
+      <p class="build">BUILD 2026.10.15-d</p>
     </section>
   </div>
 </section>
@@ -1159,6 +1176,9 @@ const THANKS={dajeong:'고마워. 꼭 갚을게.',dahyeol:'…고맙다. 이번�
 /* 재윤아로 시작한 판에만, 아주 드물게: 경찰 오윤수가 모두의 반대를 무릅쓰고 몰래 섬에 들어와 재윤아를 찾는다. 그 순간 게임이 끝난다.
    둘은 평소 서로 존댓말을 쓴다. 찾으며 외칠 때만 "재윤아!" */
 const POLICE={for:'재윤아',name:'오윤수',chance:.05,from:20,to:52};
+/* 고친 무전기로 구조를 부를 수 있는 곳과 신호가 닿을 확률. 등대가 가장 잘 닿는다 */
+const RADIO_SPOTS={1:1,0:.6,4:.45,12:.45};
+const radioPlace=loc=>loc===1?'등대 꼭대기':AREAS[loc].n;
 const TEAM_SECRET='우리, 등대 무전기로 구조를 부르려고. 고장난 무전기, 건전지, 구리선만 모이면 돼. 한 명이라도 더 데리고 나갈 거야. 너도 끝까지 살아 있어.';
 /* 이태백: 경찰. 전입생으로 위장해 수학여행 반에 잠입했다. 학교는 늘 몇 년씩 일찍 들어갔다가 금방 졸업해 버려서, '우리 반'이 생긴 건 처음이다.
    손목 밴드를 BAND_STEPS번 뜯어보면 끊는 법을 알아낸다. 니퍼가 있으면 자기 밴드를 풀고, 그다음엔 말을 걸어 다른 애들 밴드도 풀어 준다.
@@ -1619,11 +1639,18 @@ function teamAct(G,c){
   const has=id=>ms.some(m=>m.inv.some(x=>x.id===id));const take=id=>{for(const m of ms){const i=m.inv.findIndex(x=>x.id===id);if(i>=0)return m.inv.splice(i,1)[0];}return null;};
   const who=ms.length>1?`${JS.wa(ms[0].name)} ${ms[1].name}`:c.name;
   if(has('fixedradio')){
-    if(c.loc===1){take('fixedradio');G.rescueT=G.t;G.rescueBy=ms.map(m=>m.id);const me=G.c[0];const here=me.alive&&me.loc===1;
-      ev(G,'hidden','heart',`${JS.i(who)} 등대 꼭대기에서 구조를 불렀다.`,{imp:1});
-      if(me.alive)ev(G,here?'seen':'heard',here?'heart':'heard',here?`${JS.i(who)} 등대 꼭대기에서 무전을 보냈다. 낯선 목소리가 대답했다. "두 시간만 버텨요. 지금 갑니다."`:'등대 쪽에서 무전기 잡음이 길게 이어지더니, 낯선 목소리가 대답하는 게 들렸다. 누군가 구조를 불렀다.',{imp:1});
+    const pr=RADIO_SPOTS[c.loc];
+    if(pr!=null&&G.zones[c.loc]!==2&&(c.loc===1||G.zones[1]===2||dist(c.loc,1)>2||R()<.4)){
+      const me=G.c[0];const here=me.alive&&me.loc===c.loc;
+      if(R()>=pr){ev(G,here?'seen':'hidden','heard',`${JS.i(who)} ${AREAS[c.loc].n}에서 무전기를 붙들고 한참 불렀지만, 잡음만 흘러나왔다.`);return true;}
+      take('fixedradio');G.rescueT=G.t;G.rescueLoc=c.loc;G.rescueBy=ms.map(m=>m.id);
+      ev(G,'hidden','heart',`${JS.i(who)} ${radioPlace(c.loc)}에서 구조를 불렀다.`,{imp:1});
+      if(me.alive)ev(G,here?'seen':'heard',here?'heart':'heard',here?`${JS.i(who)} ${radioPlace(c.loc)}에서 무전을 보냈다. 낯선 목소리가 대답했다. "두 시간만 버텨요. 지금 갑니다."`:`${AREAS[c.loc].n} 쪽에서 무전기 잡음이 길게 이어지더니, 낯선 목소리가 대답하는 게 들렸다. 누군가 구조를 불렀다.`,{imp:1});
       return true;}
-    if(R()<.25)return false;const to=stepToward(G,c.loc,1);if(to!=null){moveChar(G,c,to);return true;}return false;}
+    if(R()<.25)return false;
+    const spots=Object.keys(RADIO_SPOTS).map(Number).filter(i=>G.zones[i]!==2);if(!spots.length)return false;
+    const tg=G.zones[1]!==2?1:spots.sort((a,b)=>dist(c.loc,a)-dist(c.loc,b))[0];
+    const to=stepToward(G,c.loc,tg);if(to!=null){moveChar(G,c,to);return true;}return false;}
   if(has('radio')&&has('battery')&&has('wire')){if(R()<.5){restChar(G,c);return true;}take('radio');take('battery');take('wire');c.inv.push(mkItem('fixedradio'));
     ev(G,'hidden','find',`${JS.i(who)} 무전기를 고쳤다. 이제 등대로 가기만 하면 된다.`,{imp:1});return true;}
   const need=['radio','battery','wire'].filter(id=>!has(id));
@@ -2359,7 +2386,9 @@ function itemOp(G,op,idx,arg){
       ev(G,'seen','heart','숨을 고르고 니퍼를 이음새에 댔다. 딸깍. 밴드가 소리 없이 벌어졌다. 금지구역에 남아도, 이제 내 손목은 울리지 않는다.',{imp:1});
       ev(G,'seen','inner','이걸 아는 사람은 나 하나다. 지금 바로 나갈 수도 있다. 아니면…',{imp:1});return true;}
     if(d.k==='p'){if(!canFix(me))return false;['radio','battery','wire'].forEach(id=>{const i=me.inv.findIndex(x=>x.id===id);if(i>=0&&(id!=='wire'||!(me.club==='broadcast'||me.radioKnow)))me.inv.splice(i,1);});me.inv.push(mkItem('fixedradio'));ev(G,'seen','heart',me.radioKnow&&me.club!=='broadcast'?'미리 익혀 둔 대로 건전지를 끼우고 끊어진 배선을 이었다. 치직, 무전기가 살아났다.':me.club==='broadcast'?'방송부에서 만지던 솜씨로 무전기를 살려냈다. 치직, 잡음이 들린다.':'건전지를 넣고 구리선을 이어 붙였다. 치직, 무전기에서 잡음이 들린다.',{imp:1});return true;}
-    if(it.id==='fixedradio'){if(me.loc!==1||G.zones[1]===2||G.rescueT!=null)return false;me.inv.splice(idx,1);G.rescueT=G.t;ev(G,'seen','heart','등대 꼭대기에서 무전을 보냈다. 한참 뒤, 낯선 목소리가 대답했다. "두 시간만 버텨요. 지금 갑니다."',{imp:1});return true;}
+    if(it.id==='fixedradio'){const pr=RADIO_SPOTS[me.loc];if(pr==null||G.zones[me.loc]===2||G.rescueT!=null||G.radioTry===G.t)return false;
+      if(R()>=pr){G.radioTry=G.t;G.noise=G.t;ev(G,'seen','warn',`무전기를 켜고 한참 불렀지만 잡음만 흘러나왔다. 여기선 신호가 잘 닿지 않는다. 다음 턴에 다시 해 볼 수 있다.`,{imp:1});return true;}
+      me.inv.splice(idx,1);G.rescueT=G.t;G.rescueLoc=me.loc;ev(G,'seen','heart',`${radioPlace(me.loc)}에서 무전을 보냈다. ${me.loc===1?'한참 뒤':'잡음 사이로 한참 뒤'}, 낯선 목소리가 대답했다. "두 시간만 버텨요. 지금 갑니다."`,{imp:1});return true;}
   }
   return false;
 }
@@ -2367,7 +2396,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2550,7 +2579,7 @@ function renderReveal(){
     ${G.teamNPC&&G.team&&G.team.length?`<dt>전입생</dt><dd><b>${G.team.map(id=>esc(G.c[id].name)).join(', ')}</b> <span class="muted">· 수학여행 직전에 둘이 함께 전학 왔다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
     ${G.transferId!=null?`<dt>전입생</dt><dd><b>${esc(G.c[G.transferId].name)}</b> <span class="muted">· 작년 이 게임의 우승자라는 소문이 있다. 무슨 생각인지는 아무도 모른다.</span></dd>`:''}
     ${G.c.filter(c=>!c.me&&M.isTB(c)).map(c=>`<dt>전입생</dt><dd><b>${esc(c.name)}</b> <span class="muted">· 수학여행 직전에 전학 왔다. 말투가 묘하게 어른 같다는 얘기가 돈다.</span></dd>`).join('')}
-    ${me.team?`<dt>계획</dt><dd>고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 <b>건전지</b>만 구하면 된다. 고친 무전기로 <b>등대</b>에서 구조를 부르면, 배가 올 때까지 살아 있는 모두가 섬을 떠난다.${f?` ${esc(M.JS.wa(f.name))}는 처음부터 함께 다닌다.`:''}</dd>`:''}
+    ${me.team?`<dt>계획</dt><dd>고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 <b>건전지</b>만 구하면 된다. 고친 무전기로 <b>등대</b>(가장 잘 닿는다)나 북쪽 곶·선착장·방파제에서 구조를 부르면, 배가 올 때까지 살아 있는 모두가 섬을 떠난다.${f?` ${esc(M.JS.wa(f.name))}는 처음부터 함께 다닌다.`:''}</dd>`:''}
     ${hints.length?`<dt>예감</dt><dd>${hints.map(esc).join('<br>')}</dd>`:''}
     ${G.facts.length?`<dt>${me.tb?'수사 자료로 외워 둔 사이':'반 애들이 다 아는 사이'}</dt><dd>${G.facts.map(esc).join('<br>')}</dd>`:''}
     ${me.line?`<dt>한마디</dt><dd class="hand">${esc(me.line)}</dd>`:''}
@@ -2604,11 +2633,12 @@ function alertList(){const me=G.c[0],A=M.AREAS,out=[];if(!me.alive||G.phase==='e
   if(G.zones[me.loc]===1&&me.freed)out.push(['amber',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫힌다. 밴드가 풀렸으니 남아도 괜찮다. 하지만 한번 나가면 다시 들어올 수 없다.`]);
   if(me.freed&&!G.result){const sp=M.ESCAPE_SPOTS.includes(me.loc);out.push(['info',sp?'선착장·방파제다. 여기서 <b>탈출</b>할 수 있다. 밴드가 풀린 사람들도 같은 배에 오른다.':`밴드가 풀렸다. <b>선착장이나 방파제</b>에 가면 섬을 나갈 수 있다.${me.tb?' 그 전에 다른 애들 밴드를 더 풀어 줄 수도 있다.':''}`]);}
   else if(me.tb&&me.bandKnow&&has('nipper'))out.push(['info','니퍼가 있다. 이제 <b>내 밴드</b>를 풀 수 있다.']);
-  if(has('fixedradio')&&G.rescueT==null){
-    if(G.zones[1]===2)out.push(['red','등대가 닫혔다. 고친 무전기를 쓸 곳이 없다.']);
-    else if(G.zones[1]===1)out.push(['red',`등대가 다음 방송 때 닫힌다. <b>${left}턴</b> 안에 등대에 가서 구조를 불러야 한다.`]);
-    else out.push(['info',me.loc===1?'등대에 왔다. 고친 무전기로 구조를 부를 수 있다.':'고친 무전기가 있다. 등대에 가면 구조를 부를 수 있다.']);}
-  else if((has('radio')||has('battery')||has('wire'))&&G.rescueT==null&&G.zones[1]===1)out.push(['amber',`등대가 다음 방송 때 닫힌다. 무전기를 고쳐도 <b>${left}턴</b> 뒤엔 쓸 곳이 없다.`]);
+  if(has('fixedradio')&&G.rescueT==null){const RS=M.RADIO_SPOTS,open=Object.keys(RS).map(Number).filter(i=>G.zones[i]!==2),pr=RS[me.loc];
+    if(!open.length)out.push(['red','무전이 닿을 만한 곳이 모두 닫혔다. 고친 무전기를 쓸 곳이 없다.']);
+    else if(pr!=null&&G.zones[me.loc]!==2)out.push(['info',G.radioTry===G.t?'방금 불러 봤지만 닿지 않았다. 다음 턴에 다시 해 볼 수 있다.':pr>=1?'등대에 왔다. 여기선 고친 무전기로 확실하게 구조를 부를 수 있다.':`${M.AREAS[me.loc].n}이다. 여기서도 무전을 쳐 볼 수 있다. 신호가 닿을 확률은 <b>${Math.round(pr*100)}%</b>.`]);
+    else if(G.zones[1]===1)out.push(['red',`등대가 다음 방송 때 닫힌다. <b>${left}턴</b> 안에 등대에 가면 확실하게 구조를 부를 수 있다.`]);
+    else out.push(['info',G.zones[1]===2?'등대는 닫혔다. 북쪽 곶, 선착장, 방파제에서는 아직 신호가 닿을지도 모른다.':'고친 무전기가 있다. 등대에서 가장 잘 닿고, 북쪽 곶·선착장·방파제에서도 운이 좋으면 닿는다.']);}
+  else if((has('radio')||has('battery')||has('wire'))&&G.rescueT==null&&G.zones[1]===1)out.push(['amber',`등대가 다음 방송 때 닫힌다. 그 뒤엔 신호가 잘 안 닿는 곳에서만 무전을 칠 수 있다.`]);
   if(G.escapeKnown&&G.transferId!=null&&G.c[G.transferId].alive){const zs=M.ESCAPE_SPOTS.map(i=>G.zones[i]);
     if(zs.every(z=>z===2))out.push(['red','선착장과 방파제가 모두 닫혔다. 탈출할 길이 사라졌다.']);
     else if(zs.some(z=>z===1))out.push(['amber',`${M.JS.i(M.ESCAPE_SPOTS.filter(i=>G.zones[i]===1).map(i=>A[i].n).join(', '))} 다음 방송 때 닫힌다. 탈출하려면 서둘러야 한다.`]);}
@@ -2669,8 +2699,8 @@ function escBox(){
 /* 출석부에 적어 둔 계획: 시작 카드에서 본 내용을 플레이 중에도 펼쳐 볼 수 있게 */
 let planOpen=true;
 function planText(){const me=G.c[0];
-  if(me.tb)return '손목 밴드를 세 번 뜯어본다. 처음엔 맨손으로 살펴보고, 이음새를 벌릴 땐 커터칼이나 못, 회로를 짚을 땐 구리선이 있어야 한다. 손이 미끄러지면 밴드가 따끔하게 울리고 소리가 퍼진다. 끊는 법을 알아내고 니퍼를 구하면 내 밴드부터 푼다. 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀린 채로 선착장이나 방파제에 가면 탈출할 수 있고, 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 안다. 건전지만 있으면 등대에서 구조를 부를 수 있다.';
-  if(me.team)return '고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 건전지만 구하면 된다. 고친 무전기로 등대에서 구조를 부르면, 배가 올 때까지 살아 있는 모두가 섬을 떠난다.';
+  if(me.tb)return '손목 밴드를 세 번 뜯어본다. 처음엔 맨손으로 살펴보고, 이음새를 벌릴 땐 커터칼이나 못, 회로를 짚을 땐 구리선이 있어야 한다. 손이 미끄러지면 밴드가 따끔하게 울리고 소리가 퍼진다. 끊는 법을 알아내고 니퍼를 구하면 내 밴드부터 푼다. 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀린 채로 선착장이나 방파제에 가면 탈출할 수 있고, 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 안다. 건전지만 있으면 등대 같은 탁 트인 곳에서 구조를 부를 수 있다.';
+  if(me.team)return '고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 건전지만 구하면 된다. 고친 무전기로 구조를 부르면(등대가 가장 잘 닿고, 북쪽 곶·선착장·방파제도 운이 좋으면 닿는다), 배가 올 때까지 살아 있는 모두가 섬을 떠난다.';
   return '';}
 function planBox(){const t=planText();if(!t)return '';return `<details class="plan" id="planbox" ${planOpen?'open':''}><summary>계획</summary><p>${esc(t)}</p></details>`;}
 /* 이태백: 밴드 풀기 진행 / 누군가 내 밴드를 풀어 줬을 때 */
@@ -2686,7 +2716,7 @@ function bandBox(){const me=G.c[0];if(!me.alive)return '';
     return `<div class="escbox"><b>밴드가 풀렸다</b><span class="note">${t?`${esc(M.JS.i(t.name))} 풀어 줬다 · `:''}금지구역에 남아도 울리지 않는다 · 선착장이나 방파제에서 탈출</span></div>`;}
   return '';}
 function renderMap(){
-  const me=G.c[0];const adj=M.neighbors(me.loc);const radar=me.inv.some(it=>it.id==='radar');
+  const me=G.c[0];const adj=M.neighbors(me.loc);const radar=me.inv.some(it=>it.id==='radar');const fr=me.inv.some(it=>it.id==='fixedradio')&&G.rescueT==null;
   const counts={};if(radar)for(const c of G.c)if(c.alive&&!c.me)counts[c.loc]=(counts[c.loc]||0)+1;
   $('map').innerHTML=M.AREAS.map((a,i)=>{
     const z=G.zones[i],here=i===me.loc,isAdj=adj.includes(i)&&z!==2&&G.phase==='act'&&me.alive;
@@ -2695,7 +2725,7 @@ function renderMap(){
     const label=`${a.n}${here?', 지금 있는 곳':''}${zt?', '+zt:''}${isAdj?', 누르면 이동':''}`;
     return `<button type="button" class="tile z${z} ${here?'here':''} ${isAdj?'adj':''}" data-i="${i}" aria-label="${label}" ${isAdj?'':'aria-disabled="true"'}>
       <span class="tn">${a.n}</span><span class="tm">${M.areaMods(a).join(' · ')}</span>${zt?`<span class="tz">${z===2?'금지':'닫힘 예고'}</span>`:''}
-      ${here?'<span class="you" aria-hidden="true">나</span>':''}${radar&&counts[i]?`<span class="cnt" aria-label="${counts[i]}명">${counts[i]}</span>`:''}
+      ${here?'<span class="you" aria-hidden="true">나</span>':''}${fr&&!here&&z!==2&&M.RADIO_SPOTS[i]!=null?`<span class="rt">무전 ${Math.round(M.RADIO_SPOTS[i]*100)}%</span>`:''}${radar&&counts[i]?`<span class="cnt" aria-label="${counts[i]}명">${counts[i]}</span>`:''}
       ${comp?'<span class="cnt" style="left:6px;right:auto;color:var(--heart)">동행</span>':''}</button>`;}).join('');
   $('map').querySelectorAll('.tile.adj').forEach(b=>b.onclick=()=>doAct({type:'move',to:+b.dataset.i}));
   const cost=Math.round(10*(me.club==='track'?.6:1)*(me.inj.leg?1.5:1));
@@ -2751,10 +2781,10 @@ function itemMeta(it){const d=M.IT[it.id];
   if(d.trap)return `숨겨 두면 지나가는 사람이 걸린다 · ${d.trap} 피해`;
   if(it.id==='radar')return '가지고 있으면 지도에 사람 수가 보인다';
   if(it.id==='poison')return '먹을 것이나 약에 섞을 수 있다';
-  if(it.id==='fixedradio')return '등대에서 쓰면 구조를 부를 수 있다';
+  if(it.id==='fixedradio')return '등대에서는 확실하게, 북쪽 곶(60%)·선착장(45%)·방파제(45%)에서는 운이 좋으면 구조를 부른다';
   if(it.id==='nipper'&&G&&G.c[0].tb)return G.c[0].freed?'밴드를 끊을 수 있다 · 만난 애들에게 말을 걸어 풀어 준다':G.c[0].bandKnow?'밴드를 끊을 수 있다 · 내 밴드부터':'철사나 전선을 끊는 공구 · 밴드 구조를 알면 쓸 데가 있다';
   if(it.id==='nipper')return G&&G.escapeKnown?'밴드를 끊을 수 있다 · 전입생과 함께 선착장이나 방파제로':'철사나 전선을 끊는 공구';
-  if(it.id==='radio'&&G&&(G.c[0].radioKnow||G.c[0].club==='broadcast'))return '건전지만 넣으면 살릴 수 있다 · 고치면 등대에서 구조를 부른다';
+  if(it.id==='radio'&&G&&(G.c[0].radioKnow||G.c[0].club==='broadcast'))return '건전지만 넣으면 살릴 수 있다 · 고치면 등대 같은 탁 트인 곳에서 구조를 부른다';
   if(d.k==='p')return '무전기를 고치는 데 쓰인다';
   return '';}
 function renderInv(){
@@ -2764,6 +2794,8 @@ function renderInv(){
   const partners=pickMode&&pickMode.kind==='craft'?M.craftPartners(me,pickMode.ref):[];
   const cap=M.capOf(me),used=M.slotsOf(me.inv);
   const SLOTCHIP={wep:'들고 있음',arm:'입고 있음',gear:'착용 중',bag:'메고 있음'};
+  /* 물건 갈래: 이름 앞의 작은 표와 색으로 구분한다 */
+  const kindOf=d=>d.trap?['덫','x']:({w:['무기','w'],am:['탄환','w'],a:['옷','a'],g:['보호구','a'],b:['가방','b'],f:['먹을 것','f'],h:['약','h'],m:['재료','m'],p:['부품','p'],s:['도구','s']})[d.k]||['기타','s'];
   function btnsFor(g,slot){
     const it=g.it,d=M.IT[it.id];const r=slot?slot:String(g.idx[0]);
     if(pickMode){
@@ -2782,7 +2814,8 @@ function renderInv(){
       if(it.id==='poison')b+=B('poison',r,'섞기');
       if(it.id==='nipper'&&me.tb&&!me.freed)b+=B('use',r,'내 밴드 풀기',{cls:'primary',dis:!me.bandKnow,title:me.bandKnow?'':'밴드를 끝까지 뜯어봐야 어느 선을 끊을지 알 수 있다'});
       if(d.k==='p'&&it.id!=='nipper')b+=B('use',r,'고치기',{dis:!M.canFix(me),title:(me.club==='broadcast'||me.radioKnow)?'고장난 무전기와 건전지가 필요하다':'고장난 무전기, 건전지, 구리선이 필요하다'});
-      if(it.id==='fixedradio')b+=B('use',r,me.loc===1?'구조 요청':'등대에서 쓸 수 있다',{cls:'primary',dis:!(me.loc===1&&G.rescueT==null)});
+      if(it.id==='fixedradio'){const pr=M.RADIO_SPOTS[me.loc];const okHere=pr!=null&&G.zones[me.loc]!==2&&G.rescueT==null&&G.radioTry!==G.t;
+        b+=B('use',r,pr==null?'여기선 안 닿는다':pr>=1?'구조 요청':`구조 요청 (${Math.round(pr*100)}%)`,{cls:'primary',dis:!okHere,title:pr==null?'등대, 북쪽 곶, 선착장, 방파제에서 쓸 수 있다':G.radioTry===G.t?'이번 턴엔 이미 불러 봤다':''});}
       for(const id of M.myComps(G)){const m=G.c[id];if(m.alive&&m.loc===me.loc)b+=`<button class="btn small" data-op="give" data-ref="${r}" data-to="${m.id}" type="button">${esc(m.name)}에게 주기</button>`;}
     }else{
       const dis=slot==='bag'?M.slotsOf([...me.inv,it])>M.INV_MAX:!M.bagHasRoom(me,it);
@@ -2798,10 +2831,13 @@ function renderInv(){
     const chip=slot?` <span class="chip">${SLOTCHIP[slot]}</span>`:'';
     const bonus=it.b?` <span class="bonus">+${it.b}</span>`:'';
     const cnt=d.k==='am'?` <span class="stackn">${it.u}${M.AMMO_UNIT[it.id]}</span>`:g.n>1?` <span class="stackn">x${g.n}</span>`:'';
-    const btns=can?btnsFor(g,slot):'';
-    return `<div class="item"><div class="grow"><span class="nm">${d.n}</span>${cnt}${bonus}${chip} ${pz}<div class="meta">${itemMeta(it)}</div></div>${btns?`<div class="btns">${btns}</div>`:''}</div>`;};
-  const rows=[];for(const s of ['wep','arm','gear','bag'])if(me[s])rows.push(row({it:me[s],idx:[],n:1},s));
+    const btns=can?btnsFor(g,slot):'';const kd=kindOf(d);
+    return `<div class="item k-${kd[1]}${slot?' eq':''}"><div class="grow"><span class="kd">${kd[0]}</span><span class="nm">${d.n}</span>${cnt}${bonus}${chip} ${pz}<div class="meta">${itemMeta(it)}</div></div>${btns?`<div class="btns">${btns}</div>`:''}</div>`;};
+  const rows=[];const eqRows=[];for(const s of ['wep','arm','gear','bag'])if(me[s])eqRows.push(row({it:me[s],idx:[],n:1},s));
+  if(eqRows.length)rows.push(`<p class="invsub eq">착용 중 <span>${eqRows.length}</span></p>`,...eqRows);
+  if(me.inv.length)rows.push(`<p class="invsub">가방 속 <span>${M.slotsOf(me.inv)} / ${M.capOf(me)}칸</span></p>`);
   for(const g of groupInv(me))rows.push(row(g,null));
+  if(!me.inv.length)rows.push('<p class="invsub">가방 속</p><p class="empty" style="margin:4px 0 0">가방이 비었다.</p>');
   let banner='';
   if(pickMode&&pickMode.kind==='poison')banner=`<div class="picking" style="margin-bottom:8px">쥐약을 섞을 음식이나 약을 고른다. 섞은 걸 버려 두면 누군가 주워 먹을지도 모른다. <button class="btn small" id="btn-pcancel" type="button">그만두기</button></div>`;
   if(pickMode&&pickMode.kind==='craft'){const base=['wep','arm','gear'].includes(pickMode.ref)?me[pickMode.ref]:me.inv[+pickMode.ref];
@@ -3086,9 +3122,9 @@ function closeModal(){$('modal').hidden=true;}
 /* ---------- 끝 ---------- */
 function teamReveal(){if(!G.teamNPC||!G.team||G.team.length<2)return '';const[a,b]=G.team.map(id=>G.c[id]);const pair=`${esc(M.JS.wa(a.name))} ${esc(b.name)}`;
   const plan=`${M.JS.eun(pair)} 처음부터 <b>무전기로 구조를 불러 최대한 많이 데리고 나갈 생각</b>이었다.`;
-  if(G.rescueBy)return plan+' 그리고 정말로 등대에서 구조를 불렀다.';
+  if(G.rescueBy)return plan+` 그리고 정말로 ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 구조를 불렀다.`;
   const fixed=G.log.some(e=>/무전기를 고쳤다/.test(e.x));
-  return plan+(fixed?' 무전기까지는 고쳤지만, 등대에 닿지 못했다.':' 부품을 다 모으지 못했다.');}
+  return plan+(fixed?' 무전기까지는 고쳤지만, 끝내 구조를 부르지 못했다.':' 부품을 다 모으지 못했다.');}
 /* 이태백: NPC였다면 정체와 한 일, 내가 이태백이었다면 풀어 준 사람들 */
 function tbReveal(){const me=G.c[0];
   if(me.tb){const fr=G.c.filter(c=>!c.me&&c.freedBy===0);if(!me.bandKnow)return '끝내 밴드의 구조를 다 알아내지 못했다.';if(!me.freed)return '밴드를 끊는 법은 알아냈지만, 내 밴드를 풀 니퍼를 끝내 손에 넣지 못했다.';
@@ -3111,7 +3147,7 @@ function renderEnd(){
     else{const t=me.freedBy!=null&&me.freedBy!==0?G.c[me.freedBy]:null;head='풀려난 손목';sub=`${t?`${M.JS.i(t.name)} 풀어 준`:'풀린'} 밴드를 바닥에 버리고 작은 배로 섬을 빠져나왔다.${s.length?` 함께 나간 사람: ${list}.`:''}`;}
     if(res.left&&res.left.length)sub+=` ${res.left.map(id=>G.c[id].name).join(', ')}의 밴드는 풀 수가 없어서, 섬에 두고 올 수밖에 없었다.`;}
   else if(res.type==='rescue'){const s=res.survivors.map(id=>G.c[id]);head='안개 너머의 배';const by=G.rescueBy&&!G.rescueBy.includes(0)?G.rescueBy.map(id=>G.c[id].name):null;
-    sub=`${by?`${M.JS.i(by.length===2?M.JS.wa(by[0])+' '+by[1]:by[0])} 등대에서 부른`:'무전을 듣고 온'} 배가 ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
+    sub=`${by?`${M.JS.i(by.length===2?M.JS.wa(by[0])+' '+by[1]:by[0])} ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 부른`:'무전을 듣고 온'} 배가 ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
   else if(res.type==='police'){const s=res.survivors.map(id=>G.c[id]);const list=s.map(c=>c.me?'나':c.name).join(', ');
     const call=`안개 속에서 누군가 목이 터져라 이름을 불렀다. "재윤아!" ${M.JS.ida('오윤수')}. 모두의 반대를 무릅쓰고 혼자 몰래 섬에 들어온 거였다.`;
     if(me.alive){head='안개를 건너온 사람';sub=`${call} 나를 찾아낸 그가 숨을 고르며 말했다. "다친 데는 없어요? …늦어서 미안해요." 살아 있던 ${s.length}명이 그를 따라 섬을 빠져나갔다: ${list}.`;}
