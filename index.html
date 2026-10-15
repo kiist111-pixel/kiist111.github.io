@@ -687,7 +687,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-e</p>
+      <p class="build">BUILD 2026.10.15-f</p>
     </section>
   </div>
 </section>
@@ -1456,7 +1456,7 @@ function initRel(G,o){
   const S=(a,b,l,i,g)=>{G.rel[a][b]=[l,i,g];};
   const npcs=shuffle([...Array(N-1).keys()].map(i=>i+1));
   const spB=G.c.find(c=>c.special==='bestie');
-  const bv=o.bestie||'yes';const hasBestie=!G.c[0].tb&&(!!spB||bv==='yes'||(bv==='random'&&R()<.7));
+  const bv=o.bestie||'yes';const hasBestie=!G.c[0].tb&&!G.c[0].sw&&(!!spB||bv==='yes'||(bv==='random'&&R()<.7));
   /* 전학 온 첫날: 이태백과 반 애들은 서로 모르는 사이로 시작한다 */
   for(const t of G.c.filter(isTB))for(let x=0;x<N;x++){if(x===t.id)continue;G.rel[x][t.id]=[ri(-5,12),ri(12,30),''];G.rel[t.id][x]=[ri(0,14),ri(5,20),''];}
   const f=spB?spB.id:hasBestie?npcs.find(x=>!G.c[x].special&&!G.c[x].transfer):null;G.bestie=f;
@@ -2737,7 +2737,7 @@ function renderReveal(){
     ${b?`<dt>몸</dt><dd>${b.n} <span class="muted">· 체력 ${me.mhp} · 스태미나 ${me.mst} · 공격 ${me.atk} · 방어 ${me.def}</span></dd>`:''}
     <dt>시작 소지품</dt><dd>${esc(items)}, 교복</dd>
     ${me.tb?`<dt>정체</dt><dd><b>경찰</b> <span class="muted">· 전입생으로 위장해 수학여행 반에 잠입했다. 학교는 늘 남들보다 몇 년 일찍 들어갔다가 금방 졸업해 버려서, '우리 반'이 생긴 건 처음이다.</span></dd>`:''}
-    <dt>단짝</dt><dd>${f?`<b>${esc(f.name)}</b> <span class="muted">· ${M.CLUBS[f.club].n}</span>`:`<span class="muted">없음${me.tb?' · 전학 온 첫날이라 아는 얼굴이 하나도 없다':''}</span>`}</dd>
+    <dt>단짝</dt><dd>${f?`<b>${esc(f.name)}</b> <span class="muted">· ${M.CLUBS[f.club].n}</span>`:`<span class="muted">없음${me.tb?' · 전학 온 첫날이라 아는 얼굴이 하나도 없다':me.sw?' · 이 반에는 없다':''}</span>`}</dd>
     ${me.tb?`<dt>계획</dt><dd>${esc(planText())}</dd>`:''}
     ${G.loop?`<dt>되풀이</dt><dd>${esc(planText())}</dd>`:''}
     ${G.c.filter(c=>!c.me&&c.special==='friend').map(c=>`<dt>친구</dt><dd><b>${esc(c.name)}</b> <span class="muted">· ${M.CLUBS[c.club].n}${M.bonded(me,c)?' · 무슨 일이 있어도 서로 등을 돌리지 않는 사이':''}</span></dd>`).join('')}
