@@ -688,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-k</p>
+      <p class="build">BUILD 2026.10.15-l</p>
     </section>
   </div>
 </section>
@@ -1904,7 +1904,7 @@ function encounterPhase(G){
   if(pe&&pe.alive&&me.alive&&pe.loc===me.loc){
     if(pe.woundRoll){pe.woundRoll=0;if(R()<.5){const p=pick(Object.keys(pe.inj));pe.inj[p]=1;pe.hp=Math.min(pe.hp,Math.round(pe.mhp*rf(.45,.8)));
       ev(G,'seen','meet',`${JS.eun(pe.name)} ${JS.eul(INJN[p])} 다친 채였다.`);}}
-    const K=kimMet||{};const X=K.mask!=null?G.c[K.mask]:null;
+    const K=kimMet||{};let X=K.mask!=null?G.c[K.mask]:null;if(X&&!X.alive){X=maskFor(G,pe);K.mask=X?X.id:null;}
     if(X){X.met=true;X.seenT=G.t;X.seenLoc=me.loc;}else{pe.met=true;pe.seenT=G.t;pe.seenLoc=pe.loc;}
     if(pe.kim){const was=K.reveal?pe.name:null;if(K.reveal)kimBreak(G,pe);
       if(pFirst){G.pending={type:'meet',who:pe.id};if(X){G.pending.mask=X.id;G.pending.tell=R()<.4?ri(0,KIM_TELLS.length-1):-1;}if(was)G.pending.was=was;G.phase='pending';}
@@ -2121,7 +2121,7 @@ function fight(G,A,B,o){
   const vis=visAt(G,loc,[...sa,...sb]);
   const head=ev(G,vis,'fight',o.head||(A.me?`${JS.eul(B.name)} 공격했다.`:B.me?`${JS.wa(A.name)} 싸움이 붙었다.`:`${JS.wa(A.name)} ${JS.i(B.name)} 맞붙었다.`),{imp:1,q:o.q});
   let shield=null;
-  for(const c of G.c){if(!c.alive||c.me||inv.has(c.id)||c.loc!==loc)continue;const r=rel(G,c,B);
+  for(const c of G.c){if(!c.alive||c.me||inv.has(c.id)||c.loc!==loc||isMyComp(G,c.id))continue;const r=rel(G,c,B);
     if((r.tag==='crush'||r.tag==='bestie')&&r.like>=55&&rel(G,c,A).like<40&&R()<.7){shield=c;sb.push(c);inv.add(c.id);know(G,c.id,B.id);break;}}
   const lines=[];
   if(shield)lines.push(`${JS.i(shield.name)} ${nm(B)}의 앞을 막아섰다!`);
