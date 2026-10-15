@@ -688,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-h</p>
+      <p class="build">BUILD 2026.10.15-i</p>
     </section>
   </div>
 </section>
@@ -3351,6 +3351,7 @@ function closeModal(){$('modal').hidden=true;}
 /* ---------- 끝 ---------- */
 function teamReveal(){if(!G.teamNPC||!G.team||G.team.length<2)return '';const[a,b]=G.team.map(id=>G.c[id]);const pair=`${esc(M.JS.wa(a.name))} ${esc(b.name)}`;
   const plan=`${M.JS.eun(pair)} 처음부터 <b>무전기로 구조를 불러 최대한 많이 데리고 나갈 생각</b>이었다.`;
+  if(G.loop&&G.rescueTrio)return plan+` 그리고 정말로 시우와 셋이 함께 ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 구조를 불렀다.`;
   if(G.rescueBy)return plan+` 그리고 정말로 ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 구조를 불렀다.`;
   const fixed=G.log.some(e=>/무전기를 고쳤다/.test(e.x));
   return plan+(fixed?' 무전기까지는 고쳤지만, 끝내 구조를 부르지 못했다.':' 부품을 다 모으지 못했다.');}
