@@ -699,7 +699,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.16-g</p>
+      <p class="build">BUILD 2026.10.16-h</p>
     </section>
   </div>
 </section>
@@ -1028,7 +1028,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.k==='am'?d.n0:(d.uses||0),d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
-  if(G.police===undefined)G.police=null;
+  if(G.police===undefined)G.police=null;if(G.tbteam===undefined)G.tbteam=null;
   if(!G.ev)G.ev={plan:[],drop:null,fog:0,bounty:null};
   if(G.team===undefined){G.team=[];G.teamNPC=false;G.rescueBy=null;}
   if(G.couples&&G.couples.length&&G.rel)loyalize(G);
@@ -1233,6 +1233,10 @@ const THANKS={dajeong:'고마워. 꼭 갚을게.',dahyeol:'…고맙다. 이번�
 /* 재윤아로 시작한 판에만, 아주 드물게: 경찰 오윤수가 모두의 반대를 무릅쓰고 몰래 섬에 들어와 재윤아를 찾는다. 그 순간 게임이 끝난다.
    둘은 평소 서로 존댓말을 쓴다. 찾으며 외칠 때만 "재윤아!" */
 const POLICE={for:'재윤아',name:'오윤수',chance:.05,from:20,to:52};
+/* 이태백으로 시작한 판에만, 아주 드물게: 약속한 시간에 팀이 언더커버로 잠입한 이태백을 데리러 온다. 그 순간 게임이 끝난다.
+   이소호가 팀장. 소호는 "이 경장", 천은·최혜진은 평소 "이 경장님"이라 부르지만, 찾으며 외칠 때는 소호 "이 경장!", 천은 "이태백!", 혜진 "이태백 씨!".
+   배에서 기다리는 삼촌 금천규(서울경찰청 총경)는 "태백아!" */
+const TBTEAM={for:'이태백',lead:'이소호',crew:['천은','최혜진'],uncle:'금천규',chance:.05,from:20,to:52};
 /* 성시우: 죽어도 끝나지 않는다. 같은 반, 같은 순서로 닫히는 금지구역으로 처음부터 다시 시작한다. 가진 물건은 처음 것만.
    끝내는 길은 셋: 스스로 멈추기(포기한다), 한성백·신수아와 셋이 함께 무전으로 구조 부르기, 범원·한윤희·지원우·백나루가 데리러 오기.
    그 밖의 결말(우승, 혼자 부른 배, 밴드 풀고 탈출 등)은 모두 다시 강당으로 돌아간다 */
@@ -1399,6 +1403,7 @@ function newGame0(o){
   me.loc=5;for(const c of G.c)if(!c.me)c.loc=R()<.15?5:ri(0,15);
   initRel(G,o);
   G.police=o.name===POLICE.for&&R()<POLICE.chance?{at:ri(POLICE.from,POLICE.to)}:null;
+  G.tbteam=o.name===TBTEAM.for&&R()<TBTEAM.chance?{at:ri(TBTEAM.from,TBTEAM.to)}:null;
   {const slots=shuffle([2,3,4,5,6]).slice(0,ri(1,2)).sort((a,b)=>a-b);const kinds=shuffle(['drop','fog','bounty']);G.ev={plan:slots.map((b,i)=>({at:b*BCAST,kind:kinds[i]})),drop:null,fog:0,bounty:null};}
   if(G.transferId!=null){const tc=G.c[G.transferId];if(tc.transfer==='helper'){G.rel[tc.id][0]=[ri(20,32),ri(25,40),''];}}
   for(const c of G.c)if(!c.me&&(c.id===G.bestie||c.special||c.transfer)&&dist(c.loc,5)<2)c.loc=pick([...Array(16).keys()].filter(i=>dist(i,5)>=2));
@@ -2507,10 +2512,19 @@ function policeCheck(G){const P=G.police;if(!P||G.result)return false;const me=G
   G.result={type:'police',survivors:alive.map(c=>c.id),meAlive:me.alive};G.phase='end';G.pending=null;G.combat=null;
   ev(G,me.alive?'seen':'hidden','heart',`안개 속에서 누군가 목이 터져라 외쳤다. "${POLICE.for}!" …${POLICE.name}의 목소리였다.`,{imp:1});
   return true;}
+function tbteamCheck(G){const P=G.tbteam;if(!P||G.result)return false;const me=G.c[0];
+  if(G.t===P.at-2){if(me.alive)ev(G,'seen','inner','시계를 봤다. 약속한 시간까지 한 시간 남았다.',{imp:1});else ev(G,'hidden','heard','먼 바다에서 낮은 엔진 소리가 났다가 멎었다.',{imp:1});}
+  if(G.t===P.at-1)ev(G,me.alive?'heard':'hidden','heard','선착장 쪽 안개 속에서 손전등 불빛 세 개가 흔들렸다.',{imp:1});
+  if(G.t<P.at)return false;
+  const alive=G.c.filter(c=>c.alive);if(!alive.length)return false;
+  G.result={type:'tbteam',survivors:alive.map(c=>c.id),meAlive:me.alive};G.phase='end';G.pending=null;G.combat=null;
+  if(me.alive)ev(G,'seen','heart',`약속한 시간이었다. 안개 속에서 누군가 목이 터져라 외쳤다. "이 경장!" …${TBTEAM.lead} 팀장의 목소리였다. 뒤이어 "이태백!" "이태백 씨!"`,{imp:1});
+  else ev(G,'hidden','heart','약속한 시간이었다. 안개 속에서 세 사람이 번갈아 외쳤다. "이 경장!" "이태백!" "이태백 씨!" 대답은 돌아오지 않았다.',{imp:1});
+  return true;}
 function finishTurnRest(G){
   G.stage=null;
   const me=G.c[0];
-  if(policeCheck(G)||friendsCheck(G))return;
+  if(policeCheck(G)||tbteamCheck(G)||friendsCheck(G))return;
   if(G.fore&&G.t===G.fore.at&&me.alive)ev(G,'heard','heard',pick(LOOP_FORE),{imp:1});
   if(G.loop&&G.mind&&G.mind.includes(G.t)&&me.alive)ev(G,'seen','inner',mindLine(G,mindStage(G.loop.n)),{imp:1});
   if(G.rescueT!=null&&me.alive&&G.t>=G.rescueT+4){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
@@ -2594,7 +2608,7 @@ function runToEnd(G){
     encounterPhase(G);
     if(aliveCount(G)<=1){checkEnd(G);break;}
     G.t++;companionChecks(G);
-    if(policeCheck(G))break;
+    if(policeCheck(G)||tbteamCheck(G))break;
     if(G.rescueT!=null&&G.t>=G.rescueT+4&&aliveCount(G)>0){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
       ev(G,'hidden','heart','안개를 가르고 배 한 척이 다가왔다. 아직 숨이 붙어 있던 모두가 그 배에 올랐다.',{imp:1});break;}
     if(G.t%BCAST===0)broadcast(G);
@@ -2659,7 +2673,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={mindStage,crack,rndOf,presetFor,COND,applyMine,gunsFor,EMPTY_HIT,teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={TBTEAM,tbteamCheck,mindStage,crack,rndOf,presetFor,COND,applyMine,gunsFor,EMPTY_HIT,teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2716,12 +2730,12 @@ const ENDINGS=[
  ['win','최후의 1인','마지막까지 혼자 살아남는다'],['rescue','안개 너머의 배','직접 무전기를 고쳐 구조를 부른다'],['rescue_team','누군가 부른 배','다른 누군가가 부른 배에 오른다'],
  ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['unband','밴드를 연 사람','누군가 밴드를 여는 법을 알아낸다'],['pact','끝까지 손을 들지 않았다','마지막까지 남은 이들이 서로를 해치지 않는다'],
  ['d_bestie','등 뒤의 칼끝','가장 믿었던 사람에게…'],['d_hunter','작년의 우승자','사냥꾼 전입생에게 쓰러진다'],['d_poison','이상한 맛','독이 든 것을 먹는다'],
- ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','안개를 건너온 사람','아주 드물게, 섬 밖에서 누군가 온다'],
+ ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','안개를 건너온 사람','아주 드물게, 섬 밖에서 누군가 온다'],['tbteam','약속한 시간','아주 드물게, 약속한 시간에 누군가 데리러 온다'],
  ['d_giveup','포기한다','스스로 걸음을 멈춘다'],['loop_giveup','멈춘 아침','되풀이되는 아침을 스스로 끝낸다'],['loop_radio','셋이 부른 배','되풀이 속에서, 한성백·신수아와 함께 구조선에 오른다'],['loop_friends','널 구하러 왔어','되풀이 너머에서 누군가 온다']];
 function endingKey(){const me=G.c[0],r=G.result||{};
   if(G.loop){if(G.loop.final==='giveup')return 'loop_giveup';if(r.type==='friends')return 'loop_friends';if(r.type==='rescue')return 'loop_radio';}
   if(r.pact&&r.pact.includes(0))return 'pact';
-  if(me.alive){if(r.type==='police')return 'police';if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';if(r.type==='unband')return 'unband';return 'win';}
+  if(me.alive){if(r.type==='police')return 'police';if(r.type==='tbteam')return 'tbteam';if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';if(r.type==='unband')return 'unband';return 'win';}
   const k=me.killer!=null?G.c[me.killer]:null;
   if(k&&k.id===G.bestie&&G.btr&&G.btr.done==='fight')return 'd_bestie';
   if(me.cause==='giveup')return 'd_giveup';if(me.cause==='band')return 'd_band';if(me.cause==='poison')return 'd_poison';if(me.cause==='trap')return 'd_trap';
@@ -3492,6 +3506,9 @@ function renderEnd(){
     const call=`안개 속에서 누군가 목이 터져라 이름을 불렀다. "재윤아!" ${M.JS.ida('오윤수')}. 모두의 반대를 무릅쓰고 혼자 몰래 섬에 들어온 거였다.`;
     if(me.alive){head='안개를 건너온 사람';sub=`${call} 나를 찾아낸 그가 숨을 고르며 말했다. "다친 데는 없어요? …늦어서 미안해요." 살아 있던 ${s.length}명이 그를 따라 섬을 빠져나갔다: ${list}.`;}
     else{head='닿지 못한 이름';sub=`${call} 하지만 그 이름은 끝내 대답을 듣지 못했다. 살아 있던 ${s.length}명이 그를 따라 섬을 빠져나갔다: ${list}.`;}}
+  else if(res.type==='tbteam'){const s=res.survivors.map(id=>G.c[id]);const list=s.map(c=>c.me?'나':c.name).join(', ');const T=M.TBTEAM;
+    if(me.alive){head='약속한 시간';sub=`약속한 시간이었다. 안개 속에서 손전등 불빛 세 개가 흔들렸다. "이 경장!" ${T.lead} 팀장이었다. 뒤이어 "이태백!" ${M.JS.i(T.crew[0])}, "이태백 씨!" ${M.JS.i(T.crew[1])} 외쳤다. 선착장에 댄 배 위에서는 삼촌이 기다리고 있었다. "태백아!" 살아 있던 ${s.length}명이 그 배에 올랐다: ${list}.`;}
+    else{head='대답 없는 이름';sub=`약속한 시간이었다. 안개 속에서 손전등 불빛 세 개가 흔들렸다. "이 경장!" "이태백!" "이태백 씨!" 세 사람이 번갈아 외쳤지만, 대답은 돌아오지 않았다. 배 위에서 삼촌이 한 번 더 불렀다. "태백아." 살아 있던 ${s.length}명이 그 배로 섬을 빠져나갔다: ${list}.`;}}
   else if(res.type==='escape'){const h=G.c[res.with[1]];head='안개 속으로';sub=`${M.JS.wa(h.name)} 함께 밴드를 끊고 작은 배로 섬을 빠져나왔다.`;}
   else if(res.type==='npc'){const w=G.c[res.winner];head=`${w.name}만 섬을 떠났다`;sub=`마지막까지 남은 건 ${M.JS.ida(w.name)}.`;}
   else if(res.pact){const ps=res.pact.map(id=>G.c[id]);const nm2=c=>c.me?'나':c.name;head='끝까지 손을 들지 않았다';
@@ -3507,7 +3524,7 @@ function renderEnd(){
       head=G.rescueTrio?'셋이 부른 배':'셋이 함께 탄 배';
       sub=`${L.n}번째 아침. ${who} ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.${G.rescueTrio?'':` ${M.JS.wa(tn[0])} ${M.JS.i(tn[1])} 나란히 뱃전에 서 있었다.`} 멀어지는 섬을 끝까지 보고 있었다. 눈을 깜빡여도, 강당은 다시 보이지 않았다.`;}
     else if(res.type==='friends')sub=`${L.n}번째 아침. `+sub;}
-  const kick=G.loop&&G.loop.final==='giveup'?'LOOP ENDED':me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED',unband:'ESCAPED',police:'RESCUED',friends:'RESCUED'}[res.type]||'SURVIVED'):'ELIMINATED';
+  const kick=G.loop&&G.loop.final==='giveup'?'LOOP ENDED':me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED',unband:'ESCAPED',police:'RESCUED',tbteam:'RESCUED',friends:'RESCUED'}[res.type]||'SURVIVED'):'ELIMINATED';
   const lived=me.alive?G.t:me.deathT;
   const chron=G.log.filter(e=>e.imp);
   $('scr-end').innerHTML=`
