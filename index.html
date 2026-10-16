@@ -688,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.15-l</p>
+      <p class="build">BUILD 2026.10.16-a</p>
     </section>
   </div>
 </section>
@@ -1404,12 +1404,15 @@ function joinTeam(G,n){const me=G.c[0];const tm=G.team.map(id=>G.c[id]);G.trio=G
   for(const c of tm)if(!isMyComp(G,c.id)&&c.comp!=null&&isMyComp(G,c.comp))c.comp=null;
   const j=tm.filter(c=>isMyComp(G,c.id));if(!j.length)return;
   ev(G,'seen','pair',j.length>1?`${JS.wa(j[0].name)} ${JS.i(j[1].name)} 서로 눈을 맞추더니 고개를 끄덕였다. 이제 셋이다.`:myComps(G).length>1?`${JS.i(j[0].name)} 다시 합류했다. 이제 셋이다.`:`${JS.i(j[0].name)} 함께 다니기로 했다.`,{q:'좋아. 셋이면 무전기, 금방 고칠 수 있어.',imp:1});}
+/* 시우 판: 무전기 부품과 니퍼를 손에 넣은 곳. 섬에 처음 놓인 물건은 회차마다 같으니 다음 회차에 쓸모가 있다 */
+const FIND_IDS=['radio','battery','wire','nipper'];
+function noteFind(G,id,loc){if(!G.loop||!FIND_IDS.includes(id)||loc==null)return;const f=G.loop.found||(G.loop.found={});const a=f[id]||(f[id]=[]);if(!a.includes(loc)){a.push(loc);if(a.length>4)a.shift();}}
 function learnRadio(G){const L=G.loop;if(!L)return;G.c[0].radioKnow=1;if(L.radioKnow)return;L.radioKnow=1;
   ev(G,'seen','inner','어떻게 고치는지 눈에 담았다. 다시 눈을 떠도 잊지 않을 것 같다. 다음엔 구리선 없이 건전지만 있으면 된다.',{imp:1});}
 /* 셋이 함께 다닐 때: 둘도 같이 부품을 찾는다 */
 function teamSeek(G,c){const me=G.c[0];const ps=[me,...myComps(G).map(id=>G.c[id]).filter(m=>m.team&&m.alive)];const has=id=>ps.some(m=>m.inv.some(x=>x.id===id));
   if(has('fixedradio'))return false;const need=['radio','battery','wire'].filter(id=>!has(id)&&!(id==='wire'&&me.radioKnow));
-  for(const id of need){const pi=G.pool[c.loc].findIndex(x=>x.id===id);if(pi>=0&&R()<.5){c.inv.push(G.pool[c.loc].splice(pi,1)[0]);c.searched=true;ev(G,'seen','find',`${JS.i(c.name)} ${JS.eul(IT[id].n)} 찾아냈다.`,{q:'이거 무전기에 쓰는 거야.'});return true;}}
+  for(const id of need){const pi=G.pool[c.loc].findIndex(x=>x.id===id);if(pi>=0&&R()<.5){c.inv.push(G.pool[c.loc].splice(pi,1)[0]);c.searched=true;noteFind(G,id,c.loc);ev(G,'seen','find',`${JS.i(c.name)} ${JS.eul(IT[id].n)} 찾아냈다.`,{q:'이거 무전기에 쓰는 거야.'});return true;}}
   return false;}
 /* 셋이 함께 다닐 때: 셋 가방에 부품이 다 모이면 둘이 고친다. 고친 무전기는 시우에게 넘긴다 */
 function teamFixWithMe(G){const me=G.c[0];if(!G.loop||!me.alive||G.rescueT!=null||G.phase!=='act')return;
@@ -2280,7 +2283,7 @@ function pickUp(G,p,choice){
     else if(p.type==='loot')ev(G,'seen','find','아무것도 챙기지 않았다.');
     return;}
   const it=pool[pi],d=IT[it.id];
-  if(cmd==='take'){if(!bagHasRoom(me,it))return;pool.splice(pi,1);addToBag(me,it);ev(G,'seen','find',`${JS.eul(d.n)} 가방에 넣었다.`);}
+  if(cmd==='take'){if(!bagHasRoom(me,it))return;pool.splice(pi,1);addToBag(me,it);noteFind(G,it.id,p.loc);ev(G,'seen','find',`${JS.eul(d.n)} 가방에 넣었다.`);}
   else if(cmd==='eat'&&(d.k==='f'||d.k==='h')){pool.splice(pi,1);eatHere(G,me,it);}
   else if(cmd==='ammo'){const P=ammoPlan(me,it);if(P&&P.load+P.bag>0){pool.splice(pi,1);takeAmmo(G,me,it,'');}}
   else if(cmd==='equip'&&SLOT[d.k]){
@@ -2289,7 +2292,7 @@ function pickUp(G,p,choice){
     ev(G,'seen','find',`${JS.eul(d.n)} ${WEARV[d.k]}.${tail}`);}
   else if(cmd==='swap'){const i=+(p.type==='find'?a1:a2);if(!me.inv[i])return;
     pool.splice(pool.indexOf(it),1);const out=dropStack(G,me,i);
-    if(bagHasRoom(me,it))addToBag(me,it);else pool.push(it);
+    if(bagHasRoom(me,it)){addToBag(me,it);noteFind(G,it.id,p.loc);}else pool.push(it);
     ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓고 ${JS.eul(d.n)} 챙겼다.`);}
 }
 /* 줍기·시체 뒤지기 창이 떠 있는 동안 가방의 먹을 것이나 약을 쓴다. 창은 그대로 남는다 */
@@ -2315,7 +2318,7 @@ function bodyOp(G,cmd,arg){
   if(cmd==='drop'){const i=+arg;if(!me.inv[i])return false;const out=dropStack(G,me,i);ev(G,'seen','find',`${JS.eul(IT[out[0].id].n+(out.length>1?` ${out.length}개`:''))} 내려놓았다.`);return true;}
   let b=null,i=-1;for(const x of G.bodies[p.loc]){const j=x.items.findIndex(it=>it.uid===arg);if(j>=0){b=x;i=j;break;}}
   if(!b)return false;const it=b.items[i],d=IT[it.id],who=G.c[b.v].name;
-  if(cmd==='take'){if(!bagHasRoom(me,it))return false;b.items.splice(i,1);addToBag(me,it);ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} 챙겼다.`);return true;}
+  if(cmd==='take'){if(!bagHasRoom(me,it))return false;b.items.splice(i,1);addToBag(me,it);noteFind(G,it.id,p.loc);ev(G,'seen','find',`${who}의 ${JS.eul(d.n)} 챙겼다.`);return true;}
   if(cmd==='eat'&&(d.k==='f'||d.k==='h')){b.items.splice(i,1);eatHere(G,me,it);afterEat(G);return true;}
   if(cmd==='ammo'){const P=ammoPlan(me,it);if(!P||P.load+P.bag===0)return false;b.items.splice(i,1);takeAmmo(G,me,it,`${who}의 `);return true;}
   if(cmd==='equip'&&SLOT[d.k]){if(d.k==='b'&&!canEquipBag(me,it))return false;
@@ -2479,9 +2482,11 @@ function broadcast(G){
   let stale=G.t-G.lastDeathT,wipe=false,warn=false;
   if(stale>=30&&G.t>=36){wipe=true;
     const last=G.c.filter(c=>c.alive);
-    if(last.length===2&&G.rel[last[0].id][last[1].id][0]>=30&&G.rel[last[1].id][last[0].id][0]>=30){
-      G.pact=[last[0].id,last[1].id];
-      ev(G,last.some(c=>c.me)?'seen':'hidden','heart',`${JS.wa(nm(last[0]))} ${JS.eun(nm(last[1]))} 끝까지 서로에게 손을 들지 않았다.`,{imp:1});}
+    /* 서로 아끼거나, 끝까지 등을 돌리지 않는 사이거나, 함께 다니는 사이면 해치지 않는 쪽으로 본다 */
+    const party=x=>x.me||isMyComp(G,x.id);const okPair=(a,b)=>wontHarm(a,b)||wontHarm(b,a)||G.rel[a.id][b.id][0]>=30||(party(a)&&party(b))||a.comp===b.id||b.comp===a.id;
+    const mutual=last.length>=2&&last.every(a=>last.every(b=>a===b||okPair(a,b)));
+    if(mutual){G.pact=last.map(c=>c.id);
+      ev(G,last.some(c=>c.me)?'seen':'hidden','heart',last.length===2?`${JS.wa(nm(last[0]))} ${JS.eun(nm(last[1]))} 끝까지 서로에게 손을 들지 않았다.`:`${last.slice(0,-1).map(nm).join(', ')}, 그리고 ${nm(last[last.length-1])}. 누구도 끝까지 서로에게 손을 들지 않았다.`,{imp:1});}
     for(const c of G.c)if(c.alive&&!c.freed)kill(G,c,null,'band');}
   else if(stale>=18&&G.t>=24)warn=true;
   const dead=G.deathsSince.slice();G.deathsSince=[];
@@ -2637,7 +2642,7 @@ function recMerge(a,b){const out=recBlank();const ids=new Set();for(const r of [
 function recSave(){try{localStorage.setItem(REC_KEY,JSON.stringify(REC));}catch(e){}if(recRef){try{recRef.set(REC);}catch(e){}}}
 const ENDINGS=[
  ['win','최후의 1인','마지막까지 혼자 살아남는다'],['rescue','안개 너머의 배','직접 무전기를 고쳐 구조를 부른다'],['rescue_team','누군가 부른 배','다른 누군가가 부른 배에 오른다'],
- ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['unband','밴드를 연 사람','누군가 밴드를 여는 법을 알아낸다'],['pact','끝까지 손을 들지 않았다','마지막 둘이 서로를 해치지 않는다'],
+ ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['unband','밴드를 연 사람','누군가 밴드를 여는 법을 알아낸다'],['pact','끝까지 손을 들지 않았다','마지막까지 남은 이들이 서로를 해치지 않는다'],
  ['d_bestie','등 뒤의 칼끝','가장 믿었던 사람에게…'],['d_hunter','작년의 우승자','사냥꾼 전입생에게 쓰러진다'],['d_poison','이상한 맛','독이 든 것을 먹는다'],
  ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','안개를 건너온 사람','아주 드물게, 섬 밖에서 누군가 온다'],
  ['d_giveup','포기한다','스스로 걸음을 멈춘다'],['loop_giveup','멈춘 아침','되풀이되는 아침을 스스로 끝낸다'],['loop_radio','셋이 부른 배','되풀이 속에서, 셋이 함께 무전으로 구조를 부른다'],['loop_friends','널 구하러 왔어','되풀이 너머에서 누군가 온다']];
@@ -2936,6 +2941,7 @@ function planBox(){const t=planText();if(!t)return '';
   if(G.loop){const L=G.loop;const ms=L.memo.slice().reverse();
     return `<details class="plan" id="planbox" ${planOpen?'open':''}><summary>되풀이 <span class="mono">${L.n}회차</span></summary><p>${esc(t)}</p>
       <p class="memo-k">무전기 고치는 법 · <b>${L.radioKnow?'안다. 건전지만 있으면 된다':'아직 모른다'}</b></p>
+      ${L.found&&Object.keys(L.found).length?`<p class="memo-k">손에 넣은 곳</p><ul class="memo">${['radio','battery','wire','nipper'].filter(id=>L.found[id]&&L.found[id].length).map(id=>`<li><b>${esc(M.IT[id].n)}</b> · ${L.found[id].map(i=>esc(M.AREAS[i].n)).join(', ')}</li>`).join('')}</ul>`:''}
       ${ms.length?`<p class="memo-k">지난 회차</p><ol class="memo">${ms.slice(0,12).map(m=>`<li><span class="mono">${m.n}회차 · ${M.clock(m.t).s}</span> ${esc(M.AREAS[m.loc].n)}. ${esc(m.how)}</li>`).join('')}${ms.length>12?`<li class="muted">그 전의 ${ms.length-12}번은 줄이 너무 많아 다 적지 못했다.</li>`:''}</ol>`:''}</details>`;}
   return `<details class="plan" id="planbox" ${planOpen?'open':''}><summary>계획</summary><p>${esc(t)}</p></details>`;}
 /* 이태백: 밴드 풀기 진행 / 누군가 내 밴드를 풀어 줬을 때 */
@@ -3392,7 +3398,8 @@ function renderEnd(){
     else{head='닿지 못한 이름';sub=`${call} 하지만 그 이름은 끝내 대답을 듣지 못했다. 살아 있던 ${s.length}명이 그를 따라 섬을 빠져나갔다: ${list}.`;}}
   else if(res.type==='escape'){const h=G.c[res.with[1]];head='안개 속으로';sub=`${M.JS.wa(h.name)} 함께 밴드를 끊고 작은 배로 섬을 빠져나왔다.`;}
   else if(res.type==='npc'){const w=G.c[res.winner];head=`${w.name}만 섬을 떠났다`;sub=`마지막까지 남은 건 ${M.JS.ida(w.name)}.`;}
-  else if(res.pact){const[a,b]=res.pact.map(id=>G.c[id]);head='끝까지 손을 들지 않았다';sub=`마지막에 남은 ${M.JS.wa(a.me?'나':a.name)} ${b.me?'나':b.name}. 둘은 서로를 해치지 않았고, 마지막 방송과 함께 섬은 조용해졌다.`;}
+  else if(res.pact){const ps=res.pact.map(id=>G.c[id]);const nm2=c=>c.me?'나':c.name;head='끝까지 손을 들지 않았다';
+    sub=ps.length===2?`마지막에 남은 ${M.JS.wa(nm2(ps[0]))} ${nm2(ps[1])}. 둘은 서로를 해치지 않았고, 마지막 방송과 함께 섬은 조용해졌다.`:`마지막에 남은 ${ps.length}명, ${ps.map(nm2).join(', ')}. 누구도 서로를 해치지 않았고, 마지막 방송과 함께 섬은 조용해졌다.`;}
   else if(res.type==='friends'){const s=res.survivors.map(id=>G.c[id]);head='널 구하러 왔어';
     sub=`안개를 가르고 작은 배 한 척이 다가왔다. 뱃머리에 선 네 사람, ${M.SW_FRIENDS.join(', ')}. 넷 중 누군가 말했다. "널 구하러 왔어, 시우야." 어떻게 이 섬을 찾아왔는지, 몇 번째 아침인지 알고 있는 건지, 아무도 묻지 않았다. 살아 있던 ${s.length}명이 모두 그 배에 올랐다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
   else{head='아무도 남지 않았다';sub='마지막 방송이 끝나고, 섬은 다시 조용해졌다.';}
