@@ -688,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.16-c</p>
+      <p class="build">BUILD 2026.10.16-d</p>
     </section>
   </div>
 </section>
@@ -868,7 +868,7 @@ const AREAS=[
  {n:'대나무숲',d:.75,a:1,f:1,pool:['bamboo','snare','riceball','stone','choco','armguard:0.4','rope:0.6']},
  {n:'폐광 입구',d:1,a:1,f:.85,pool:['pickaxe','wire','helmet','firecracker','water','nail','powder:0.5','workwear','kneepad:0.5','nipper:0.7','chain','steelplate:0.5']},
  {n:'선착장',d:1.2,a:1,f:1,pool:['hook','water','ramen','molotov:0.5','bottle','whetstone:0.6','tape:0.5','lifejacket:0.6','hikingpack:0.4','rope','chain:0.5']},
- {n:'폐교',d:1,a:.9,f:1,pool:['plank','mop','extinguisher','cutter','dart','bat:0.6','tracksuit','nail','tape:0.6','backpack','bathelmet:0.6','kneepad:0.4','magazine','cardboard:0.5']},
+ {n:'폐교',d:1,a:.9,f:1,pool:['plank','mop','extinguisher','cutter','dart','bat:0.6','tracksuit','nail','tape:0.6','backpack','bathelmet:0.6','kneepad:0.4','magazine','cardboard:0.5','sneakers:0.5']},
  {n:'마을회관',d:1.2,a:1,f:1,pool:['radar','choco','painkiller','padding','battery:0.5','firecracker','nail:0.6','ecobag','raincoat:0.5','nipper:0.5','magazine','sewkit:0.6','pot:0.5','cardboard:0.5']},
  {n:'동백 언덕',d:1,a:1.2,f:1,pool:['sickle','stone','milk','hatchet:0.5','windbreaker:0.4','pouch:0.4']},
  {n:'염전',d:1.3,a:1,f:1,pool:['shovel','water','bottle','bread','workwear:0.6','nipper:0.4','cardboard:0.6','rope:0.5']},
@@ -876,7 +876,7 @@ const AREAS=[
  {n:'보건소',d:1.2,a:1,f:1,pool:['firstaid','bandage','bandage','painkiller','bandaid','bandaid','poison:0.5','battery:0.4','armguard:0.4']},
  {n:'저수지',d:.75,a:1,f:1,pool:['airgun','riceball','water','knuckle','raincoat:0.5','bullet:0.5']},
  {n:'방파제',d:1,a:1,f:.85,pool:['wire','ironball','bottle','hook','water','glass:0.5','lifejacket:0.5','nipper:0.3','steelplate:0.4','rope:0.4']},
- {n:'해녀 탈의장',d:.75,a:1,f:1,pool:['diveknife','wetsuit','water','riceball','whetstone:0.5','pouch:0.4','sewkit:0.4','pot:0.5']},
+ {n:'해녀 탈의장',d:.75,a:1,f:1,pool:['diveknife','wetsuit','water','riceball','whetstone:0.5','pouch:0.4','sewkit:0.4','pot:0.5','sneakers:0.4']},
  {n:'성당',d:1,a:1,f:1.2,pool:['candlestick','bread','bandage','beartrap','nail:0.5','backpack:0.4','sewkit:0.5']},
  {n:'전망대',d:1.3,a:1.1,f:1,pool:['bow','choco','vest','dart','machete:0.4','hikingpack:0.5','bathelmet:0.3','arrow:0.5']},
 ];
@@ -914,7 +914,9 @@ const IT={
  nail:{n:'못',k:'m'}, whetstone:{n:'숫돌',k:'m'}, powder:{n:'화약',k:'m'}, tape:{n:'청테이프',k:'m'}, glass:{n:'유리조각',k:'s',trap:16},
  nailplank:{n:'못 박힌 각목',k:'w',t:'blunt',atk:17}, nailbat:{n:'못 박힌 방망이',k:'w',t:'blunt',atk:26},
  mopspear:{n:'대걸레 창',k:'w',t:'cut',atk:19}, powderbottle:{n:'화약병',k:'w',t:'blast',atk:22,uses:2},
- glassknuckle:{n:'유리 너클',k:'w',t:'fist',atk:13}, spikesnare:{n:'가시 올무',k:'s',trap:34},
+ glassknuckle:{n:'유리 너클',k:'w',t:'fist',atk:13},
+ homebomb:{n:'사제 폭탄',k:'w',t:'blast',atk:40,uses:1}, ironbomb:{n:'쇠구슬 폭탄',k:'w',t:'blast',atk:30,uses:2}, firebomb:{n:'소이 화염병',k:'w',t:'blast',atk:34,uses:3},
+ ironknuckle:{n:'쇠 너클',k:'w',t:'fist',atk:18}, sneakers:{n:'가벼운 운동화',k:'g',def:1,dur:30,prot:'leg',flee:.15}, spikesnare:{n:'가시 올무',k:'s',trap:34},
  nipper:{n:'니퍼',k:'p'},
  chain:{n:'쇠사슬',k:'m'}, magazine:{n:'두꺼운 잡지',k:'m'}, cardboard:{n:'골판지',k:'m'}, sewkit:{n:'반짇고리',k:'m'},
  steelplate:{n:'얇은 철판',k:'m'}, rope:{n:'밧줄',k:'m'}, pot:{n:'찌그러진 냄비',k:'m'},
@@ -924,7 +926,7 @@ const IT={
  cardarmor:{n:'골판지 갑옷',k:'a',def:6,dur:16}, pothelm:{n:'냄비 투구',k:'g',def:4,dur:22,prot:'head'},
  magguard:{n:'잡지 팔토시',k:'g',def:3,dur:18,prot:'arm'}, cardshin:{n:'골판지 정강이대',k:'g',def:3,dur:14,prot:'leg'},
 };
-const RECIPES=[['plank','nail','nailplank'],['bat','nail','nailbat'],['mop','kitchen','mopspear'],['mop','cutter','mopspear'],
+const RECIPES=[['powder','wire','homebomb'],['powder','ironball','ironbomb'],['molotov','powder','firebomb'],['knuckle','steelplate','ironknuckle'],['plank','nail','nailplank'],['bat','nail','nailbat'],['mop','kitchen','mopspear'],['mop','cutter','mopspear'],
   ['bottle','powder','powderbottle'],['snare','glass','spikesnare'],['tape','glass','glassknuckle'],
   ['pipe','kitchen','pipespear'],['pipe','diveknife','pipespear'],['plank','chain','flail'],['rope','stone','sling'],['knuckle','nail','spikeknuckle'],
   ['cardboard','tape','cardarmor'],['pot','tape','pothelm'],['pot','rope','pothelm'],['magazine','tape','magguard'],['cardboard','rope','cardshin']];
@@ -2014,7 +2016,7 @@ const COMBAT_MAX=8;
 function live(G,ids){const C=G.combat;return ids.map(id=>G.c[id]).filter(c=>c.alive&&c.loc===C.loc&&!C.out.includes(c.id));}
 function syncHead(G){const C=G.combat;if(!C)return;const e=G.log.find(x=>x.n===C.headN);if(e)e.lines=C.lines.slice();}
 function pickTarget(cands){const me=cands.find(c=>c.me);if(me&&R()<.65)return me;return cands.length?pick(cands):null;}
-function fleeChance(G){const me=G.c[0],C=G.combat;if(!C)return 0;let p=.6+(fogOn(G)?.15:0)+(me.tb?.1:0);if(me.club==='track')p+=.2;if(me.inj.leg)p-=.25;
+function fleeChance(G){const me=G.c[0],C=G.combat;if(!C)return 0;let p=.6+(fogOn(G)?.15:0)+(me.tb?.1:0)+(me.gear&&IT[me.gear.id].flee||0);if(me.club==='track')p+=.2;if(me.inj.leg)p-=.25;
   p-=(live(G,C.foes).length-1)*.12;if(me.st<10)p-=.15;return clamp(p,.1,.92);}
 function spareChance(G,f){const me=G.c[0],C=G.combat;const r=rel(G,f,me);let p=.12+r.like/110;
   if(r.tag==='friend'||r.tag==='bestie')p+=.25;if(r.tag==='crush')p+=.35;if(r.tag==='enemy')p-=.2;
@@ -2561,6 +2563,7 @@ function itemOp(G,op,idx,arg){
     if(out.startsWith('mod:')){const mat=A.id===out.slice(4)&&MODS[A.id]&&!MODS[B.id]?A:B;const tgt=mat===A?B:A;
       const msg=MODS[mat.id].apply(tgt);rm([mat===A?String(idx):String(arg)]);ev(G,'seen','find',msg,{imp:1});return true;}
     const eq=idx==='wep'||arg==='wep';const n=mkItem(out);const toHand=eq&&IT[out].k==='w';
+    if(out==='firebomb'){const src=[A,B].find(x=>x.id==='molotov');if(src)n.u=Math.max(1,Math.min(IT.firebomb.uses,src.u));}
     if(!toHand&&!fits([A,B],[n]))return false;
     rm([idx,arg]);if(toHand&&!me.wep)me.wep=n;else addToBag(me,n);
     ev(G,'seen','find',`${JS.wa(IT[A.id].n)} ${JS.eul(IT[B.id].n)} 합쳐 ${JS.eul(IT[out].n)} 만들었다.`,{imp:1});return true;
@@ -3007,11 +3010,11 @@ function renderLatest(){
   const list=G.log.filter(e=>e.n>=G.turnStart&&visible(e));
   $('latest').innerHTML=`<h3>방금 일어난 일 <span class="label">${M.clock(G.t).hm}</span></h3><div class="feed">${list.length?list.map(e=>evHTML(e,false)).join(''):'<p class="empty">이동하거나, 둘러보거나, 쉬면 시간이 흐른다.</p>'}</div>`;
 }
-const MAT_DESC={nail:'각목, 야구방망이, 너클에 박으면 더 센 무기가 된다',whetstone:'베는 무기의 날을 세운다 (공격 +5, 두 번까지)',powder:'유리병에 채우면 화약병이 된다',
+const MAT_DESC={nail:'각목, 야구방망이, 너클에 박으면 더 센 무기가 된다',whetstone:'베는 무기의 날을 세운다 (공격 +5, 두 번까지)',powder:'유리병에 채우면 화약병 · 구리선을 감으면 사제 폭탄 · 쇠공에 채우면 쇠구슬 폭탄 · 화염병에 섞으면 소이 화염병',
   tape:'무기 손잡이에 감으면 공격 +2, 옷이나 보호구에 감으면 내구 +10 · 유리조각, 골판지, 잡지, 냄비와 합쳐 만들 수도 있다',
   chain:'각목과 합치면 철퇴, 다른 둔기에 감으면 공격 +4',magazine:'옷 안에 덧대면 방어 +2 (두 번까지) · 청테이프와 합치면 팔토시',
   cardboard:'청테이프와 합치면 갑옷, 밧줄과 합치면 정강이대',sewkit:'해진 옷이나 보호구의 내구를 가득 채운다',
-  steelplate:'옷에 덧대면 방어 +4, 보호구에 덧대면 방어 +3',rope:'돌멩이와 합치면 투석끈, 냄비를 머리에 묶으면 투구, 골판지를 묶으면 정강이대',
+  steelplate:'옷에 덧대면 방어 +4, 보호구에 덧대면 방어 +3 · 너클에 덧대면 쇠 너클',rope:'돌멩이와 합치면 투석끈, 냄비를 머리에 묶으면 투구, 골판지를 묶으면 정강이대',
   pot:'청테이프나 밧줄로 머리에 고정하면 투구가 된다'};
 const modTags=it=>(it.mods&&it.mods.length)?' · '+[...new Set(it.mods)].map(k=>{const n=it.mods.filter(x=>x===k).length;return M.MODTAG[k]+(n>1?' x'+n:'');}).join(', '):'';
 const defTxt=it=>`방어 ${M.IT[it.id].def}${it.b?`+${it.b}`:''}`;
@@ -3022,7 +3025,7 @@ function itemMeta(it){const d=M.IT[it.id];
   if(d.k==='am')return `${M.gunsFor(it.id).map(g=>M.IT[g].n).join('·')}에 채워 쓴다 · ${it.u}${M.AMMO_UNIT[it.id]}`;
   if(it.id==='glass')return `숨겨 두면 밟은 사람이 다친다 · ${d.trap} 피해 · 올무나 청테이프와 합칠 수 있다`;
   if(d.k==='a')return `옷 · ${defTxt(it)} · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
-  if(d.k==='g')return `보호구 · ${defTxt(it)} · ${M.PROTN[d.prot]} 부상을 막는다 · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
+  if(d.k==='g')return `보호구 · ${defTxt(it)} · ${M.PROTN[d.prot]} 부상을 막는다${d.flee?` · 싸움에서 도망칠 확률 +${Math.round(d.flee*100)}%`:''} · 내구 ${it.d}/${M.maxDur(it)}${modTags(it)}`;
   if(d.k==='b')return `가방 · 칸 +${d.cap}`;
   if(d.k==='f')return `스태미나 +${d.st}`;
   if(d.k==='h')return `체력 +${d.hp}${d.cure===1?' · 부상 하나 치료':d.cure?' · 부상 모두 치료':''}`;
@@ -3033,6 +3036,7 @@ function itemMeta(it){const d=M.IT[it.id];
   if(it.id==='nipper'&&G&&G.c[0].tb)return G.c[0].freed?'밴드를 끊을 수 있다 · 만난 애들에게 말을 걸어 풀어 준다':G.c[0].bandKnow?'밴드를 끊을 수 있다 · 내 밴드부터':'철사나 전선을 끊는 공구 · 밴드 구조를 알면 쓸 데가 있다';
   if(it.id==='nipper')return G&&G.escapeKnown?'밴드를 끊을 수 있다 · 전입생과 함께 선착장이나 방파제로':'철사나 전선을 끊는 공구';
   if(it.id==='radio'&&G&&(G.c[0].radioKnow||G.c[0].club==='broadcast'))return '건전지만 넣으면 살릴 수 있다 · 고치면 등대 같은 탁 트인 곳에서 구조를 부른다';
+  if(it.id==='wire')return '무전기를 고치는 데 쓰인다 · 화약에 감으면 사제 폭탄이 된다';
   if(d.k==='p')return '무전기를 고치는 데 쓰인다';
   return '';}
 function renderInv(){
