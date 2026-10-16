@@ -688,7 +688,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.16-a</p>
+      <p class="build">BUILD 2026.10.16-b</p>
     </section>
   </div>
 </section>
@@ -1394,6 +1394,7 @@ function kimEncounter(G,pe){const k=kimOf(G),me=G.c[0];if(!k)return {pe};
   return {pe};}
 function kimBreak(G,k){if(k.glitch)return;k.glitch=1;k.name=KIM.glitch;if(G.loop)G.loop.broken=1;}
 function noiseLine(was){return was?`눈앞에 마주한, ${was}${jong(was)?'이었던':'였던'} 사람의 몸이 노이즈처럼 까맣게 튀기 시작했다.`:'눈앞의 몸이 노이즈처럼 까맣게 튀기 시작했다.';}
+function teamBothAlive(G){return !!(G.team&&G.team.length===2&&G.team.every(id=>G.c[id]&&G.c[id].alive));}
 function trioOK(G){const me=G.c[0];return !!(G.loop&&G.team&&G.team.length===2&&G.team.every(id=>G.c[id].alive&&isMyComp(G,id)&&G.c[id].loc===me.loc));}
 function canJoinTeam(G,n){const me=G.c[0];return !!(G.loop&&n&&n.team&&G.teamNPC&&n.alive&&me.alive&&!isMyComp(G,n.id)&&myComps(G).every(id=>G.c[id].team));}
 function joinTeam(G,n){const me=G.c[0];const tm=G.team.map(id=>G.c[id]);G.trio=G.team.slice();
@@ -1451,7 +1452,7 @@ function giveUp(G,will){if(!canGiveUp(G))return false;const me=G.c[0];if(typeof 
   ev(G,'seen','inner',tx,{imp:1});kill(G,me,null,'giveup');checkEnd(G);return true;}
 /* 시우 판에서 판이 끝나려 할 때: 진짜 결말이 아니면 다시 강당으로 */
 function loopTrue(G){const r=G.result||{},me=G.c[0];if(G.loop.final==='giveup')return true;
-  if(G.phase==='end'&&me.alive&&(r.type==='friends'||(r.type==='rescue'&&G.rescueTrio)))return true;return false;}
+  if(G.phase==='end'&&me.alive&&(r.type==='friends'||(r.type==='rescue'&&teamBothAlive(G))))return true;return false;}
 function loopGate(G){if(!G||!G.loop)return false;if(G.phase==='loop')return true;if(G.phase!=='dead'&&G.phase!=='end')return false;if(loopTrue(G))return false;
   const me=G.c[0],r=G.result||{};let why,how;
   if(!me.alive){const k=me.killer!=null?G.c[me.killer]:null;
@@ -2587,7 +2588,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2645,7 +2646,7 @@ const ENDINGS=[
  ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['unband','밴드를 연 사람','누군가 밴드를 여는 법을 알아낸다'],['pact','끝까지 손을 들지 않았다','마지막까지 남은 이들이 서로를 해치지 않는다'],
  ['d_bestie','등 뒤의 칼끝','가장 믿었던 사람에게…'],['d_hunter','작년의 우승자','사냥꾼 전입생에게 쓰러진다'],['d_poison','이상한 맛','독이 든 것을 먹는다'],
  ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','안개를 건너온 사람','아주 드물게, 섬 밖에서 누군가 온다'],
- ['d_giveup','포기한다','스스로 걸음을 멈춘다'],['loop_giveup','멈춘 아침','되풀이되는 아침을 스스로 끝낸다'],['loop_radio','셋이 부른 배','되풀이 속에서, 셋이 함께 무전으로 구조를 부른다'],['loop_friends','널 구하러 왔어','되풀이 너머에서 누군가 온다']];
+ ['d_giveup','포기한다','스스로 걸음을 멈춘다'],['loop_giveup','멈춘 아침','되풀이되는 아침을 스스로 끝낸다'],['loop_radio','셋이 부른 배','되풀이 속에서, 한성백·신수아와 함께 구조선에 오른다'],['loop_friends','널 구하러 왔어','되풀이 너머에서 누군가 온다']];
 function endingKey(){const me=G.c[0],r=G.result||{};
   if(G.loop){if(G.loop.final==='giveup')return 'loop_giveup';if(r.type==='friends')return 'loop_friends';if(r.type==='rescue')return 'loop_radio';}
   if(r.pact&&r.pact.includes(0))return 'pact';
@@ -2929,7 +2930,7 @@ function swBox(){const me=G.c[0];if(!G.loop||!me.alive||!G.teamNPC||!G.teamKnown
   const ck=(ok,t)=>`<span class="${ok?'ok':'no'}"><span class="sr">${ok?'됨':'아직'}: </span>${t}</span>`;
   const ps=[me,...M.myComps(G).map(id=>G.c[id]).filter(c=>c.team)];const has=id=>ps.some(m=>m.inv.some(x=>x.id===id));const tm=G.team.map(id=>G.c[id]);
   return `<div class="escbox"><b>셋이 무전기</b>${has('fixedradio')?ck(true,'고친 무전기'):`${ck(has('radio'),'고장난 무전기')}${ck(has('battery'),'건전지')}${me.radioKnow?ck(true,'구리선 <small>· 없어도 된다</small>'):ck(has('wire'),'구리선')}`}${tm.map(c=>ck(c.alive&&M.isMyComp(G,c.id),`${esc(c.name)} 동행${c.alive?'':' <small>· 쓰러짐</small>'}`)).join('')}
-    <span class="note">${tm.some(c=>!c.alive)?'둘 중 하나가 쓰러졌다. 이번 회차에는 셋이 함께 부를 수 없다.':'셋 가방에 부품이 다 모이면 둘이 고친다. 무전을 칠 땐 셋이 함께 있어야 한다.'}</span></div>`;}
+    <span class="note">${tm.some(c=>!c.alive)?'둘 중 하나가 쓰러졌다. 이번 회차에는 셋이 함께 배에 오를 수 없다.':'셋 가방에 부품이 다 모이면 둘이 고친다. 누가 부르든, 배가 올 때 둘 다 살아 있어야 한다.'}</span></div>`;}
 /* 출석부에 적어 둔 계획: 시작 카드에서 본 내용을 플레이 중에도 펼쳐 볼 수 있게 */
 let planOpen=true;
 function planText(){const me=G.c[0];
@@ -3366,6 +3367,7 @@ function closeModal(){$('modal').hidden=true;}
 function teamReveal(){if(!G.teamNPC||!G.team||G.team.length<2)return '';const[a,b]=G.team.map(id=>G.c[id]);const pair=`${esc(M.JS.wa(a.name))} ${esc(b.name)}`;
   const plan=`${M.JS.eun(pair)} 처음부터 <b>무전기로 구조를 불러 최대한 많이 데리고 나갈 생각</b>이었다.`;
   if(G.loop&&G.rescueTrio)return plan+` 그리고 정말로 시우와 셋이 함께 ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 구조를 불렀다.`;
+  if(G.loop&&G.result&&G.result.type==='rescue'&&!G.rescueBy)return plan+` 구조는 시우가 먼저 불렀지만, 셋은 같은 배에 올랐다.`;
   if(G.rescueBy)return plan+` 그리고 정말로 ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 구조를 불렀다.`;
   const fixed=G.log.some(e=>/무전기를 고쳤다/.test(e.x));
   return plan+(fixed?' 무전기까지는 고쳤지만, 끝내 구조를 부르지 못했다.':' 부품을 다 모으지 못했다.');}
@@ -3406,8 +3408,10 @@ function renderEnd(){
   if(G.loop){const L=G.loop;
     if(L.final==='giveup'){const after=res.type==='npc'?` 그 뒤 섬에 마지막까지 남은 건 ${M.JS.ida(G.c[res.winner].name)}.`:res.type==='rescue'?` 그 뒤 누군가 부른 배가 남은 ${res.survivors.length}명을 태웠다.`:res.type==='unband'?' 그 뒤 밴드가 풀린 아이들이 작은 배로 섬을 떠났다.':' 그 뒤 섬은 조용해졌다.';
       head='멈춘 아침';sub=`${L.n}번째 아침이었다. 닫힌 구역으로 걸어 들어간 뒤, 다시는 강당에서 눈을 뜨지 않았다.${after}`;}
-    else if(res.type==='rescue'){const s=res.survivors.map(id=>G.c[id]);head='셋이 부른 배';
-      sub=`${L.n}번째 아침. ${G.team.map(id=>G.c[id].name).join(', ')}, 그리고 나. 셋이 ${M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n}에서 부른 배가 ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}. 멀어지는 섬을 끝까지 보고 있었다. 눈을 깜빡여도, 강당은 다시 보이지 않았다.`;}
+    else if(res.type==='rescue'){const s=res.survivors.map(id=>G.c[id]);const pl=M.AREAS[G.rescueLoc!=null?G.rescueLoc:1].n;const tn=G.team.map(id=>G.c[id].name);
+      const who=G.rescueTrio?`${tn.join(', ')}, 그리고 나. 셋이 ${pl}에서 부른 배가`:G.rescueBy?`${M.JS.wa(tn[0])} ${M.JS.i(tn[1])} ${pl}에서 부른 배가`:`내가 ${pl}에서 부른 배가`;
+      head=G.rescueTrio?'셋이 부른 배':'셋이 함께 탄 배';
+      sub=`${L.n}번째 아침. ${who} ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.${G.rescueTrio?'':` ${M.JS.wa(tn[0])} ${M.JS.i(tn[1])} 나란히 뱃전에 서 있었다.`} 멀어지는 섬을 끝까지 보고 있었다. 눈을 깜빡여도, 강당은 다시 보이지 않았다.`;}
     else if(res.type==='friends')sub=`${L.n}번째 아침. `+sub;}
   const kick=G.loop&&G.loop.final==='giveup'?'LOOP ENDED':me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED',unband:'ESCAPED',police:'RESCUED',friends:'RESCUED'}[res.type]||'SURVIVED'):'ELIMINATED';
   const lived=me.alive?G.t:me.deathT;
