@@ -594,6 +594,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
 .pc.pro i{color:var(--green)}.pc.con i{color:var(--red)}
 .pcl{margin-top:4px}
 .preset-msg{margin:6px 0 0;font-size:13px;color:var(--green);line-height:1.5}
+.mind-bad{color:var(--red)}
 .chip.cond-good{color:var(--green);border-color:var(--green)}.chip.cond-bad{color:var(--red);border-color:var(--red)}
 /* 포기한다 · 되풀이 메모 · 깨진 이름 */
 .make-msg{margin:10px 0 0;padding:8px 12px;border:1.5px solid var(--red);color:var(--red);background:var(--paper-2);font-size:14px;line-height:1.6}
@@ -698,7 +699,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.16-e</p>
+      <p class="build">BUILD 2026.10.16-f</p>
     </section>
   </div>
 </section>
@@ -1243,6 +1244,24 @@ const KIM_TELLS=[n=>`${JS.eun(n)} 눈을 한 번도 깜빡이지 않는다.`,n=>
 const SW_FRIENDS=['범원','한윤희','지원우','백나루'];
 /* 넷이 데리러 올 확률: 처음엔 아주 낮고 회차가 쌓일수록 오른다 */
 const friendsP=n=>Math.min(.4,.03+.04*(n-1));
+/* 회차가 쌓일수록 시우의 마음이 닳는다. 0: 1회차, 1: 2~3, 2: 4~6, 3: 7~10, 4: 11~15, 5: 16~ */
+function mindStage(n){return n>=16?5:n>=11?4:n>=7?3:n>=4?2:n>=2?1:0;}
+const YI='ꊐꊑꊒꊓꊔꊕꊖꊗꊘꊙꊚꊛꊜꊝꊞꊟꊠꊡꊢꊣ';
+const JL='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ',JV='ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ',JT=['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function rndOf(seed){let a=(seed>>>0)||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+/* 글자가 깨진다: 한글 일부를 김백윤의 이름처럼 낯선 글자로, 일부는 자모로 흩어지게 */
+function crack(s,p,rnd,pj){rnd=rnd||R;let o='';for(const ch of String(s)){const c=ch.charCodeAt(0);
+    if(c>=0xAC00&&c<=0xD7A3){const r=rnd();if(r<p){o+=YI[Math.floor(rnd()*YI.length)];continue;}if(pj&&r<p+pj){const k=c-0xAC00;o+=JL[Math.floor(k/588)]+JV[Math.floor((k%588)/28)]+JT[k%28];continue;}}o+=ch;}return o;}
+const WAKE=[null,
+ [n=>`또 이 강당이다. ${n}번째 아침.`,n=>`눈을 떴다. 천장 스피커, 손목의 밴드, 같은 얼굴들. ${n}번째다.`,n=>`${n}번째 아침이다. 이번엔 다르게 해 본다.`],
+ [n=>`${n}번째 아침. 천장 스피커의 얼룩 모양까지 외워 버렸다.`,n=>`${n}번째. 손목의 밴드가 익숙하다. 그게 더 무섭다.`,n=>`눈을 뜨기 전부터 알았다. 또 강당이다. ${n}번째.`],
+ [n=>`${n-1}번째… 아니, ${n}번째. 세는 손가락이 자꾸 엇갈린다.`,n=>`누가 먼저 말을 걸지, 누가 먼저 울지 다 안다. ${n}번째 아침.`,n=>`어젯밤 일인지 몇 번 전 일인지 헷갈린다. ${n}번째.`],
+ [n=>`또 이 강당이다. 또. 또. ${n}번째 아침.`,n=>`${n}번째. 아니면 그보다 많이. 반 애들 얼굴이 하나로 번져 보인다.`,n=>`아침이 또 온다. 아침이 또 온다. 아침이`],
+ [n=>`몇 번째 아침인지 모른다. 세는 걸 그만뒀다.`,n=>`강당. 강당. 강당. 강당.`,n=>`눈을 떴다. 또다. 또다. 또다.`]];
+const MIND=['방금 그 말, 저번에도 들었다. 토씨 하나 안 틀리고.','누가 내 이름을 부르면 대답이 한 박자 늦는다. 어느 회차의 나를 부르는 건지 몰라서.','손이 떨린다. 언제부터였는지 기억나지 않는다.',
+ '모르는 척 웃는 게 점점 쉬워진다. 그게 제일 싫다.','이 길로 가면 누가 쓰러져 있는지 안다. 그래도 간다.','꿈인지 회차인지, 경계가 자꾸 흐려진다.','이 얼굴들한테 몇 번이나 처음 인사를 했더라.'];
+function mindLine(G,s){const base=s===0?'':pick(MIND);return s>=5?crack(base,.3,R,.15):s>=4?crack(base,.12,R):base;}
+function wakeLine(n){const s=mindStage(n);const t=pick(WAKE[Math.max(1,s)])(n);return s>=5?crack(t,.28,R,.2):s>=4?crack(t,.12,R):t;}
 const LOOP_WAKE=[n=>`또 이 강당이다. ${n}번째 아침.`,n=>`눈을 떴다. 천장 스피커, 손목의 밴드, 같은 얼굴들. ${n}번째다.`,n=>`${n}번째 아침이다. 이번엔 다르게 해 본다.`];
 const LOOP_FORE=['안개 너머에서 누가 내 이름을 부른 것 같았다. 돌아보면 아무도 없다.','아주 멀리서 노 젓는 소리가 들렸다가 끊겼다.','시우야, 하고 부르는 소리를 들은 것 같다. 익숙한 목소리였다.'];
 /* 고친 무전기로 구조를 부를 수 있는 곳과 신호가 닿을 확률. 등대가 가장 잘 닿는다 */
@@ -1415,7 +1434,8 @@ function startLoop(G){const L=G.loop,me=G.c[0];
   if(L.radioKnow)me.radioKnow=1;
   G.friends=R()<friendsP(L.n)?{at:ri(20,52)}:null;
   G.fore=!G.friends&&L.n>=2&&R()<.55?{at:ri(12,44)}:null;
-  if(L.n>=2)ev(G,'seen','inner',pick(LOOP_WAKE)(L.n),{imp:1});}
+  if(L.n>=2)ev(G,'seen','inner',wakeLine(L.n),{imp:1});
+  const s=mindStage(L.n);G.mind=s>=3?Array.from({length:s>=4?2:1},()=>ri(6,34)):[];}
 /* 판을 막 만든 직후에만 쓴다: 한 명을 빼고 번호와 id를 당겨 맞춘다 */
 function dropChar(G,i){const gone=G.c[i];if(!gone||gone.me)return;
   G.c.splice(i,1);G.rel.splice(i,1);for(const r of G.rel)r.splice(i,1);
@@ -2492,6 +2512,7 @@ function finishTurnRest(G){
   const me=G.c[0];
   if(policeCheck(G)||friendsCheck(G))return;
   if(G.fore&&G.t===G.fore.at&&me.alive)ev(G,'heard','heard',pick(LOOP_FORE),{imp:1});
+  if(G.loop&&G.mind&&G.mind.includes(G.t)&&me.alive)ev(G,'seen','inner',mindLine(G,mindStage(G.loop.n)),{imp:1});
   if(G.rescueT!=null&&me.alive&&G.t>=G.rescueT+4){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
     ev(G,'seen','heart','안개를 가르고 배 한 척이 다가왔다. 아직 숨이 붙어 있던 모두가 그 배에 올랐다.',{imp:1});return;}
   if(G.t%BCAST===0)broadcast(G);
@@ -2638,7 +2659,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={presetFor,COND,applyMine,gunsFor,EMPTY_HIT,teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={mindStage,crack,rndOf,presetFor,COND,applyMine,gunsFor,EMPTY_HIT,teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2863,11 +2884,20 @@ function enterGame(){
 /* 성시우: 판이 끝나도 다시 강당에서 눈을 뜬다 */
 function openLoop(){const L=G.loop;if(!L)return;const dlg=$('dlg');dlg.classList.remove('fightdlg','deathdlg');dlg.classList.add('deathdlg','loopdlg');
   const m=L.memo[L.memo.length-1];
-  dlg.innerHTML=`<p class="kick dead">${L.n}회차</p><p class="label" style="margin:-8px 0 0">${m?M.clock(m.t).s+' · '+esc(M.AREAS[m.loc].n):''}</p><h2 id="dlg-h">다시, 아침</h2>
+  const s=M.mindStage(L.n),rr=M.rndOf(L.n*7919+13);const cr=(t,p,pj)=>M.crack(t,p,rr,pj);
+  const kick=s>=5?`${cr('몇',1)}회차`:`${L.n}회차`;
+  const h2=['다시, 아침','다시, 아침','또, 아침','또 아침',cr('또 아침',.3),cr('아침',0,1)][s];
+  const wake=['…눈을 떴다. 폐교 강당이다. 천장 스피커에서 같은 목소리가 흘러나온다. 손목에는 다시 밴드가 채워져 있다.',
+    '…눈을 떴다. 폐교 강당이다. 천장 스피커에서 같은 목소리가 흘러나온다. 손목에는 다시 밴드가 채워져 있다.',
+    '…눈을 떴다. 또 폐교 강당이다. 천장 스피커에서 같은 목소리가, 같은 단어로 흘러나온다.',
+    '…눈을 떴다. 강당. 같은 목소리. 같은 밴드. 같은 얼굴들. 같은, 같은.',
+    cr('…눈을 떴다. 몇 번을 떠도 똑같은 강당이다. 숨을 고르는 법을 잊어버린 것 같다.',.12),
+    cr('…눈을 떴다 눈을 떴다 눈을 떴다. 강당이다.',.3,.2)][s];
+  dlg.innerHTML=`<p class="kick dead">${esc(kick)}</p><p class="label" style="margin:-8px 0 0">${m?M.clock(m.t).s+' · '+esc(M.AREAS[m.loc].n):''}</p><h2 id="dlg-h"${s>=4?' class="tell"':''}>${esc(h2)}</h2>
    <p style="margin:0">${esc(G.loopWhy||'')}</p>
-   <p style="margin:0">…눈을 떴다. 폐교 강당이다. 천장 스피커에서 같은 목소리가 흘러나온다. 손목에는 다시 밴드가 채워져 있다.</p>
+   <p style="margin:0">${esc(wake)}</p>
    <p class="muted" style="margin:0;font-size:13px">반 애들도, 금지구역이 닫히는 순서도 그대로다. 가방은 처음으로 돌아갔다.${L.radioKnow?' 무전기 고치는 법은 기억한다.':''}</p>
-   <div class="acts"><button class="btn primary" type="button" id="m-loop">다시 눈을 뜬다</button></div>`;
+   <div class="acts"><button class="btn primary" type="button" id="m-loop">${s>=5?esc(cr('다시 눈을 뜬다',.25)):'다시 눈을 뜬다'}</button></div>`;
   $('modal').hidden=false;$('m-loop').focus();
   $('m-loop').onclick=()=>{dlg.classList.remove('loopdlg');G=M.nextLoop(G);saveSoon();closeModal();enterGame();};}
 function doAct(a){if(!G||G.phase!=='act')return;pickMode=null;M.act(G,a);after(true);}
@@ -2993,16 +3023,19 @@ function swBox(){const me=G.c[0];if(!G.loop||!me.alive||!G.teamNPC||!G.teamKnown
 /* 출석부에 적어 둔 계획: 시작 카드에서 본 내용을 플레이 중에도 펼쳐 볼 수 있게 */
 let planOpen=true;
 function planText(){const me=G.c[0];
-  if(G.loop)return '죽어도 끝나지 않는다. 눈을 뜨면 다시 폐교 강당이다. 같은 반, 같은 얼굴들, 같은 순서로 닫히는 금지구역. 가진 물건만 처음으로 돌아간다. 무전기 고치는 법처럼, 한 번 익힌 건 다음에도 기억한다. 멈추는 방법은 아직 하나밖에 모른다.';
+  if(G.loop)return '죽어도 끝나지 않는다. 눈을 뜨면 다시 폐교 강당이다. 같은 반, 같은 얼굴들, 같은 순서로 닫히는 금지구역. 가진 물건만 처음으로 돌아간다. 무전기 고치는 법처럼, 한 번 익힌 건 다음에도 기억한다. 멈추는 방법은 아직 하나밖에 모른다.'+(M.mindStage(G.loop.n)>=3?' 지난 회차들이 점점 뒤섞인다.':'');
   if(me.tb)return '손목 밴드를 세 번 뜯어본다. 처음엔 맨손으로 살펴보고, 이음새를 벌릴 땐 커터칼이나 못, 회로를 짚을 땐 구리선이 있어야 한다. 손이 미끄러지면 밴드가 따끔하게 울리고 소리가 퍼진다. 끊는 법을 알아내고 니퍼를 구하면 내 밴드부터 푼다. 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀린 채로 선착장이나 방파제에 가면 탈출할 수 있고, 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 안다. 건전지만 있으면 등대 같은 탁 트인 곳에서 구조를 부를 수 있다.';
   if(me.team)return '고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 건전지만 구하면 된다. 고친 무전기로 구조를 부르면(등대가 가장 잘 닿고, 북쪽 곶·선착장·방파제도 운이 좋으면 닿는다), 배가 올 때까지 살아 있는 모두가 섬을 떠난다.';
   return '';}
 function planBox(){const t=planText();if(!t)return '';
   if(G.loop){const L=G.loop;const ms=L.memo.slice().reverse();
+    const s=M.mindStage(L.n);const mind=['아직 괜찮다','버틸 만하다','조금씩 닳고 있다','금이 가고 있다',M.crack('부서지고 있다',.3,M.rndOf(L.n*31)),M.crack('부서졌다',.2,M.rndOf(L.n*37),.6)][s];
+    const fade=m=>{const age=L.n-m.n;const p=s>=4&&age>=4?Math.min(.5,(s-3)*.12+age*.02):s>=3&&age>=6?.06:0;return p?M.crack(m.how,p,M.rndOf(m.n*101+L.n)):m.how;};
     return `<details class="plan" id="planbox" ${planOpen?'open':''}><summary>되풀이 <span class="mono">${L.n}회차</span></summary><p>${esc(t)}</p>
+      <p class="memo-k">마음 · <b class="${s>=4?'mind-bad':''}">${esc(mind)}</b></p>
       <p class="memo-k">무전기 고치는 법 · <b>${L.radioKnow?'안다. 건전지만 있으면 된다':'아직 모른다'}</b></p>
       ${L.found&&Object.keys(L.found).length?`<p class="memo-k">손에 넣은 곳</p><ul class="memo">${['radio','battery','wire','nipper'].filter(id=>L.found[id]&&L.found[id].length).map(id=>`<li><b>${esc(M.IT[id].n)}</b> · ${L.found[id].map(i=>esc(M.AREAS[i].n)).join(', ')}</li>`).join('')}</ul>`:''}
-      ${ms.length?`<p class="memo-k">지난 회차</p><ol class="memo">${ms.slice(0,12).map(m=>`<li><span class="mono">${m.n}회차 · ${M.clock(m.t).s}</span> ${esc(M.AREAS[m.loc].n)}. ${esc(m.how)}</li>`).join('')}${ms.length>12?`<li class="muted">그 전의 ${ms.length-12}번은 줄이 너무 많아 다 적지 못했다.</li>`:''}</ol>`:''}</details>`;}
+      ${ms.length?`<p class="memo-k">지난 회차</p><ol class="memo">${ms.slice(0,12).map(m=>`<li><span class="mono">${m.n}회차 · ${M.clock(m.t).s}</span> ${esc(M.AREAS[m.loc].n)}. ${esc(fade(m))}</li>`).join('')}${ms.length>12?`<li class="muted">그 전의 ${ms.length-12}번은 줄이 너무 많아 다 적지 못했다.</li>`:''}</ol>`:''}</details>`;}
   return `<details class="plan" id="planbox" ${planOpen?'open':''}><summary>계획</summary><p>${esc(t)}</p></details>`;}
 /* 이태백: 밴드 풀기 진행 / 누군가 내 밴드를 풀어 줬을 때 */
 function bandBox(){const me=G.c[0];if(!me.alive)return '';
@@ -3511,12 +3544,13 @@ function renderEnd(){
 /* ---------- 시작 ---------- */
 /* 깨진 이름: 화면 어디에 나오든 지지직 튄다 */
 const GLT=M.KIM.glitch;
-function glitchify(root){if(!document.body.textContent.includes(GLT))return;
-  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeValue.includes(GLT)&&!(n.parentElement&&n.parentElement.closest('.glitch,textarea,script,style'))?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+const YIRUN=/[\uA000-\uA48F](?:\s?[\uA000-\uA48F])*/g,YIONE=/[\uA000-\uA48F]/;
+function glitchify(root){
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>YIONE.test(n.nodeValue)&&!(n.parentElement&&n.parentElement.closest('.glitch,textarea,script,style'))?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
   const list=[];while(w.nextNode())list.push(w.currentNode);
-  for(const t of list){const parts=t.nodeValue.split(GLT);const frag=document.createDocumentFragment();
-    parts.forEach((s,i)=>{if(i){const sp=document.createElement('span');sp.className='glitch';sp.dataset.t=GLT;sp.textContent=GLT;frag.appendChild(sp);}if(s)frag.appendChild(document.createTextNode(s));});
-    t.parentNode.replaceChild(frag,t);}}
+  for(const t of list){const v=t.nodeValue;const frag=document.createDocumentFragment();let last=0;v.replace(YIRUN,(mt,at)=>{if(at>last)frag.appendChild(document.createTextNode(v.slice(last,at)));
+      const sp=document.createElement('span');sp.className='glitch';sp.dataset.t=mt;sp.textContent=mt;frag.appendChild(sp);last=at+mt.length;return mt;});
+    if(last<v.length)frag.appendChild(document.createTextNode(v.slice(last)));t.parentNode.replaceChild(frag,t);}}
 {let glPend=false;new MutationObserver(()=>{if(glPend)return;glPend=true;requestAnimationFrame(()=>{glPend=false;glitchify(document.body);});}).observe(document.body,{childList:true,subtree:true,characterData:true});}
 function boot(data){
   if(data&&data.save){try{G=M.migrate(JSON.parse(data.save));enterGame();return;}catch(e){}}
