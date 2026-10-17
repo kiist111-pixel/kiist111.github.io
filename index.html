@@ -75,6 +75,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
 .cover-label .cls{border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:8px 0;font-size:16px;font-weight:700;letter-spacing:.22em}
 .cover-label .tchr{display:flex;align-items:flex-end;gap:10px;font-size:13px}
 .cover-label .blank{flex:1;border-bottom:1px solid #7a7a6c;height:14px}
+.cover-label .blank.on{height:auto;line-height:1.15;font-size:15px;font-weight:700;letter-spacing:.3em;padding:0 0 1px}
 .logo{margin:-70px 0 0;position:relative;transform:rotate(-9deg);border:5px double var(--red);color:var(--red);padding:10px 16px 8px;font-weight:900;font-size:34px;line-height:.98;letter-spacing:.02em;text-align:center;text-transform:uppercase;mix-blend-mode:multiply;opacity:.95;display:block}
 .logo span{display:block}
 .cover-foot{margin:auto 0 0;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:600;letter-spacing:.4em;color:var(--gold)}
@@ -288,6 +289,7 @@ select{font:inherit;padding:.3em .5em;border:1px solid var(--ink);border-radius:
 .dock-btns #act-chat{border-color:var(--pen);color:var(--pen)}
 .dock-btns #act-escape{background:var(--red);border-color:var(--red);color:var(--on-red);font-weight:800}
 .dock-btns #act-study{border-color:var(--green);color:var(--green)}
+.dock-btns #act-hq{border-color:var(--red);color:var(--red);font-weight:800}
 .bodysec{display:grid;gap:8px;border:1.5px solid var(--ink);padding:10px 12px;background:var(--paper-2)}
 .bodysec .bh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
 .bodysec .bh b{font-weight:800;font-size:16px;text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px}
@@ -631,7 +633,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
         <span class="yr">2026학년도</span>
         <span class="big">출석부</span>
         <span class="cls">제 2 학년 3 반</span>
-        <span class="tchr"><span>담임</span><span class="blank"></span></span>
+        <span class="tchr"><span>담임</span><span class="blank" id="cover-tchr"></span></span>
       </div>
       <h1 id="t-h" class="logo"><span>Last</span> <span>Roll Call</span></h1>
       <p class="cover-foot"><span>수학여행 셋째 날</span><span>물안개섬</span></p>
@@ -699,7 +701,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
           </div>
         </div>
       </div>
-      <p class="build">BUILD 2026.10.16-h</p>
+      <p class="build">BUILD 2026.10.17-a</p>
     </section>
   </div>
 </section>
@@ -823,6 +825,7 @@ h2.tell{animation:tell 4.7s steps(1) infinite}
         <button class="btn" type="button" id="act-loot" hidden><span class="lg">소지품 </span>뒤지기</button>
         <button class="btn" type="button" id="act-escape" hidden><span class="lg">함께 </span>탈출</button>
         <button class="btn" type="button" id="act-study" hidden title="손목 밴드를 들여다본다. 한 턴이 지나간다.">밴드 뜯어보기</button>
+        <button class="btn" type="button" id="act-hq" hidden>지하로 <span class="lg">내려간다</span></button>
         <button class="btn" type="button" id="act-chat" hidden>대화하기</button>
         <button class="btn" type="button" id="act-search"><span class="lg">이 자리 </span>둘러보기</button>
         <button class="btn" type="button" id="act-rest"><span class="lg">숨어서 </span>쉬기</button>
@@ -1028,7 +1031,7 @@ const WEARV={w:'손에 쥐었다',a:'걸쳐 입었다',g:'착용했다',b:'둘�
 let UIDN=0;const newUid=()=>Math.floor(R()*2e9).toString(36)+(++UIDN).toString(36);
 function mkItem(id,pc){const d=IT[id];return {id,uid:newUid(),u:d.k==='am'?d.n0:(d.uses||0),d:d.dur||0,p:(pc&&(d.k==='f'||d.k==='h')&&R()<pc)?1:0,by:null,pk:0};}
 function migrate(G){
-  if(G.police===undefined)G.police=null;if(G.tbteam===undefined)G.tbteam=null;
+  if(G.police===undefined)G.police=null;if(G.tbteam===undefined)G.tbteam=null;if(G.hq===undefined)G.hq=null;if(G.watch===undefined)G.watch=null;
   if(!G.ev)G.ev={plan:[],drop:null,fog:0,bounty:null};
   if(G.team===undefined){G.team=[];G.teamNPC=false;G.rescueBy=null;}
   if(G.couples&&G.couples.length&&G.rel)loyalize(G);
@@ -1237,6 +1240,60 @@ const POLICE={for:'재윤아',name:'오윤수',chance:.05,from:20,to:52};
    이소호가 팀장. 소호는 "이 경장", 천은·최혜진은 평소 "이 경장님"이라 부르지만, 찾으며 외칠 때는 소호 "이 경장!", 천은 "이태백!", 혜진 "이태백 씨!".
    배에서 기다리는 삼촌 금천규(서울경찰청 총경)는 "태백아!" */
 const TBTEAM={for:'이태백',lead:'이소호',crew:['천은','최혜진'],uncle:'금천규',chance:.05,from:20,to:52};
+/* 예찬: 방송 목소리. 폐교 지하 방송실에 있다. 공적인 방송은 존댓말, 1:1은 반말("그런 건가." "그렇군." "그러도록 하지.").
+   고저가 없고 물음표·느낌표를 거의 쓰지 않는다. 화학 교사, 다트는 늘 가운데에 꽂힌다. 캬라멜 마끼아또, 청포도 사탕, 말보로 라이트 골드.
+   방송실은 폐교(첫 방송에 늘 닫힌다) 아래라서, 밴드가 멎었거나 풀린 사람만 내려갈 수 있다 */
+const YC={name:'예 찬',loc:5,dealN:2,keep:.25};
+/* 유령: 폐교가 닫히는 순간 거기 남아 있으면 보통은 밴드가 울리지만, 가끔 울리다 멎는다. 주최측 명단에서는 죽은 사람이 된다.
+   반 애들 중에도 겁에 질려 강당을 못 떠나는 애가 가끔 있다 */
+const GHOST={p:.1,freezeSosim:.05,freeze:.01};
+/* 이태백: 밴드를 뜯다 실패하면 경고음이 울리고, 그때마다 주최측 눈에 띌 확률이 쌓인다 */
+const WATCHN=['아직 모른다','예의주시','수상하다','잡아라'];
+const WATCH_UP=[null,'밴드 안쪽에서 아주 작게 딸깍, 소리가 났다. 어딘가에 기록이 남은 것 같다.','천장 스피커가 잠깐 지직거렸다. 누군가 이쪽을 찾고 있다.','밴드 불빛이 한 번, 길게 깜빡였다. …들켰다.'];
+const YC_SAY=['방송입니다. 받아 적으세요.','다들 부지런하네요. 계속 그렇게 하면 됩니다.','당이 떨어지네요. 짧게 하겠습니다.','한 번만 말합니다. 놓친 건 본인 책임입니다.','시간 맞춰 움직이세요. 늦으면 그걸로 끝입니다.','생각보다 오래들 버티네요.','조용히 끝내겠습니다. 저도 피곤하니까요.'];
+const YC_NIGHT=['밤입니다. 자 두는 편이 좋을 겁니다. 일어날 수 있다면요.','늦었네요. 저는 커피를 한 잔 더 하겠습니다.'];
+function hqState(G){return G.hq||(G.hq={known:0,met:0,deal:null,fails:0,expose:0});}
+function watchState(G){return G.watch||(G.watch={fails:0,stage:0,said:0,detT:null});}
+function ghostHidden(c){return !!(c&&c.ghost&&!c.exposed);}
+function registered(G){return G.c.filter(c=>c.alive&&!ghostHidden(c));}
+function shownAlive(G){return G.c.filter(c=>c.alive&&(c.me||!ghostHidden(c)||c.ghostSeen)).length;}
+function unfreedComps(G){return myComps(G).map(id=>G.c[id]).filter(c=>c.alive&&!c.freed);}
+function canEnter(G,c,i){return G.zones[i]!==2||(!!c.freed&&(!!c.ghost||(i===YC.loc&&!!hqState(G).known)));}
+function canMoveTo(G,i){const me=G.c[0];if(!neighbors(me.loc).includes(i))return false;if(G.zones[i]!==2)return true;return canEnter(G,me,i)&&!unfreedComps(G).length;}
+function canHQ(G){const me=G.c[0];return G.phase==='act'&&me.alive&&!!me.freed&&me.loc===YC.loc&&G.zones[YC.loc]===2&&!!hqState(G).known&&!unfreedComps(G).length;}
+function hqComps(G){const me=G.c[0];return myComps(G).map(id=>G.c[id]).filter(c=>c.alive&&c.loc===me.loc);}
+function hqOdds(G){const me=G.c[0],H=hqState(G);return clamp(.1+(power(me)-40)/100+hqComps(G).length*.13+(me.hp/me.mhp)*.1-H.fails*.08+(me.tb?.05:0),.08,.85);}
+function dealLeft(G){const D=G.hq&&G.hq.deal;if(!D||D.done)return null;return {got:Math.max(0,G.c[0].kills-D.k0),need:D.need,left:D.until-G.t};}
+function ghostify(G,c){c.freed=1;c.freedBy=c.id;c.ghost=1;c.frozen=0;G.deathsSince.push(c.id);G.lastDeathT=G.t;
+  if(c.me){hqState(G).known=1;ev(G,'seen','heart','손목 밴드가 날카롭게 울렸다. …울리다가, 멎었다. 불빛이 꺼졌다. 발밑, 강당 마룻바닥 아래에서 방송 목소리가 울린다. 이 아래에 누가 있다.',{imp:1});}
+  else ev(G,'hidden','heart',`${c.name}의 밴드가 울리다 멎었다.`,{imp:1});}
+function ghostAct(G,c){
+  if(c.st<22){restChar(G,c);return;}
+  const nb=neighbors(c.loc).filter(i=>G.zones[i]===2);
+  if((G.zones[c.loc]!==2||R()<.2)&&nb.length){moveChar(G,c,pick(nb));return;}
+  if(R()<.5)restChar(G,c);else searchArea(G,c);}
+function watchBump(G){const W=watchState(G);W.fails++;if(W.stage<3&&R()<Math.min(.85,.2+.15*W.fails)){W.stage++;ev(G,'seen','warn',WATCH_UP[W.stage],{imp:1});}}
+function exposeMe(G){const me=G.c[0];me.exposed=1;const E=evState(G);if(E.bounty&&!E.bounty.done)E.bounty.done=1;E.bounty={id:0,until:G.t+BCAST,done:0};}
+function hqEnter(G){const H=hqState(G);G.pending={type:'hq',first:H.met?0:1};H.met=1;G.phase='pending';}
+function hqResolve(G,p,choice){const me=G.c[0],H=hqState(G);
+  if(choice==='attack'){const comps=hqComps(G);
+    if(R()<hqOdds(G)){
+      for(const c of G.c)if(c.alive&&!c.freed){c.freed=1;c.freedBy=me.id;}
+      const surv=G.c.filter(c=>c.alive).map(c=>c.id);
+      if(me.tb){G.result={type:'arrest',survivors:surv};ev(G,'seen','heart','예찬의 팔을 꺾어 책상에 눌렀다. 그는 버티지 않았다. 풀어 두었던 밴드 하나를 그의 손목에 채웠다.',{q:'…그렇군. 그러도록 하지.',imp:1});}
+      else{G.result={type:'hq',survivors:surv};ev(G,'seen','heart','예찬이 의자째 쓰러졌다. 콘솔의 스위치를 하나씩 내리자 모니터 속 밴드 불빛이 꺼져 갔다.',{imp:1});}
+      G.phase='end';G.pending=null;G.combat=null;return;}
+    H.fails++;H.expose=1;
+    const dmg=Math.round(me.mhp*rf(.35,.6));me.hp-=dmg;
+    for(const c of comps){c.hp-=Math.round(c.mhp*rf(.2,.45));if(c.hp<=0)kill(G,c,null,'yechan');}
+    if(me.hp<=0){kill(G,me,null,'yechan');return;}
+    ev(G,'seen','warn',`다트가 날아와 박혔다. 늘 그렇듯 가운데였다. 체력 -${dmg}. 계단 위로 굴러 나왔다.`,{q:'다음엔 노크하도록.',imp:1});return;}
+  if(choice==='deal'&&!me.tb&&!H.deal){const tb=turnsToBcast(G);H.deal={k0:me.kills,need:YC.dealN,until:G.t+tb+(tb<6?BCAST:0),done:0};
+    ev(G,'seen','heart','살려 달라고 했다. 예찬은 한참 아무 말이 없었다.',{q:'그런 건가. …두 명. 다음 방송까지. 해 오면 생각해 보지. 그렇게 하도록.',imp:1});return;}
+  if(choice==='report'){const D=H.deal;if(!D||D.done||me.kills-D.k0<D.need)return;D.done='report';
+    if(R()<YC.keep){G.result={type:'deal'};G.phase='end';G.pending=null;ev(G,'seen','heart','예찬은 한참 나를 보다가 고개를 돌렸다.',{q:'…귀찮군. 가. 선착장에 배가 하나 있어. 다시는 보지 말도록.',imp:1});return;}
+    ev(G,'seen','heart','예찬이 책상 위의 컵 하나를 밀어 주었다. 캬라멜 마끼아또였다. 아직 따뜻했다.',{q:'수고했어. 마셔.',imp:1});kill(G,me,null,'macchiato');return;}
+  ev(G,'seen','move','계단을 다시 올라왔다. 등 뒤에서 철문이 닫혔다.');}
 /* 성시우: 죽어도 끝나지 않는다. 같은 반, 같은 순서로 닫히는 금지구역으로 처음부터 다시 시작한다. 가진 물건은 처음 것만.
    끝내는 길은 셋: 스스로 멈추기(포기한다), 한성백·신수아와 셋이 함께 무전으로 구조 부르기, 범원·한윤희·지원우·백나루가 데리러 오기.
    그 밖의 결말(우승, 혼자 부른 배, 밴드 풀고 탈출 등)은 모두 다시 강당으로 돌아간다 */
@@ -1416,6 +1473,7 @@ function newGame0(o){
   ev(G,'radio','radio','',{imp:1,data:{first:1,time:clock(0).hm,closed:[],next:G.zones.map((z,i)=>z===1?i:-1).filter(i=>i>=0),dead:[],alive:G.c.length,transfer:G.transferId,pair:teamNPC?G.c.filter(c=>TEAMN.includes(c.name)).map(c=>c.id):null}});
   rollCond(G,me,true);
   if(meTB)ev(G,'seen','inner','교복 깃이 자꾸 목에 걸린다. 어째 학생이었던 적이 한 번도 없었던 것만 같은 기분이다.',{imp:1});
+  for(const c of G.c)if(!c.me&&!c.special&&!c.transfer&&!c.team&&!c.kim&&!c.tb&&c.id!==G.bestie&&R()<(c.pers==='sosim'?GHOST.freezeSosim:GHOST.freeze)){c.frozen=1;c.loc=YC.loc;}
   G.turnStart=0;
   return G;
 }
@@ -1522,9 +1580,12 @@ function loopTrue(G){const r=G.result||{},me=G.c[0];if(G.loop.final==='giveup')r
 function loopGate(G){if(!G||!G.loop)return false;if(G.phase==='loop')return true;if(G.phase!=='dead'&&G.phase!=='end')return false;if(loopTrue(G))return false;
   const me=G.c[0],r=G.result||{};let why,how;
   if(!me.alive){const k=me.killer!=null?G.c[me.killer]:null;
-    how=me.cause==='band'?'손목 밴드가 울렸다.':me.cause==='trap'?(k?`${k.name}의 덫에 걸렸다.`:'덫에 걸렸다.'):me.cause==='poison'?'독이 든 것을 먹었다.':(k?`${k.name}에게 쓰러졌다.`:'쓰러졌다.');why=how;}
+    how=me.cause==='band'?'손목 밴드가 울렸다.':me.cause==='trap'?(k?`${k.name}의 덫에 걸렸다.`:'덫에 걸렸다.'):me.cause==='poison'?'독이 든 것을 먹었다.':me.cause==='yechan'?'방송실에서 예찬의 다트에 쓰러졌다.':me.cause==='macchiato'?'예찬이 건넨 캬라멜 마끼아또를 마셨다.':me.cause==='remote'?'주최측이 밴드를 터뜨렸다.':(k?`${k.name}에게 쓰러졌다.`:'쓰러졌다.');why=how;}
   else if(r.type==='win'){why='섬에 남은 건 나 하나뿐이었다. 손목의 밴드가 딸깍, 하고 풀렸다.';how='혼자 남았다. 그래도 돌아왔다.';}
   else if(r.type==='rescue'){why='구조선에 올랐다. 멀어지는 섬을 보다가, 눈을 한 번 깜빡였다.';how='배에 올랐다. 그래도 돌아왔다.';}
+  else if(r.type==='hq'){why='방송이 끊겼다. 섬이 조용해지는가 싶더니.';how='방송실을 끊었다. 그래도 돌아왔다.';}
+  else if(r.type==='ghost'){why='명단에서 지워진 채로 배를 밀었다. 안개가 걷히는가 싶더니.';how='명단에서 지워졌다. 그래도 돌아왔다.';}
+  else if(r.type==='deal'){why='예찬은 나를 보내 주었다. 선착장의 배에 오르는가 싶더니.';how='거래를 했다. 그래도 돌아왔다.';}
   else if(r.type==='unband'||r.type==='escape'){why='밴드를 바닥에 버리고 작은 배로 섬을 빠져나왔다. 안개가 걷히는가 싶더니.';how='섬을 빠져나갔다. 그래도 돌아왔다.';}
   else{why='섬이 조용해졌다.';how='섬이 조용해졌다. 그래도 돌아왔다.';}
   const lm=G.loop.memo[G.loop.memo.length-1];if(!lm||lm.n!==G.loop.n)G.loop.memo.push({n:G.loop.n,t:me.alive?G.t:me.deathT,loc:me.loc,how});
@@ -1661,11 +1722,12 @@ function canEscape(G){const me=G.c[0];if(!me.alive||!G.escapeKnown||G.transferId
   return h.alive&&isMyComp(G,h.id)&&h.loc===me.loc&&me.inv.some(x=>x.id==='nipper')&&ESCAPE_SPOTS.includes(me.loc)&&G.zones[me.loc]!==2;}
 /* 이태백으로 플레이: 밴드 뜯어보기 → 니퍼로 내 밴드 풀기 → 말을 걸어 다른 애들 밴드 풀어 주기 → 선착장·방파제에서 탈출 */
 function studyBand(G,me){me.st-=5;if(me.st<0)stOver(G,me);const s=me.bandProg||0;
-  if(R()<studyFailP(me)){const dmg=ri(5,9);me.hp-=dmg;G.noise=G.t;ev(G,'seen','warn',STUDY_FAIL_T[s].replace('{d}',dmg),{imp:1});if(me.hp<=0)kill(G,me,null,'band');return;}
+  if(R()<studyFailP(me)){const dmg=ri(5,9);me.hp-=dmg;G.noise=G.t;ev(G,'seen','warn',STUDY_FAIL_T[s].replace('{d}',dmg),{imp:1});if(me.me)watchBump(G);if(me.hp<=0)kill(G,me,null,'band');return;}
   if(s===2){const i=me.inv.findIndex(x=>x.id==='wire');if(i>=0)me.inv.splice(i,1);}
   me.bandProg=Math.min(BAND_STEPS,s+1);
-  const done=me.bandProg>=BAND_STEPS;if(done)me.bandKnow=1;
+  const done=me.bandProg>=BAND_STEPS;if(done){me.bandKnow=1;if(me.me)hqState(G).known=1;}
   ev(G,'seen',done?'heart':'find',STUDY_T[me.bandProg-1],{imp:done?1:0});
+  if(done&&me.me)ev(G,'seen','inner','밴드가 받는 신호는 전부 한곳으로 모인다. 섬 한가운데, 폐교. 강당 바로 아래다.',{imp:1});
   if(!done){const need=studyNeed(me);if(need)ev(G,'seen','inner',me.bandProg===1?'이음새를 벌리려면 커터칼이나 못 같은 게 있어야겠다.':'회로를 짚어 보려면 구리선이 필요하다. 폐광 입구나 방파제에 있을지도 모른다.',{imp:1});}
   if(done)ev(G,'seen','inner',me.inv.some(x=>x.id==='nipper')?'니퍼가 있다. 내 밴드부터 풀 수 있다.':'이제 니퍼만 있으면 된다. 폐광 입구나 마을회관 같은 데라면 하나쯤 굴러다닐 거다.',{imp:1});}
 function canUnband(G,n){const me=G.c[0];return !!n&&n.alive&&!n.me&&!n.freed&&me.alive&&!!me.freed&&canCut(me);}
@@ -1908,6 +1970,8 @@ function tbAct(G,c){
   return false;}
 function npcAct(G,c){
   emergencyUse(G,c);if(!c.alive)return;autoEquip(G,c);
+  if(c.frozen){if(G.t<BCAST&&c.loc===YC.loc&&c.comp==null){restChar(G,c);return;}c.frozen=0;}
+  if(c.ghost&&c.comp==null){ghostAct(G,c);return;}
   if(c.team&&!G.c[0].team&&teamAct(G,c))return;
   if(isTB(c)&&!c.me&&tbAct(G,c))return;
   {const B=bountyOn(G);if(B&&B.id!==c.id&&c.st>=22&&!c.team){const tg=G.c[B.id];const t=G.rel[c.id][tg.id][2];
@@ -1979,6 +2043,8 @@ function encounterPhase(G){
       ev(G,'seen','meet',`${JS.eun(pe.name)} ${JS.eul(INJN[p])} 다친 채였다.`);}}
     const K=kimMet||{};let X=K.mask!=null?G.c[K.mask]:null;if(X&&!X.alive){X=maskFor(G,pe);K.mask=X?X.id:null;}
     if(X){X.met=true;X.seenT=G.t;X.seenLoc=me.loc;}else{pe.met=true;pe.seenT=G.t;pe.seenLoc=pe.loc;}
+    if(pe.ghost&&!pe.ghostSeen&&!X){pe.ghostSeen=1;ev(G,'seen','heart',`${pe.name}… 방송에서 이름이 불렸던 애다. 살아 있었다.`,{imp:1});}
+    if(ghostHidden(me)&&!(X||pe).sawGhost){(X||pe).sawGhost=1;ev(G,'seen','heart',`${(X||pe).name}의 얼굴이 하얗게 질렸다.`,{q:'…너, 방송에서 이름 불렸잖아.',imp:1});}
     if(pe.kim){const was=K.reveal?pe.name:null;if(K.reveal)kimBreak(G,pe);
       if(pFirst){G.pending={type:'meet',who:pe.id};if(X){G.pending.mask=X.id;G.pending.tell=R()<.4?ri(0,KIM_TELLS.length-1):-1;}if(was)G.pending.was=was;G.phase='pending';}
       else{ev(G,'seen','heart',X?`${JS.i(X.name)} 이쪽으로 다가왔다. `+noiseLine(X.name):noiseLine(was),{imp:1});fight(G,pe,me,{ambush:true,head:`${JS.i(pe.name)} 덮쳐 왔다!`});}}
@@ -2268,7 +2334,7 @@ function npcWill(G,v,k){
 }
 function kill(G,v,k,cause){
   if(!v.alive)return;const B0=bountyOn(G);
-  v.alive=false;v.hp=0;v.deathT=G.t;v.killer=k?k.id:null;v.cause=cause;G.deathsSince.push(v.id);G.lastDeathT=G.t;G.order.push(v.id);
+  v.alive=false;v.hp=0;v.deathT=G.t;v.killer=k?k.id:null;v.cause=cause;if(!ghostHidden(v))G.deathsSince.push(v.id);G.lastDeathT=G.t;G.order.push(v.id);
   if(k){k.kills++;if(cause==='fight'){k.exp+=4;levelCheck(G,k,null);}}
   {const B=B0;if(B&&B.id===v.id){B.done=1;if(k&&k.alive){const prize=BOUNTY_PRIZE.map(id=>mkItem(id));
       if(k.me){const kept=[];for(const it of prize){if(bagHasRoom(k,it)){addToBag(k,it);kept.push(IT[it.id].n);}else G.pool[k.loc].push(it);}
@@ -2292,7 +2358,9 @@ function kill(G,v,k,cause){
   const vis=v.me?'seen':visAt(G,v.loc,[v,k].filter(Boolean));
   const tx=cause==='band'?`${v.me?'내':v.name+'의'} 손목 밴드가 날카롭게 울렸다. ${JS.eun(nm(v))} 그대로 쓰러졌다.`:
     cause==='giveup'?`${v.me?'내':v.name+'의'} 손목 밴드가 길게 울렸다. ${JS.eun(nm(v))} 그대로 눈을 감았다.`:
-    cause==='trap'?`${JS.eun(nm(v))} 덫에 걸려 쓰러졌다.`:cause==='poison'?`${JS.eun(nm(v))} 독이 든 것을 먹고 쓰러졌다.`:`${JS.eun(nm(v))} 쓰러졌다.`;
+    cause==='trap'?`${JS.eun(nm(v))} 덫에 걸려 쓰러졌다.`:cause==='poison'?`${JS.eun(nm(v))} 독이 든 것을 먹고 쓰러졌다.`:
+    cause==='yechan'?`다트가 날아와 정확히 꽂혔다. ${JS.eun(nm(v))} 계단에 그대로 쓰러졌다.`:cause==='macchiato'?`캬라멜 마끼아또는 너무 달았다. ${JS.eun(nm(v))} 그대로 눈을 감았다.`:
+    cause==='remote'?`${v.me?'내':v.name+'의'} 손목 밴드가 길게 한 번, 짧게 두 번 울렸다. ${JS.eun(nm(v))} 그대로 쓰러졌다.`:`${JS.eun(nm(v))} 쓰러졌다.`;
   ev(G,vis,'death',tx,{q:will,imp:1,data:{v:v.id}});
   if(vis==='seen'&&k)G.kk[v.id]=k.id;
   if(body&&vis==='seen')body.seen=1;
@@ -2307,7 +2375,8 @@ function kill(G,v,k,cause){
 function act(G,a){
   if(G.phase!=='act')return false;
   const me=G.c[0];if(!me.alive)return false;
-  if(a.type==='move'&&(!neighbors(me.loc).includes(a.to)||G.zones[a.to]===2))return false;
+  if(a.type==='move'&&!canMoveTo(G,a.to))return false;
+  if(a.type==='hq'&&!canHQ(G))return false;
   if(a.type==='loot'&&!bodiesAt(G,me.loc).length)return false;
   if(a.type==='chat'&&!myComps(G).some(id=>G.c[id].alive&&G.c[id].loc===me.loc))return false;
   if(a.type==='study'&&!(me.tb&&!me.bandKnow&&!studyNeed(me)))return false;
@@ -2330,6 +2399,7 @@ function act(G,a){
     G.pending={type:'body',loc:me.loc};G.phase='pending';
   }
   else if(a.type==='study'){studyBand(G,me);}
+  else if(a.type==='hq'){ev(G,'seen','move','강당 무대 옆, 잠긴 줄 알았던 문 아래로 계단이 이어져 있었다. 내려갔다.');hqEnter(G);}
   else if(a.type==='rest'){restChar(G,me);comps.forEach(c=>restChar(G,c));}
   else if(a.type==='chat'){const cs=comps.filter(c=>c.loc===me.loc);const names=cs.map(c=>c.name);
     restChar(G,me,`${names.slice(0,-1).map(x=>x+', ').join('')}${JS.wa(names[names.length-1])} 몸을 기대고 쉬었다.`);cs.forEach(c=>{restChar(G,c);chatWith(G,me,c);});}
@@ -2405,6 +2475,7 @@ function resolve(G,choice){
   const p=G.pending;if(!p||G.phase!=='pending')return;
   if(p.type==='combat'){combatAct(G,choice);return;}
   G.pending=null;G.phase='act';
+  if(p.type==='hq'){hqResolve(G,p,choice);if(G.phase==='act')proceed(G);return;}
   const me=G.c[0];
   if(p.type==='find'||p.type==='loot'||p.type==='body'){
     if(p.type!=='body')pickUp(G,p,choice);
@@ -2558,12 +2629,12 @@ function runEvents(G,next){const E=evState(G),out={};
       const items=[];for(let k=0;k<3;k++){const it=mkItem(wpick(DROP_POOL));it.drop=1;items.push(it);}G.pool[loc].push(...items);E.drop={loc,t:G.t};out.drop=loc;}
     if(pl.kind==='fog'){E.fog=G.t+BCAST;out.fog=1;}
     if(pl.kind==='bounty'){const alive=G.c.filter(c=>c.alive);if(alive.length<4)continue;const me=G.c[0];
-      const tg=me.alive&&R()<.25?me:pick(alive.filter(c=>!c.me));E.bounty={id:tg.id,until:G.t+BCAST,done:0};out.bounty=tg.id;}}
+      const pool=alive.filter(c=>!c.me&&!ghostHidden(c));if(!pool.length)continue;const tg=me.alive&&!ghostHidden(me)&&R()<.25?me:pick(pool);E.bounty={id:tg.id,until:G.t+BCAST,done:0};out.bounty=tg.id;}}
   return out;}
 function broadcast(G){
   const closed=[];
   G.zones.forEach((z,i)=>{if(z===1){G.zones[i]=2;closed.push(i);}});
-  for(const c of G.c)if(c.alive&&G.zones[c.loc]===2){if(c.freed){if(c.me)ev(G,'seen','inner','방송과 함께 이곳이 닫혔다. 다른 손목이었다면 지금쯤 울렸을 거다. 내 손목은 조용하다.',{imp:1});}else kill(G,c,null,'band');}
+  for(const c of G.c)if(c.alive&&G.zones[c.loc]===2){if(c.freed){if(c.me&&closed.includes(c.loc))ev(G,'seen','inner','방송과 함께 이곳이 닫혔다. 다른 손목이었다면 지금쯤 울렸을 거다. 내 손목은 조용하다.',{imp:1});}else if(c.loc===YC.loc&&closed.includes(YC.loc)&&R()<GHOST.p)ghostify(G,c);else kill(G,c,null,'band');}
   let stale=G.t-G.lastDeathT,wipe=false,warn=false;
   if(stale>=30&&G.t>=36){wipe=true;
     const last=G.c.filter(c=>c.alive);
@@ -2574,26 +2645,42 @@ function broadcast(G){
       ev(G,last.some(c=>c.me)?'seen':'hidden','heart',last.length===2?`${JS.wa(nm(last[0]))} ${JS.eun(nm(last[1]))} 끝까지 서로에게 손을 들지 않았다.`:`${last.slice(0,-1).map(nm).join(', ')}, 그리고 ${nm(last[last.length-1])}. 누구도 끝까지 서로에게 손을 들지 않았다.`,{imp:1});}
     for(const c of G.c)if(c.alive&&!c.freed)kill(G,c,null,'band');}
   else if(stale>=18&&G.t>=24)warn=true;
+  const yc={},me0=G.c[0];
+  {const W=G.watch;if(W&&W.detT!=null&&G.t>=W.detT&&me0.alive){W.detT=null;if(me0.freed)yc.freed=1;else{yc.boom=1;kill(G,me0,null,'remote');}}}
   const dead=G.deathsSince.slice();G.deathsSince=[];
   const openN=G.zones.filter(z=>z===0).length;
   /* 시우 판: 금지구역이 닫히는 순서는 회차가 바뀌어도 그대로 */
   const bi=G.t/BCAST;let next;
   if(G.loop&&G.loop.zseq[bi])next=G.loop.zseq[bi].filter(i=>G.zones[i]===0);
   else{next=chooseClosures(G,openN>3?2:1);if(G.loop)G.loop.zseq[bi]=next.slice();}
+  {const W=G.watch;if(W&&W.stage>=2&&!G.loop&&me0.alive&&me0.tb&&G.zones[me0.loc]===0&&me0.loc!==G.finalZone&&!next.includes(me0.loc)){
+    const open=[...Array(16).keys()].filter(i=>G.zones[i]===0);const alt=next.length?next.slice(0,-1).concat(me0.loc):[me0.loc];const rest=open.filter(i=>!alt.includes(i));
+    if(rest.length&&compCount(rest)<=Math.max(1,compCount(open.filter(i=>!next.includes(i))))){next=alt;yc.near=1;}}}
   next.forEach(i=>G.zones[i]=1);
   const evd=runEvents(G,next);
+  {const W=G.watch;if(W&&me0.alive&&me0.tb&&W.stage>W.said){W.said=W.stage;yc.watch=W.stage;if(W.stage===3){W.detT=G.t+BCAST;exposeMe(G);}}}
+  if(yc.freed&&me0.alive)exposeMe(G);
+  {const H=G.hq;if(H&&me0.alive){const D=H.deal;if(D&&!D.done&&G.t>=D.until){D.done='fail';yc.expose='deal';exposeMe(G);}if(H.expose===1){H.expose=2;yc.expose=yc.expose||'hq';exposeMe(G);}}}
+  if(yc.watch===3||yc.expose||yc.freed)delete evd.bounty;
+  yc.sayT=isNight(G.t)&&R()<.5?pick(YC_NIGHT):pick(YC_SAY);
   {const me=G.c[0];if(me.alive){me.exp+=3;levelCheck(G,me,null);rollCond(G,me);}}
-  ev(G,'radio','radio','',{imp:1,data:{time:clock(G.t).hm,closed,next,dead,alive:aliveCount(G),warn,wipe,...evd}});
+  ev(G,'radio','radio','',{imp:1,data:{time:clock(G.t).hm,closed,next,dead,alive:registered(G).length,warn,wipe,...evd,yc}});
   const me=G.c[0];
-  if(me.alive)for(const id of dead){const v=G.c[id];if(G.rel[0][id][0]>=40||G.rel[0][id][2]==='crush'||G.rel[0][id][2]==='bestie')ev(G,'seen','inner',`${v.name}의 이름이 불렸다. 숨이 잘 쉬어지지 않는다.`,{imp:1});}
+  if(me.alive&&dead.includes(0))ev(G,'seen','inner','방송에서 내 이름이 불렸다. 명단에서는 이제 죽은 사람이다.',{imp:1});
+  if(me.alive)for(const id of dead){if(id===0)continue;const v=G.c[id];if(G.rel[0][id][0]>=40||G.rel[0][id][2]==='crush'||G.rel[0][id][2]==='bestie')ev(G,'seen','inner',`${v.name}의 이름이 불렸다. 숨이 잘 쉬어지지 않는다.`,{imp:1});}
 }
 function checkEnd(G){
   if(G.phase==='end'||G.phase==='loop')return true;
   const alive=G.c.filter(c=>c.alive);const me=G.c[0];
   if(me.alive&&alive.length===1){G.result={type:'win',winner:0};G.phase='end';G.pending=null;ev(G,'seen','heart',me.freed?'섬에 남은 건 나 하나뿐이다.':'섬에 남은 건 나 하나뿐이다. 손목의 밴드가 딸깍, 하고 풀렸다.',{imp:1});return true;}
+  if(me.alive&&alive.length>1){const reg=alive.filter(c=>!ghostHidden(c));
+    if(!ghostHidden(me)&&reg.length===1){G.result={type:'win',winner:0,ghosts:alive.filter(c=>!c.me).map(c=>c.id)};G.phase='end';G.pending=null;ev(G,'seen','heart',me.freed?'방송은 내가 마지막이라고 했다.':'방송은 내가 마지막이라고 했다. 손목의 밴드가 딸깍, 하고 풀렸다.',{imp:1});return true;}
+    if(ghostHidden(me)&&reg.length<=1){G.result={type:'ghost',winner:reg.length?reg[0].id:null,survivors:alive.map(c=>c.id)};G.phase='end';G.pending=null;
+      ev(G,'seen','heart',reg.length?`마지막 방송이 부른 이름은 ${JS.ida(reg[0].name)}. 내 이름은 없었다.`:'마지막 방송은 아무도 남지 않았다고 했다. 아무도 나를 세지 않았다.',{imp:1});return true;}}
   if(allFreedEnd(G))return true;
   if(!me.alive){
-    if(alive.length<=1){G.result=alive.length?{type:'npc',winner:alive[0].id}:{type:'none',pact:G.pact||null};if(G.phase!=='dead')G.phase='end';}
+    const reg=alive.filter(c=>!ghostHidden(c)),gh=alive.filter(c=>ghostHidden(c)).map(c=>c.id);
+    if(reg.length<=1){G.result=reg.length?{type:'npc',winner:reg[0].id}:{type:'none',pact:G.pact||null};if(gh.length)G.result.ghosts=gh;if(G.phase!=='dead')G.phase='end';}
     else if(G.phase!=='dead'&&G.phase!=='end')G.phase='dead';
     return true;
   }
@@ -2604,15 +2691,15 @@ function runToEnd(G){
   let guard=0;
   while(!G.result&&guard++<500){
     resetFlags(G);npcPhase(G);
-    if(aliveCount(G)<=1){checkEnd(G);break;}
+    if(registered(G).length<=1){checkEnd(G);if(G.result)break;}
     encounterPhase(G);
-    if(aliveCount(G)<=1){checkEnd(G);break;}
+    if(registered(G).length<=1){checkEnd(G);if(G.result)break;}
     G.t++;companionChecks(G);
     if(policeCheck(G)||tbteamCheck(G))break;
     if(G.rescueT!=null&&G.t>=G.rescueT+4&&aliveCount(G)>0){G.result={type:'rescue',survivors:G.c.filter(c=>c.alive).map(c=>c.id)};G.phase='end';
       ev(G,'hidden','heart','안개를 가르고 배 한 척이 다가왔다. 아직 숨이 붙어 있던 모두가 그 배에 올랐다.',{imp:1});break;}
     if(G.t%BCAST===0)broadcast(G);
-    if(aliveCount(G)<=1||allFreedEnd(G))checkEnd(G);
+    if(registered(G).length<=1||allFreedEnd(G))checkEnd(G);
   }
   if(!G.result){G.result={type:'none',pact:G.pact||null};}
   G.phase='end';
@@ -2673,7 +2760,7 @@ function canFix(me){const has=id=>me.inv.some(x=>x.id===id);if(!has('radio')||!h
 function setFlee(G,m){if(FLEE_TH[m]!=null)G.flee=m;}
 function dismiss(G,id){const me=G.c[0];if(id==null)id=myComps(G)[0];if(!isMyComp(G,id)||G.phase!=='act')return;const m=G.c[id];unpair(G,me,m);changeRel(G,m,me,-10,5);ev(G,'seen','pair',`${JS.wa(m.name)} 따로 움직이기로 했다.`,{imp:1});}
 
-root.MO={TBTEAM,tbteamCheck,mindStage,crack,rndOf,presetFor,COND,applyMine,gunsFor,EMPTY_HIT,teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
+root.MO={YC,GHOST,WATCHN,hqState,watchState,ghostHidden,registered,shownAlive,canEnter,canMoveTo,canHQ,hqOdds,dealLeft,hqComps,unfreedComps,power,TBTEAM,tbteamCheck,mindStage,crack,rndOf,presetFor,COND,applyMine,gunsFor,EMPTY_HIT,teamBothAlive,noiseLine,SW,KIM,KIM_TELLS,SW_FRIENDS,friendsP,nextLoop,loopGate,canGiveUp,giveUp,canJoinTeam,joinTeam,trioOK,kimEncounter,kimOf,teamFixWithMe,newGame0,encounterPhase,RADIO_SPOTS,studyNeed,studyFailP,BAND_TOOLS,isTB,TB,BAND_STEPS,canUnband,unbandComp,canFreeEscape,canCut,persN,persD,sayL,wontHarm,dropLeft,fogOn,bountyOn,inviteChance,canJoinMe,RECIPES,TEAMN,AMMO_OF,AMMO_UNIT,gunCap,canSplit,splitFits,ammoPlan,gunFor,pendingEat,MODS,MODTAG,maxDur,modCount,bonded,myComps,isMyComp,newGame,migrate,act,resolve,itemOp,setFlee,dismiss,runToEnd,clock,neighbors,dist,areaMods,canFix,turnsToBcast,aliveCount,relSentence,isKnown,calcTag,
   BUILDS,randomName,isCouple,canEscape,TRANSFER,ESCAPE_SPOTS,specialsFor,CLASS_SIZE,combatAct,fleeChance,spareChance,compCount,
   recipeFor,craftPartners,SPLIT,bodiesAt,bodyOp,skey,slotsOf,capOf,bagHasRoom,canEquipBag,armorDef,
   AREAS,IT,PERS,PK,CLUBS,TAGN,TIERN,INJN,TYPEN,PROTN,SLOT,INV_MAX,STACK_MAX,BCAST,JS,PROPOSE,wepInfo,skLv,_setRng:f=>{R=f;}};
@@ -2730,14 +2817,15 @@ const ENDINGS=[
  ['win','최후의 1인','마지막까지 혼자 살아남는다'],['rescue','안개 너머의 배','직접 무전기를 고쳐 구조를 부른다'],['rescue_team','누군가 부른 배','다른 누군가가 부른 배에 오른다'],
  ['escape','밴드를 끊고','작년의 생존자와 함께 섬을 빠져나간다'],['unband','밴드를 연 사람','누군가 밴드를 여는 법을 알아낸다'],['pact','끝까지 손을 들지 않았다','마지막까지 남은 이들이 서로를 해치지 않는다'],
  ['d_bestie','등 뒤의 칼끝','가장 믿었던 사람에게…'],['d_hunter','작년의 우승자','사냥꾼 전입생에게 쓰러진다'],['d_poison','이상한 맛','독이 든 것을 먹는다'],
- ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','안개를 건너온 사람','아주 드물게, 섬 밖에서 누군가 온다'],['tbteam','약속한 시간','아주 드물게, 약속한 시간에 누군가 데리러 온다'],
- ['d_giveup','포기한다','스스로 걸음을 멈춘다'],['loop_giveup','멈춘 아침','되풀이되는 아침을 스스로 끝낸다'],['loop_radio','셋이 부른 배','되풀이 속에서, 한성백·신수아와 함께 구조선에 오른다'],['loop_friends','널 구하러 왔어','되풀이 너머에서 누군가 온다']];
+ ['d_trap','발밑 조심','누군가의 덫에 걸린다'],['d_band','밴드가 울렸다','금지구역에 남는다'],['d_fight','출석부에 줄이 그어졌다','싸움에서 쓰러진다'],['police','안개를 건너온 사람','아주 드물게, 섬 밖에서 누군가 온다'],['tbteam','약속한 시간','아주 드물게, 약속한 시간에 누군가 데리러 온다'],['arrest','출석부를 덮다','방송하는 자를 붙잡아 구조선에 태운다'],['hq','방송이 끊겼다','방송실의 주인을 쓰러뜨린다'],['ghost','명단에 없는 사람','방송에서 이름이 불린 뒤에도 살아남는다'],['deal','남은 목격자','방송실의 목소리와 거래하고 살아 나온다'],
+ ['d_giveup','포기한다','스스로 걸음을 멈춘다'],['d_yechan','가운데에 꽂힌 다트','방송실에서 쓰러진다'],['d_deal','캬라멜 마끼아또','거래의 대가를 받는다'],['d_remote','학생이 아니군요','정체가 들통난다'],['loop_giveup','멈춘 아침','되풀이되는 아침을 스스로 끝낸다'],['loop_radio','셋이 부른 배','되풀이 속에서, 한성백·신수아와 함께 구조선에 오른다'],['loop_friends','널 구하러 왔어','되풀이 너머에서 누군가 온다']];
 function endingKey(){const me=G.c[0],r=G.result||{};
   if(G.loop){if(G.loop.final==='giveup')return 'loop_giveup';if(r.type==='friends')return 'loop_friends';if(r.type==='rescue')return 'loop_radio';}
   if(r.pact&&r.pact.includes(0))return 'pact';
-  if(me.alive){if(r.type==='police')return 'police';if(r.type==='tbteam')return 'tbteam';if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';if(r.type==='unband')return 'unband';return 'win';}
+  if(me.alive){if(r.type==='arrest')return 'arrest';if(r.type==='hq')return 'hq';if(r.type==='deal')return 'deal';if(r.type==='ghost'||(me.ghost&&r.type==='unband'))return 'ghost';if(r.type==='police')return 'police';if(r.type==='tbteam')return 'tbteam';if(r.type==='rescue')return G.rescueBy&&!G.rescueBy.includes(0)?'rescue_team':'rescue';if(r.type==='escape')return 'escape';if(r.type==='unband')return 'unband';return 'win';}
   const k=me.killer!=null?G.c[me.killer]:null;
   if(k&&k.id===G.bestie&&G.btr&&G.btr.done==='fight')return 'd_bestie';
+  if(me.cause==='yechan')return 'd_yechan';if(me.cause==='macchiato')return 'd_deal';if(me.cause==='remote')return 'd_remote';
   if(me.cause==='giveup')return 'd_giveup';if(me.cause==='band')return 'd_band';if(me.cause==='poison')return 'd_poison';if(me.cause==='trap')return 'd_trap';
   if(k&&k.transfer==='hunter')return 'd_hunter';return 'd_fight';}
 function recordRun(){if(!G||G.recorded||G.phase!=='end')return;G.recorded=1;saveSoon();recLoad();const me=G.c[0];const key=endingKey();const now=Date.now();
@@ -2784,11 +2872,12 @@ const SCR=['scr-title','scr-make','scr-reveal','scr-game','scr-end','scr-records
 function show(id){SCR.forEach(s=>$(s).hidden=s!==id);window.scrollTo({top:0});}
 
 function renderTitle(){
+  {const t=$('cover-tchr'),y=recLoad().yechan;t.textContent=y?'예 찬':'';t.classList.toggle('on',!!y);}
   const s=bestSave();let g=null;try{g=s?JSON.parse(s.json):null;}catch(e){}
   const btn=$('btn-cont'),info=$('cont-info');
   if(g){btn.hidden=false;info.hidden=false;const me=g.c[0];
     if(g.phase==='end'){btn.textContent='지난 판 결과 보기';info.textContent=`${me.name} · 지난 판이 끝났다.`;}
-    else{btn.textContent='이어하기';info.textContent=`${me.name}${g.loop?` · ${g.loop.n}회차`:''} · ${M.clock(g.t).s} · 남은 인원 ${g.c.filter(c=>c.alive).length}명`;}}
+    else{btn.textContent='이어하기';info.textContent=`${me.name}${g.loop?` · ${g.loop.n}회차`:''} · ${M.clock(g.t).s} · 남은 인원 ${M.shownAlive(g)}명`;}}
   else{btn.hidden=true;info.hidden=true;}
   $('confirm-new').hidden=true;
 }
@@ -2916,7 +3005,7 @@ function openLoop(){const L=G.loop;if(!L)return;const dlg=$('dlg');dlg.classList
   $('m-loop').onclick=()=>{dlg.classList.remove('loopdlg');G=M.nextLoop(G);saveSoon();closeModal();enterGame();};}
 function doAct(a){if(!G||G.phase!=='act')return;pickMode=null;M.act(G,a);after(true);}
 /* turn: 시간이 흐른 행동 뒤에만 방금 일어난 일 쪽으로 살짝 내려 준다. 가방 조작은 화면을 그대로 둔다. */
-function after(turn){M.loopGate(G);saveSoon();renderGame();if(G.phase==='loop'){openLoop();return;}if(G.phase==='pending'||G.phase==='dead')openModal();else if(G.phase==='end'){closeModal();renderEnd();}
+function after(turn){M.loopGate(G);saveSoon();if(G&&G.hq&&G.hq.met){recLoad();if(!REC.yechan){REC.yechan=Date.now();recSave();}}renderGame();if(G.phase==='loop'){openLoop();return;}if(G.phase==='pending'||G.phase==='dead')openModal();else if(G.phase==='end'){closeModal();renderEnd();}
   else if(turn===true){const l=$('latest');if(l&&window.matchMedia('(max-width: 860px)').matches){const r=l.getBoundingClientRect();if(r.top>window.innerHeight*.85)l.scrollIntoView({block:'nearest',behavior:'smooth'});}}}
 $('act-search').onclick=()=>doAct({type:'search'});
 $('act-rest').onclick=()=>doAct({type:'rest'});
@@ -2924,6 +3013,7 @@ $('act-loot').onclick=()=>doAct({type:'loot'});
 $('act-chat').onclick=()=>doAct({type:'chat'});
 $('act-escape').onclick=()=>doAct({type:'escape'});
 $('act-study').onclick=()=>doAct({type:'study'});
+$('act-hq').onclick=()=>doAct({type:'hq'});
 ['log','roster','dead','rel'].forEach(k=>{$('tab-'+k).onclick=()=>{tab=k;renderTabs();};});
 $('btn-dead').onclick=()=>{tab='dead';renderTabs();$('tab-dead').closest('.tabs').scrollIntoView({behavior:'smooth',block:'start'});};
 
@@ -2931,7 +3021,7 @@ function hpWord(c){const r=c.hp/c.mhp;return r>.75?'정상':r>.45?'경상':r>.2?
 function tagChip(t){return `<span class="tg tg-${t||'none'}">${M.TAGN[t||'']}</span>`;}
 function renderGame(){
   const me=G.c[0];const ck=M.clock(G.t);
-  $('h-clock').textContent=ck.s;$('h-alive').textContent=G.c.filter(c=>c.alive).length+'명';
+  $('h-clock').textContent=ck.s;$('h-alive').textContent=M.shownAlive(G)+'명';
   $('h-next').textContent=M.turnsToBcast(G)+'턴';
   const hr=$('h-rescue');if(G.rescueT!=null&&!G.result){hr.hidden=false;hr.textContent=`구조선까지 ${Math.max(0,G.rescueT+4-G.t)}턴`;}else hr.hidden=true;
   renderAlerts();renderStatus();renderMap();renderLatest();renderInv();renderTabs();renderDock();
@@ -2941,6 +3031,7 @@ function renderGame(){
   const here=M.myComps(G).map(id=>G.c[id]).filter(c=>c.alive&&c.loc===me.loc);const cb=$('act-chat');cb.hidden=!(me.alive&&here.length);cb.disabled=!can;
   const eb=$('act-escape'),esc1=M.canEscape(G),esc2=M.canFreeEscape(G);eb.hidden=!(esc1||esc2);eb.disabled=!can;
   eb.innerHTML=esc1?'<span class="lg">함께 </span>탈출':'<span class="lg">배로 </span>탈출';eb.title=esc1?'':'밴드가 풀린 사람들과 함께 섬을 빠져나간다. 게임이 끝난다.';
+  {const hb=$('act-hq'),H=G.hq;hb.hidden=!(me.alive&&me.freed&&me.loc===M.YC.loc&&G.zones[M.YC.loc]===2&&H&&H.known);hb.disabled=!can||!M.canHQ(G);hb.title=M.unfreedComps(G).length?'밴드를 찬 동행은 데려갈 수 없다.':'폐교 지하 방송실로 내려간다. 한 턴이 지나간다.';}
   const sb=$('act-study'),sneed=M.studyNeed(me);sb.hidden=!(me.alive&&me.tb&&!me.bandKnow);sb.disabled=!can||!!sneed;sb.title=sneed?`${sneed}이 있어야 한다.`:`손목 밴드를 들여다본다. 실패할 확률 ${Math.round(M.studyFailP(me)*100)}%.`;sb.innerHTML=`<span class="lg">밴드 </span>뜯어보기 <span class="mono">${me.bandProg||0}/${M.BAND_STEPS}</span>`;
   if(here.length){const nms=here.map(c=>c.name);cb.title=`${nms.slice(0,-1).map(x=>x+', ').join('')}${M.JS.wa(nms[nms.length-1])} 쉬면서 이야기한다. 쉬기만큼 회복하고 서로 가까워진다.`;}
 }
@@ -2949,8 +3040,8 @@ function alertList(){const me=G.c[0],A=M.AREAS,out=[];if(!me.alive||G.phase==='e
   const left=M.turnsToBcast(G),has=id=>me.inv.some(x=>x.id===id),firstOf=k=>me.inv.find(x=>M.IT[x.id].k===k);
   /* 경고 줄: 누군가 잊지 않으려고 적어 둔 메모처럼, ~다 말투로 */
   if(G.zones[me.loc]===1&&!me.freed)out.push(['red',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫힌다. <b>${left}턴</b> 안에 옮기지 않으면 밴드가 울린다.`]);
-  if(G.zones[me.loc]===1&&me.freed)out.push(['amber',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫힌다. 밴드가 풀렸으니 남아도 괜찮다. 하지만 한번 나가면 다시 들어올 수 없다.`]);
-  if(me.freed&&!G.result){const sp=M.ESCAPE_SPOTS.includes(me.loc);out.push(['info',sp?'선착장·방파제다. 여기서 <b>탈출</b>할 수 있다. 밴드가 풀린 사람들도 같은 배에 오른다.':`밴드가 풀렸다. <b>선착장이나 방파제</b>에 가면 섬을 나갈 수 있다.${me.tb?' 그 전에 다른 애들 밴드를 더 풀어 줄 수도 있다.':''}`]);}
+  if(G.zones[me.loc]===1&&me.freed)out.push(['amber',`지금 있는 ${M.JS.eun(A[me.loc].n)} 다음 방송 때 닫힌다. ${me.ghost?'밴드가 멎었으니 남아도 괜찮고, 닫힌 곳도 드나들 수 있다.':'밴드가 풀렸으니 남아도 괜찮다. 하지만 한번 나가면 다시 들어올 수 없다.'}`]);
+  if(me.freed&&!G.result){const sp=M.ESCAPE_SPOTS.includes(me.loc);out.push(['info',sp?'선착장·방파제다. 여기서 <b>탈출</b>할 수 있다. 밴드가 풀린 사람들도 같은 배에 오른다.':`${me.ghost?'밴드가 멎었다. 닫힌 곳도 드나들 수 있다.':'밴드가 풀렸다.'} <b>선착장이나 방파제</b>에 가면 섬을 나갈 수 있다.${me.tb?' 그 전에 다른 애들 밴드를 더 풀어 줄 수도 있다.':''}${M.canHQ(G)?' 발밑 강당 아래에는 방송실이 있다.':''}`]);}
   else if(me.tb&&me.bandKnow&&has('nipper'))out.push(['info','니퍼가 있다. 이제 <b>내 밴드</b>를 풀 수 있다.']);
   if(has('fixedradio')&&G.rescueT==null){const RS=M.RADIO_SPOTS,open=Object.keys(RS).map(Number).filter(i=>G.zones[i]!==2),pr=RS[me.loc];
     if(!open.length)out.push(['red','무전이 닿을 만한 곳이 모두 닫혔다. 고친 무전기를 쓸 곳이 없다.']);
@@ -3002,7 +3093,7 @@ function renderStatus(){
     <div><span class="k">기본</span><span class="mono">공격 ${me.atk} · 방어 ${me.def}</span> <span class="muted">· 지금 ${M.AREAS[me.loc].n}</span></div>
    </div>
    ${warn?`<div style="margin-top:10px">${warn}</div>`:''}
-   ${escBox()}${bandBox()}${swBox()}${planBox()}
+   ${escBox()}${bandBox()}${hqBox()}${swBox()}${planBox()}
    ${comps.map((comp,k)=>`<div class="comp${k?' more':''}"><span>동행</span><b>${esc(comp.name)}</b>${tagChip(G.rel[0][comp.id][2])}${M.bonded(me,comp)?'<span class="chip bond">끝까지 한편</span>':''}${comp.freed?'<span class="chip freed">밴드 풀림</span>':''}<span class="muted mono">${hpWord(comp)}</span><span style="flex:1"></span>${M.canUnband(G,comp)&&comp.loc===me.loc?`<button class="btn small" type="button" data-unband="${comp.id}" ${G.phase!=='act'?'disabled':''}>밴드 풀어 주기</button>`:''}<button class="btn small" type="button" data-dismiss="${comp.id}" ${G.phase!=='act'?'disabled':''}>따로 움직이기</button></div>`).join('')}
    ${M.canGiveUp(G)?'<div class="giveup"><button class="btn small danger" type="button" id="btn-giveup">포기한다</button></div>':''}`;
   {const gb=$('btn-giveup');if(gb)gb.onclick=openGiveUp;}
@@ -3010,6 +3101,13 @@ function renderStatus(){
   {const pb=$('planbox');if(pb)pb.addEventListener('toggle',()=>{planOpen=pb.open;});}
   $('status').querySelectorAll('button[data-unband]').forEach(bd=>bd.onclick=()=>{M.unbandComp(G,+bd.dataset.unband);after();});
 }
+function hqBox(){const me=G.c[0];if(!me.alive)return '';const H=G.hq,W=G.watch;const rows=[];
+  if(me.tb){const st=W?W.stage:0;rows.push(`<span>주최측 · <b class="${st>=2?'mind-bad':''}">${M.WATCHN[st]}</b></span>`);
+    if(W&&W.detT!=null&&!me.freed)rows.push('<span class="note warn">다음 방송 때 밴드가 터진다. 그 전에 풀어야 한다.</span>');
+    else if(st>=2)rows.push('<span class="note warn">내가 있는 곳부터 금지구역이 된다.</span>');}
+  if(H&&H.known)rows.push(`<span>위치 · <b>폐교 지하, 강당 아래</b></span>${me.freed?'':'<span class="note">밴드를 풀어야 닫힌 폐교에 들어갈 수 있다.</span>'}`);
+  const D=M.dealLeft(G);if(D)rows.push(`<span class="note">거래 · 두 명 중 ${D.got}명 · ${D.left>0?`다음 방송까지 ${D.left}턴`:'시간이 다 됐다'}</span>`);
+  return rows.length?`<div class="escbox"><b>방송실</b>${rows.join('')}</div>`:'';}
 function escBox(){
   if(!G.escapeKnown||G.transferId==null)return '';const me=G.c[0],h=G.c[G.transferId];
   if(!h.alive)return `<div class="escbox"><b>탈출</b><span class="no">${esc(M.JS.i(h.name))} 쓰러져 탈출할 길이 사라졌다.</span></div>`;
@@ -3038,7 +3136,7 @@ function swBox(){const me=G.c[0];if(!G.loop||!me.alive||!G.teamNPC||!G.teamKnown
 let planOpen=true;
 function planText(){const me=G.c[0];
   if(G.loop)return '죽어도 끝나지 않는다. 눈을 뜨면 다시 폐교 강당이다. 같은 반, 같은 얼굴들, 같은 순서로 닫히는 금지구역. 가진 물건만 처음으로 돌아간다. 무전기 고치는 법처럼, 한 번 익힌 건 다음에도 기억한다. 멈추는 방법은 아직 하나밖에 모른다.'+(M.mindStage(G.loop.n)>=3?' 지난 회차들이 점점 뒤섞인다.':'');
-  if(me.tb)return '손목 밴드를 세 번 뜯어본다. 처음엔 맨손으로 살펴보고, 이음새를 벌릴 땐 커터칼이나 못, 회로를 짚을 땐 구리선이 있어야 한다. 손이 미끄러지면 밴드가 따끔하게 울리고 소리가 퍼진다. 끊는 법을 알아내고 니퍼를 구하면 내 밴드부터 푼다. 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀린 채로 선착장이나 방파제에 가면 탈출할 수 있고, 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 안다. 건전지만 있으면 등대 같은 탁 트인 곳에서 구조를 부를 수 있다.';
+  if(me.tb)return '손목 밴드를 세 번 뜯어본다. 처음엔 맨손으로 살펴보고, 이음새를 벌릴 땐 커터칼이나 못, 회로를 짚을 땐 구리선이 있어야 한다. 손이 미끄러지면 밴드가 따끔하게 울리고 소리가 퍼진다. 끊는 법을 알아내고 니퍼를 구하면 내 밴드부터 푼다. 그다음엔 만나는 애들에게 말을 걸어 밴드를 풀어 줄 수 있다. 밴드가 풀린 채로 선착장이나 방파제에 가면 탈출할 수 있고, 밴드가 풀린 애들도 같은 배에 오른다. 무전기 고치는 법도 안다. 건전지만 있으면 등대 같은 탁 트인 곳에서 구조를 부를 수 있다. 손이 미끄러질 때마다 주최측이 눈치챌 수 있다. 밴드가 받는 신호를 끝까지 따라가면, 방송하는 자가 있는 곳도 알 수 있을 것이다.';
   if(me.team)return '고장난 무전기를 들고 있다. 고치는 법은 이미 알고 있어서 건전지만 구하면 된다. 고친 무전기로 구조를 부르면(등대가 가장 잘 닿고, 북쪽 곶·선착장·방파제도 운이 좋으면 닿는다), 배가 올 때까지 살아 있는 모두가 섬을 떠난다.';
   return '';}
 function planBox(){const t=planText();if(!t)return '';
@@ -3060,6 +3158,7 @@ function bandBox(){const me=G.c[0];if(!me.alive)return '';
     return `<div class="escbox"><b>밴드 풀기</b>${steps.map((st,i)=>ck(pg>i,`${i+1}. ${st[0]}${st[1]?` <small>· ${st[1]}</small>`:''}`)).join('')}${ck(me.inv.some(x=>x.id==='nipper'),'니퍼')}${ck(me.freed,'내 밴드')}
       ${!me.bandKnow?(need?`<span class="note warn">다음 단계에는 ${need}이 필요하다.</span>`:`<span class="note">다음 단계 실패 확률 ${Math.round(M.studyFailP(me)*100)}%. 실패하면 밴드가 따끔하게 울리고 소리가 퍼진다.</span>`):''}
       ${me.freed?`<span class="note">풀어 준 사람 ${n}명${n>alive?` (살아 있는 ${alive}명)`:''} · 만나서 말을 걸면 더 풀어 줄 수 있다</span>`:''}</div>`;}
+  if(me.ghost)return `<div class="escbox"><b>밴드가 멎었다</b><span class="note">${me.exposed?'예찬에게 들켰다. 이제 살아 있는 걸 다들 안다':'명단에서는 죽은 사람이다'} · 금지구역도 드나들 수 있다 · 선착장이나 방파제에서 탈출</span></div>`;
   if(me.freed){const t=me.freedBy!=null&&me.freedBy!==0?G.c[me.freedBy]:null;
     return `<div class="escbox"><b>밴드가 풀렸다</b><span class="note">${t?`${esc(M.JS.i(t.name))} 풀어 줬다 · `:''}금지구역에 남아도 울리지 않는다 · 선착장이나 방파제에서 탈출</span></div>`;}
   return '';}
@@ -3067,7 +3166,7 @@ function renderMap(){
   const me=G.c[0];const adj=M.neighbors(me.loc);const radar=me.inv.some(it=>it.id==='radar');const fr=me.inv.some(it=>it.id==='fixedradio')&&G.rescueT==null;
   const counts={};if(radar)for(const c of G.c)if(c.alive&&!c.me)counts[c.loc]=(counts[c.loc]||0)+1;
   $('map').innerHTML=M.AREAS.map((a,i)=>{
-    const z=G.zones[i],here=i===me.loc,isAdj=adj.includes(i)&&z!==2&&G.phase==='act'&&me.alive;
+    const z=G.zones[i],here=i===me.loc,isAdj=adj.includes(i)&&M.canMoveTo(G,i)&&G.phase==='act'&&me.alive;
     const zt=z===2?'금지구역':z===1?'다음 방송 때 금지':'';
     const comp=!here&&M.myComps(G).some(id=>G.c[id].alive&&G.c[id].loc===i);
     const label=`${a.n}${here?', 지금 있는 곳':''}${zt?', '+zt:''}${isAdj?', 누르면 이동':''}`;
@@ -3081,22 +3180,32 @@ function renderMap(){
 }
 function radioHTML(e){
   const d=e.data,A=M.AREAS,names=ids=>ids.map(i=>A[i].n).join(', ');
-  const dead=d.dead.map(id=>G.c[id].name).join(', ');
+  const dead=d.dead.map(id=>G.c[id].name).join(', ');const me=G.c[0],y=d.yc||{};const q=t=>`<p style="margin:6px 0 0">"${t}"</p>`,qr=t=>`<p style="margin:6px 0 0" class="r-red">"${t}"</p>`;
   if(d.first)return `<div class="radio"><div class="rh"><span class="stamp">교내 방송</span><span class="mono">${d.time}</span></div>
-   <p style="margin:6px 0 0">"안녕하신가, 2학년 3반. 규칙은 하나다. 마지막 한 명만 섬을 떠난다. 네 시간마다 방송으로 닫히는 구역을 알려 주지. 닫힌 구역에 남은 사람의 밴드는 울린다."</p>
-   ${d.transfer!=null&&G.c[d.transfer]?`<p style="margin:6px 0 0">"그리고 이번 판에는 전입생이 하나 있다. ${esc(G.c[d.transfer].name)}. 작년 이 섬을 기억하는 녀석이지."</p>`:''}
-   ${d.pair&&d.pair.length?`<p style="margin:6px 0 0">"${d.transfer!=null&&G.c[d.transfer]?'그게 다가 아니다. 전입생이 둘 더 있다.':'그리고 이번 판에는 전입생이 둘 있다.'} ${d.pair.map(id=>esc(G.c[id].name)).join(', ')}. 하필 수학여행 직전에 같이 전학을 왔더군."</p>`:''}
+   ${q('좋은 아침입니다, 2학년 3반. 규칙은 하나입니다. 마지막 한 명만 섬을 떠납니다. 네 시간마다 방송으로 닫히는 구역을 알려 드리죠. 닫힌 구역에 남은 사람의 밴드는 울립니다.')}
+   ${d.transfer!=null&&G.c[d.transfer]?q(`그리고 이번에는 전입생이 한 명 있습니다. ${esc(G.c[d.transfer].name)}. 작년 이 섬을 기억하는 학생이죠.`):''}
+   ${d.pair&&d.pair.length?q(`${d.transfer!=null&&G.c[d.transfer]?'그게 다가 아닙니다. 전입생이 둘 더 있습니다.':'그리고 이번에는 전입생이 둘 있습니다.'} ${d.pair.map(id=>esc(G.c[id].name)).join(', ')}. 하필 수학여행 직전에 같이 전학을 왔더군요.`):''}
    <dl><dt>다음 방송에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd></dl></div>`;
+  const tag=`${me.no}번`;
   return `<div class="radio"><div class="rh"><span class="stamp">교내 방송</span><span class="mono">${d.time}</span><span class="muted" style="font-family:var(--f-body);font-weight:400;font-size:13px">남은 인원 ${d.alive}명</span></div>
+   ${y.sayT?q(esc(y.sayT)):''}
    <dl>${d.closed.length?`<dt>지금부터 금지</dt><dd class="r-red">${names(d.closed)}</dd>`:''}
    <dt>떠난 친구들</dt><dd>${dead?esc(dead):'없음'}</dd>
    ${d.next.length?`<dt>다음에 닫힘</dt><dd class="r-amb">${names(d.next)}</dd>`:'<dt>다음에 닫힘</dt><dd class="muted">더 닫을 곳이 없다</dd>'}</dl>
-   ${d.warn?'<p style="margin:6px 0 0" class="r-red">"너무 조용하군. 다음 방송 전까지 아무도 떠나지 않으면, 남은 모두의 밴드가 울린다."</p>':''}
-   ${d.wipe?'<p style="margin:6px 0 0" class="r-red">"약속은 지켰다."</p>':''}
-   ${d.bountyEnd!=null&&G.c[d.bountyEnd]&&G.c[d.bountyEnd].alive?`<p style="margin:6px 0 0">"${esc(G.c[d.bountyEnd].name)}, 운이 좋군. 현상금은 거둬들인다."</p>`:''}
-   ${d.drop!=null?`<p style="margin:6px 0 0" class="r-amb">"선물이다. 방금 드론이 <b>${A[d.drop].n}</b>에 보급 상자를 떨어뜨렸다. 먼저 줍는 사람이 임자지."</p>`:''}
-   ${d.fog?'<p style="margin:6px 0 0">"안개가 짙어진다. 다음 방송까지는 서로 얼굴도 잘 안 보일 거다. 숨기 좋은 밤이군."</p>':''}
-   ${d.bounty!=null&&G.c[d.bounty]?`<p style="margin:6px 0 0" class="r-red">"특별 규칙이다. 다음 방송 전까지 <b>${esc(G.c[d.bounty].name)}</b>${G.c[d.bounty].me?'(나)':''}${M.JS.eul(G.c[d.bounty].name).slice(G.c[d.bounty].name.length)} 쓰러뜨리는 사람에게 보급을 주지."</p>`:''}</div>`;
+   ${d.warn?qr('너무 조용하네요. 다음 방송 전까지 아무도 떠나지 않으면, 남은 모두의 밴드가 울립니다.'):''}
+   ${d.wipe?qr('말씀드린 대로 했습니다.'):''}
+   ${d.bountyEnd!=null&&G.c[d.bountyEnd]&&G.c[d.bountyEnd].alive&&!(y.watch===3||y.expose||y.freed)?q(`${esc(G.c[d.bountyEnd].name)}, 운이 좋네요. 현상금은 거둬들이겠습니다.`):''}
+   ${d.drop!=null?`<p style="margin:6px 0 0" class="r-amb">"선물입니다. 방금 드론이 <b>${A[d.drop].n}</b>에 보급 상자를 떨어뜨렸습니다. 먼저 줍는 사람이 임자죠."</p>`:''}
+   ${d.fog?q('안개가 짙어집니다. 다음 방송까지는 서로 얼굴도 잘 안 보일 겁니다. 숨기 좋겠네요.'):''}
+   ${d.bounty!=null&&G.c[d.bounty]?`<p style="margin:6px 0 0" class="r-red">"특별 규칙입니다. 다음 방송 전까지 <b>${esc(G.c[d.bounty].name)}</b>${G.c[d.bounty].me?'(나)':''}${M.JS.eul(G.c[d.bounty].name).slice(G.c[d.bounty].name.length)} 쓰러뜨리는 사람에게 보급을 드리죠."</p>`:''}
+   ${y.watch===1?q(`${tag}. 손목은 그만 만지세요. 다 보입니다.`):''}
+   ${y.watch===2?qr(`${tag} 근처는 앞으로 먼저 닫겠습니다. 이유는 본인이 알 겁니다.`):''}
+   ${y.watch===3?qr(`${tag} ${esc(me.name)}. 학생이 아니더군요. 다음 방송에 맞춰 밴드를 터뜨리겠습니다. 그 전에 데려오는 학생에게는 상을 드리죠.`):''}
+   ${y.near&&y.watch!==2?q(`${tag} 근처를 닫습니다.`):''}
+   ${y.freed?qr(`${tag}. 이미 끊었네요. 상은 그대로 걸어 두겠습니다.`):''}
+   ${y.boom?q(`${tag}은 정리했습니다.`):''}
+   ${y.expose==='deal'?qr(`명단에서 지운 학생이 하나 살아 있었습니다. ${tag} ${esc(me.name)}. 데려오는 학생에게 상을 드리죠.`):''}
+   ${y.expose==='hq'?qr(`방금 방송실에 손님이 다녀갔습니다. ${tag} ${esc(me.name)}. 살아 있습니다. 데려오는 학생에게 상을 드리죠.`):''}</div>`;
 }
 function evHTML(e,showTime){
   if(e.c==='radio')return radioHTML(e);
@@ -3255,7 +3364,8 @@ function renderRoster(el,reveal){
     const feel=c.me?'':`<div class="feel"><span>내 마음 ${tagChip(r0[2])} <span class="mini">호감 ${bar(r0[0]+100,200,'var(--heart)')} 관심 ${bar(r0[1],100,'var(--violet)')}</span></span><span>그 애 마음 ${theirs}</span></div>`;
     const will=!c.alive&&c.willText&&(reveal||G.log.some(e=>e.c==='death'&&e.v==='seen'&&e.q===c.willText))?`<div class="hand" style="font-size:1.2em">“${esc(c.willText)}”</div>`:
       (c.alive&&!c.me&&c.talked&&c.line?`<div class="hand muted" style="font-size:1.15em">“${esc(c.line)}”</div>`:'');
-    return `<div class="row ${c.alive?'':'dead'}"><span class="n">${String(c.no).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${c.id===G.bestie?' <span class="chip">단짝</span>':''}${!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':''}${c.sex?` <span class="chip">${c.sex}</span>`:''}${c.transfer?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal?' · '+M.TRANSFER[c.transfer].n:''}</span>`:(c.team&&G.teamNPC)?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal||G.teamKnown?' · 무전기 계획':''}</span>`:M.isTB(c)?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal||c.me?' · 경찰':''}</span>`:''}${c.freed&&(reveal||c.me||c.freedBy===0||c.id===G.c[0].freedBy||M.isMyComp(G,c.id))?' <span class="chip freed">밴드 풀림</span>':''}<div class="sub">${sub}${c.alive?'':` · <span style="color:var(--red)">${esc(causeText(c,reveal))}</span>`}</div>${c.me&&c.bio?`<div class="sub">${esc(c.bio)}</div>`:''}${feel}${will}</div><span class="stampmark ${c.alive?'al':'dd'}" aria-label="${c.alive?'생존':'탈락'}">${c.alive?'출':'결'}</span></div>`;}).join('');
+    const gone=!c.alive||(!c.me&&M.ghostHidden(c)&&!c.ghostSeen);
+    return `<div class="row ${gone?'dead':''}"><span class="n">${String(c.no).padStart(2,'0')}</span><div style="min-width:0"><span class="nm">${esc(c.name)}</span>${c.ghost&&c.alive&&(c.me||c.ghostSeen)?' <span class="chip" style="color:var(--red);border-color:var(--red)">명단에서 지워짐</span>':''}${c.id===G.bestie?' <span class="chip">단짝</span>':''}${!c.me&&M.isCouple(G,0,c.id)?' <span class="chip">연인</span>':''}${c.sex?` <span class="chip">${c.sex}</span>`:''}${c.transfer?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal?' · '+M.TRANSFER[c.transfer].n:''}</span>`:(c.team&&G.teamNPC)?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal||G.teamKnown?' · 무전기 계획':''}</span>`:M.isTB(c)?` <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생${reveal||c.me?' · 경찰':''}</span>`:''}${c.freed&&(reveal||c.me||c.freedBy===0||c.id===G.c[0].freedBy||M.isMyComp(G,c.id))?' <span class="chip freed">밴드 풀림</span>':''}<div class="sub">${sub}${c.alive?'':` · <span style="color:var(--red)">${esc(causeText(c,reveal))}</span>`}</div>${c.me&&c.bio?`<div class="sub">${esc(c.bio)}</div>`:''}${feel}${will}</div><span class="stampmark ${c.alive?'al':'dd'}" aria-label="${c.alive?'생존':'탈락'}">${c.alive?'출':'결'}</span></div>`;}).join('');
   el.innerHTML=`<div class="roster">${rows}</div>`;
 }
 function renderRel(el,reveal){
@@ -3281,7 +3391,7 @@ function openModal(){
   const dlg=$('dlg');const me=G.c[0];dlg.classList.remove('fightdlg','deathdlg');
   if(G.phase==='dead'){
     const k=me.killer!=null?G.c[me.killer]:null;
-    const cause=me.cause==='giveup'?(me.gaveUp==='self'?'스스로 밴드를 울렸다.':G.loop?'닫힌 구역으로 걸어 들어갔다. 이번에는 돌아오지 않는다.':'닫힌 구역으로 걸어 들어갔다.'):me.cause==='band'?'손목 밴드가 울렸다.':me.cause==='trap'?(k?`${k.name}의 덫에 걸렸다.`:'덫에 걸렸다.'):me.cause==='poison'?'독이 든 것을 먹었다.':(k?`${k.name}에게 쓰러졌다.`:'쓰러졌다.');
+    const cause=me.cause==='giveup'?(me.gaveUp==='self'?'스스로 밴드를 울렸다.':G.loop?'닫힌 구역으로 걸어 들어갔다. 이번에는 돌아오지 않는다.':'닫힌 구역으로 걸어 들어갔다.'):me.cause==='band'?'손목 밴드가 울렸다.':me.cause==='trap'?(k?`${k.name}의 덫에 걸렸다.`:'덫에 걸렸다.'):me.cause==='poison'?'독이 든 것을 먹었다.':me.cause==='yechan'?'방송실에서 예찬의 다트에 쓰러졌다.':me.cause==='macchiato'?'예찬이 건넨 캬라멜 마끼아또를 마셨다.':me.cause==='remote'?'주최측이 밴드를 터뜨렸다.':(k?`${k.name}에게 쓰러졌다.`:'쓰러졌다.');
     dlg.classList.add('deathdlg');
     dlg.innerHTML=`<p class="kick dead">ELIMINATED</p><p class="label" style="margin:-8px 0 0">${M.clock(me.deathT).s}</p><h2 id="dlg-h">${G.loop?'마지막 아침':'출석부에 줄이 그어졌다'}</h2><p style="margin:0">${esc(cause)}</p>${G.loop?`<p class="muted" style="margin:0">${G.loop.n}번째 아침이었다.</p>`:''}
      ${me.will?`<p class="hand" style="margin:0">“${esc(me.will)}”</p>`:''}
@@ -3293,6 +3403,7 @@ function openModal(){
   if(p.type==='find'||p.type==='loot'){openPickup(p);return;}
   if(p.type==='body'){openBody(p);return;}
   if(p.type==='combat'){openCombat();return;}
+  if(p.type==='hq'){openHQ(p);return;}
   const n0=G.c[p.who];const n=p.mask!=null?G.c[p.mask]:n0;const w=M.wepInfo(n);const r0=G.rel[0][n.id];const kimFace=n0.kim&&p.mask==null;
   const theirs=M.isKnown(G,n.id,0)?tagChip(G.rel[n.id][0][2]):'<span class="tg tg-none">?</span>';
   const card=`<div class="who-card"><div><b>${esc(n.name)}</b> <span class="muted mono">${n.no}번</span>${n.id===G.bestie?' <span class="chip">단짝</span>':''}${M.isCouple(G,0,n.id)?' <span class="chip">연인</span>':''}${n.sex?` <span class="chip">${n.sex}</span>`:''}${(n.transfer||(n.team&&G.teamNPC)||M.isTB(n))?' <span class="chip" style="color:var(--amber);border-color:var(--amber)">전입생</span>':''}${n.freed&&(n.freedBy===0||n.id===G.c[0].freedBy)?' <span class="chip freed">밴드 풀림</span>':''}</div>
@@ -3320,6 +3431,19 @@ function openModal(){
   dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>{M.resolve(G,b.dataset.c);closeModal();after(true);});
   const f=dlg.querySelector('button');if(f)f.focus();
 }
+function openHQ(p){const dlg=$('dlg');const me=G.c[0];const H=M.hqState(G);const D=M.dealLeft(G);const odds=Math.round(M.hqOdds(G)*100);const comps=M.hqComps(G);
+  const room='계단 끝에 철문이 있었다. 안은 모니터 불빛뿐이다. 화면마다 섬의 구역과 밴드 번호가 떠 있다. 책상 위에는 빈 캬라멜 마끼아또 컵 몇 개, 청포도 사탕 껍질, 색이 다 다른 일회용 라이터 셋, 말보로 라이트 골드 꽁초가 수북한 재떨이. 벽의 다트판은 가운데만 구멍이 숭숭 나 있다.';
+  const man='의자에 앉은 남자가 천천히 돌아봤다. 새까만 머리, 검은 가디건, 물에 젖은 것 같은 눈. 목에 건 교사증에는 「화학 · 예 찬」.';
+  const line=p.first?(me.tb?'학생은 아니라고 생각했어. 그렇군.':me.ghost?'죽은 줄 알았는데. 그런 건가.':'밴드가 없군. 누가 풀어 줬는지는 대충 알겠어.'):D?(D.got>=D.need?'끝났나.':'아직이군. 시간은 기다려 주지 않아.'):'또 왔군.';
+  const ch=[];if(D&&D.got>=D.need)ch.push(['report','primary','다 했다고 말한다']);
+  ch.push(['attack','danger',`${me.tb?'체포한다':'덮친다'} <small>· 승산 ${odds}%</small>`]);
+  if(!me.tb&&!H.deal)ch.push(['deal','','살려 달라고 한다']);
+  ch.push(['leave','','물러난다']);
+  dlg.innerHTML=`<p class="label">${M.clock(G.t).hm} · 폐교 지하</p><h2 id="dlg-h">방송실</h2>${p.first?`<p style="margin:0">${esc(room)}</p><p style="margin:0">${esc(man)}</p>`:''}<p class="hand" style="margin:0">“${esc(line)}”</p>
+   ${D?`<p class="muted" style="margin:0;font-size:13px">거래 · 두 명 중 ${D.got}명 · ${D.left>0?`다음 방송까지 ${D.left}턴`:'시간이 다 됐다'}</p>`:''}
+   <p class="muted" style="margin:0;font-size:13px">${me.tb?'붙잡으면 방송실 무전으로 구조선을 부를 수 있다.':'쓰러뜨리면 모든 밴드를 끌 수 있다.'} ${comps.length?`함께 내려온 ${esc(M.JS.i(comps.map(c=>c.name).join(', ')))} 거든다.`:'혼자다.'} 실패하면 크게 다친다.</p>
+   <div class="acts choices">${ch.map(([c,cls,t])=>`<button class="btn ${cls}" type="button" data-c="${c}">${t}</button>`).join('')}</div>`;
+  $('modal').hidden=false;dlg.querySelectorAll('button[data-c]').forEach(b=>b.onclick=()=>{M.resolve(G,b.dataset.c);closeModal();after(true);});const f=dlg.querySelector('button');if(f)f.focus();}
 function cmpLine(it){const me=G.c[0];const d=M.IT[it.id];
   if(d.k==='w'){const w=M.wepInfo(me);return `지금 손에 든 것: ${esc(w.name)} (공격 ${w.atk})`;}
   if(d.k==='a')return me.arm?`지금 입은 옷: ${esc(M.IT[me.arm.id].n)} (${defTxt(me.arm)}, 내구 ${me.arm.d})`:'지금 입은 옷이 없다';
@@ -3498,6 +3622,7 @@ function renderEnd(){
   else if(res.type==='unband'){const s=res.with.map(id=>G.c[id]).filter(c=>!c.me);const list=s.map(c=>c.name).join(', ');
     if(res.auto){head=me.alive?'밴드 없는 손목들':'밴드가 풀린 아이들';sub=`섬에 남은 건 밴드가 풀린 사람들뿐이었다. 살아 있던 ${res.with.length}명이 낡은 배를 밀어 안개 속으로 나아갔다: ${res.with.map(id=>G.c[id]).map(c=>c.me?'나':c.name).join(', ')}.`;}
     else if(me.tb){head='밴드를 연 사람';sub=s.length?`밴드를 여는 법을 아는 사람은 섬에 나 하나뿐이었다. 그래서 끝까지 돌아다녔다. 밴드를 풀어 준 ${s.length}명과 함께 작은 배로 섬을 빠져나왔다: ${list}.`:'밴드를 여는 법을 아는 사람은 섬에 나 하나뿐이었다. 작은 배에는 나 혼자 올랐다. 멀어지는 섬에는, 아직 울리지 않은 밴드들이 남아 있었다.';}
+    else if(me.ghost){head='명단에 없는 사람';sub=`방송에서는 이미 죽은 사람이었다. 멎은 밴드를 바닥에 버리고 작은 배로 섬을 빠져나왔다.${s.length?` 함께 나간 사람: ${list}.`:''}`;}
     else{const t=me.freedBy!=null&&me.freedBy!==0?G.c[me.freedBy]:null;head='풀려난 손목';sub=`${t?`${M.JS.i(t.name)} 풀어 준`:'풀린'} 밴드를 바닥에 버리고 작은 배로 섬을 빠져나왔다.${s.length?` 함께 나간 사람: ${list}.`:''}`;}
     if(res.left&&res.left.length)sub+=` ${res.left.map(id=>G.c[id].name).join(', ')}의 밴드는 풀 수가 없어서, 섬에 두고 올 수밖에 없었다.`;}
   else if(res.type==='rescue'){const s=res.survivors.map(id=>G.c[id]);head='안개 너머의 배';const by=G.rescueBy&&!G.rescueBy.includes(0)?G.rescueBy.map(id=>G.c[id].name):null;
@@ -3506,6 +3631,13 @@ function renderEnd(){
     const call=`안개 속에서 누군가 목이 터져라 이름을 불렀다. "재윤아!" ${M.JS.ida('오윤수')}. 모두의 반대를 무릅쓰고 혼자 몰래 섬에 들어온 거였다.`;
     if(me.alive){head='안개를 건너온 사람';sub=`${call} 나를 찾아낸 그가 숨을 고르며 말했다. "다친 데는 없어요? …늦어서 미안해요." 살아 있던 ${s.length}명이 그를 따라 섬을 빠져나갔다: ${list}.`;}
     else{head='닿지 못한 이름';sub=`${call} 하지만 그 이름은 끝내 대답을 듣지 못했다. 살아 있던 ${s.length}명이 그를 따라 섬을 빠져나갔다: ${list}.`;}}
+  else if(res.type==='arrest'){const s=res.survivors.map(id=>G.c[id]);head='출석부를 덮다';
+    sub=`풀어 두었던 밴드 하나를 예찬의 손목에 채웠다. 그는 버티지 않았다. "…그렇군." 콘솔을 내리자 모니터 속 밴드 불빛이 하나씩 꺼졌다. 방송실 무전으로 부른 구조선이 새벽 안개를 가르고 들어왔다. 살아 있던 ${s.length}명, 그리고 예 찬이 그 배에 올랐다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
+  else if(res.type==='hq'){const s=res.survivors.map(id=>G.c[id]);head='방송이 끊겼다';
+    sub=`예찬이 의자째 쓰러졌다. 콘솔의 스위치를 하나씩 내리자 모니터 속 밴드 불빛이 꺼져 갔다. 그날 밤 섬에는 방송이 울리지 않았다. 살아 있던 ${s.length}명이 선착장의 낡은 배를 밀어 섬을 빠져나갔다: ${s.map(c=>c.me?'나':c.name).join(', ')}.`;}
+  else if(res.type==='deal'){head='남은 목격자';sub='두 명. 약속대로였다. 예찬은 한참 나를 보다가 고개를 돌렸다. "…귀찮군. 가." 선착장에 묶여 있던 작은 배에 혼자 올랐다. 멀어지는 섬에서 다음 방송이 울렸다.';}
+  else if(res.type==='ghost'){const w=res.winner!=null?G.c[res.winner]:null;head='명단에 없는 사람';
+    sub=`${w?`마지막 방송이 부른 이름은 ${M.JS.ida(w.name)}.`:'마지막 방송은 아무도 남지 않았다고 했다.'} 아무도 내 이름은 부르지 않았다. 나는 이미 죽은 사람이었으니까. 안개가 걷히기 전에 선착장의 작은 배를 밀었다.`;}
   else if(res.type==='tbteam'){const s=res.survivors.map(id=>G.c[id]);const list=s.map(c=>c.me?'나':c.name).join(', ');const T=M.TBTEAM;
     if(me.alive){head='약속한 시간';sub=`약속한 시간이었다. 안개 속에서 손전등 불빛 세 개가 흔들렸다. "이 경장!" ${T.lead} 팀장이었다. 뒤이어 "이태백!" ${M.JS.i(T.crew[0])}, "이태백 씨!" ${M.JS.i(T.crew[1])} 외쳤다. 선착장에 댄 배 위에서는 삼촌이 기다리고 있었다. "태백아!" 살아 있던 ${s.length}명이 그 배에 올랐다: ${list}.`;}
     else{head='대답 없는 이름';sub=`약속한 시간이었다. 안개 속에서 손전등 불빛 세 개가 흔들렸다. "이 경장!" "이태백!" "이태백 씨!" 세 사람이 번갈아 외쳤지만, 대답은 돌아오지 않았다. 배 위에서 삼촌이 한 번 더 불렀다. "태백아." 살아 있던 ${s.length}명이 그 배로 섬을 빠져나갔다: ${list}.`;}}
@@ -3524,7 +3656,7 @@ function renderEnd(){
       head=G.rescueTrio?'셋이 부른 배':'셋이 함께 탄 배';
       sub=`${L.n}번째 아침. ${who} ${s.length}명을 태웠다: ${s.map(c=>c.me?'나':c.name).join(', ')}.${G.rescueTrio?'':` ${M.JS.wa(tn[0])} ${M.JS.i(tn[1])} 나란히 뱃전에 서 있었다.`} 멀어지는 섬을 끝까지 보고 있었다. 눈을 깜빡여도, 강당은 다시 보이지 않았다.`;}
     else if(res.type==='friends')sub=`${L.n}번째 아침. `+sub;}
-  const kick=G.loop&&G.loop.final==='giveup'?'LOOP ENDED':me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED',unband:'ESCAPED',police:'RESCUED',tbteam:'RESCUED',friends:'RESCUED'}[res.type]||'SURVIVED'):'ELIMINATED';
+  const kick=G.loop&&G.loop.final==='giveup'?'LOOP ENDED':me.alive?({win:'LAST ONE STANDING',rescue:'RESCUED',escape:'ESCAPED',unband:'ESCAPED',police:'RESCUED',tbteam:'RESCUED',friends:'RESCUED',arrest:'CASE CLOSED',hq:'SIGNAL LOST',deal:'RELEASED',ghost:'UNLISTED'}[res.type]||'SURVIVED'):'ELIMINATED';
   const lived=me.alive?G.t:me.deathT;
   const chron=G.log.filter(e=>e.imp);
   $('scr-end').innerHTML=`
@@ -3535,6 +3667,7 @@ function renderEnd(){
     ${G.transferId!=null&&!G.c[G.transferId].kim?`<p class="muted" style="margin:10px 0 0;max-width:40em">전입생 ${esc(G.c[G.transferId].name)}의 정체는 <b>${M.TRANSFER[G.c[G.transferId].transfer].n}</b>${M.TRANSFER[G.c[G.transferId].transfer].n==='사냥꾼'?'이었다':'였다'}. ${M.TRANSFER[G.c[G.transferId].transfer].desc}</p>`:''}
     ${btrReveal()?`<p class="muted" style="margin:10px 0 0;max-width:40em">${btrReveal()}</p>`:''}
     ${teamReveal()?`<p class="muted" style="margin:10px 0 0;max-width:40em">${teamReveal()}</p>`:''}
+    ${res.ghosts&&res.ghosts.length?`<p class="muted" style="margin:10px 0 0;max-width:40em">${esc(M.JS.eun(res.ghosts.map(id=>G.c[id].name).join(', ')))} 아직 살아 있었다. 방송에서 이름이 불렸던 ${res.ghosts.length>1?'그 애들이':'그 애가'}.</p>`:''}
     ${tbReveal()?`<p class="muted" style="margin:10px 0 0;max-width:40em">${tbReveal()}</p>`:''}</div>
    <div class="sum">
     <div><span class="label">내 순위</span><b>${rank}등 / ${G.c.length}명</b></div>
